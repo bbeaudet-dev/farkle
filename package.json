@@ -1,0 +1,21 @@
+{
+  "name": "farkle-cli",
+  "version": "1.0.0",
+  "description": "A fully-featured command-line implementation of the classic dice game Farkle",
+  "main": "src/cli.ts",
+  "scripts": {
+    "start": "ts-node src/cli.ts",
+    "build": "tsc",
+    "dev": "ts-node --watch src/cli.ts"
+  },
+  "keywords": ["farkle", "dice", "game", "cli", "typescript"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^4.9.0"
+  }
+}

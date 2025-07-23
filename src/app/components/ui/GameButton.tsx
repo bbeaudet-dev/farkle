@@ -18,7 +18,7 @@ export const GameButton: React.FC<GameButtonProps> = ({
   const baseClasses = "border-none px-4 py-2 font-mono text-lg cursor-pointer transition-colors";
   
   const variantClasses = {
-    primary: "bg-terminal-text text-terminal-input hover:bg-green-400",
+    primary: "bg-green-500 text-black hover:bg-green-400",
     secondary: "bg-gray-600 text-white hover:bg-gray-500",
     danger: "bg-red-600 text-white hover:bg-red-500"
   };

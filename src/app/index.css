@@ -4,44 +4,15 @@
 
 @layer base {
   body {
-    @apply bg-terminal-bg text-terminal-text font-mono;
+    background-color: #1a1a1a;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
   }
 }
 
 @layer components {
-  .dice {
-    @apply inline-block w-8 h-8 border-2 border-terminal-border bg-terminal-input text-terminal-text text-center leading-6 mx-1 font-mono transition-colors;
-  }
-  
-  .dice:hover {
-    @apply border-green-400;
-  }
-  
-  .dice.selected {
-    @apply border-green-400 bg-green-400 text-black;
-  }
-  
-  .game-output {
-    @apply bg-terminal-input border-2 border-terminal-border p-4 h-96 overflow-y-auto mb-4 whitespace-pre-wrap font-mono text-terminal-text;
-  }
-  
-  .game-input {
-    @apply bg-terminal-input text-terminal-text border-2 border-terminal-border p-2 font-mono text-lg flex-1 focus:outline-none focus:border-green-400;
-  }
-  
-  .game-button {
-    @apply border-none px-4 py-2 font-mono text-lg cursor-pointer transition-colors bg-terminal-text text-terminal-input hover:bg-green-400;
-  }
-  
-  .game-button:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-  
-  .game-button.secondary {
-    @apply bg-gray-600 text-white hover:bg-gray-500;
-  }
-  
-  .game-button.danger {
-    @apply bg-red-600 text-white hover:bg-red-500;
+  /* Blinking cursor effect for input fields */
+  input:focus {
+    caret-color: #00ff00;
   }
 } 

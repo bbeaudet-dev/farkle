@@ -1,31 +1,50 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface GameInputProps {
   value: string;
   onChange: (value: string) => void;
+  onSubmit: () => void;
   placeholder?: string;
-  onKeyPress?: (e: React.KeyboardEvent) => void;
-  className?: string;
   disabled?: boolean;
+  className?: string;
+  autoFocus?: boolean;
 }
 
-export const GameInput: React.FC<GameInputProps> = ({ 
-  value, 
-  onChange, 
-  placeholder = "Enter dice values (e.g., 125)...", 
-  onKeyPress,
+export const GameInput: React.FC<GameInputProps> = ({
+  value,
+  onChange,
+  onSubmit,
+  placeholder = '',
+  disabled = false,
   className = '',
-  disabled = false
+  autoFocus = false
 }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when component mounts or when autoFocus prop changes
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus]);
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !disabled) {
+      e.preventDefault();
+      onSubmit();
+    }
+  };
+
   return (
     <input
+      ref={inputRef}
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      onKeyPress={onKeyPress}
+      onKeyPress={handleKeyPress}
       placeholder={placeholder}
       disabled={disabled}
-      className={`bg-terminal-input text-terminal-text border-2 border-terminal-border p-2 font-mono text-lg flex-1 focus:outline-none focus:border-green-400 ${className}`}
+      className={`bg-black text-green-500 border-2 border-green-500 px-4 py-3 font-mono text-lg flex-1 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 rounded-md ${className}`}
       autoComplete="off"
     />
   );

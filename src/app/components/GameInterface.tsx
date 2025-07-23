@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { GameEngine } from '../../game/gameEngine';
+import { GameInterface as IGameInterface } from '../../game/interfaces';
 import {
   GameStatus,
   DiceDisplay,
@@ -7,141 +9,223 @@ import {
   GameButton
 } from './ui';
 
-interface GameState {
-  isActive: boolean;
-  gameScore: number;
-  roundNumber: number;
-  rollNumber: number;
-  roundPoints: number;
-  currentDice: number[];
-  selectedIndices: number[];
+// React implementation of the GameInterface
+class ReactGameInterface implements IGameInterface {
+  private outputCallback: (text: string) => void;
+  private inputCallback: (question: string) => Promise<string>;
+  private updateGameState: (state: any) => void;
+  private hasShownWelcome: boolean = false;
+
+  constructor(
+    outputCallback: (text: string) => void,
+    inputCallback: (question: string) => Promise<string>,
+    updateGameState: (state: any) => void
+  ) {
+    this.outputCallback = outputCallback;
+    this.inputCallback = inputCallback;
+    this.updateGameState = updateGameState;
+  }
+
+  // Input methods
+  async ask(question: string): Promise<string> {
+    return this.inputCallback(question);
+  }
+
+  async askYesNo(question: string): Promise<boolean> {
+    const answer = await this.inputCallback(question);
+    return answer.toLowerCase().startsWith('y');
+  }
+
+  async askDiceSelection(question: string): Promise<string> {
+    return this.inputCallback(question);
+  }
+
+  async askAction(question: string): Promise<string> {
+    return this.inputCallback(question);
+  }
+
+  // Display methods
+  async displayRoll(rollNumber: number, dice: number[]): Promise<void> {
+    this.outputCallback(`Roll #${rollNumber}:\n${dice.join(' ')}`);
+    this.updateGameState({ rollNumber, currentDice: dice, selectedIndices: [] });
+  }
+
+  async displayScoringResult(selectedIndices: number[], dice: number[], combinations: any[], points: number): Promise<void> {
+    const selectedDice = selectedIndices.map(i => dice[i]);
+    this.outputCallback(`You selected dice: ${selectedDice.join(', ')}`);
+    this.outputCallback(`Points for this roll: ${points}`);
+    this.updateGameState({ selectedIndices });
+  }
+
+  async displayRoundPoints(points: number): Promise<void> {
+    this.outputCallback(`Round points so far: ${points}`);
+    this.updateGameState({ roundPoints: points });
+  }
+
+  async displayGameScore(score: number): Promise<void> {
+    this.outputCallback(`Game score: ${score}`);
+    this.updateGameState({ gameScore: score });
+  }
+
+  async displayRoundNumber(roundNumber: number): Promise<void> {
+    this.outputCallback(`--- Round ${roundNumber} ---`);
+    this.updateGameState({ roundNumber });
+  }
+
+  async displayDiceToReroll(count: number): Promise<void> {
+    this.outputCallback(`Reroll ${count} dice (r) or bank points (b)?`);
+  }
+
+  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, penalty: number): Promise<void> {
+    this.outputCallback(`No scoring combinations, you flopped! Round points forfeited: ${forfeitedPoints}`);
+    if (consecutiveFlops === 2) {
+      this.outputCallback(`(2 consecutive flops - one more and you lose ${penalty} points!)`);
+    } else if (consecutiveFlops >= 3) {
+      this.outputCallback(`(3 consecutive flops - you lose ${penalty} points! Game score: ${gameScore})`);
+    }
+  }
+
+  async displayHotDice(): Promise<void> {
+    this.outputCallback('🎉 Hot dice! You can reroll all 6 dice!');
+  }
+
+  async displayWinMessage(finalScore: number): Promise<void> {
+    this.outputCallback(`🎉 Congratulations! You won with ${finalScore} points!`);
+  }
+
+  async displayGameStats(stats: any): Promise<void> {
+    this.outputCallback(`\n📊 Game Statistics:`);
+    this.outputCallback(`Total rounds: ${stats.totalRounds}`);
+    this.outputCallback(`Total rolls: ${stats.totalRolls}`);
+    this.outputCallback(`Hot dice: ${stats.hotDiceTotal}`);
+    this.outputCallback(`Forfeited points: ${stats.forfeitedPointsTotal}`);
+    this.outputCallback(`Final score: ${stats.finalScore}`);
+  }
+
+  async displayGameEnd(finalScore: number): Promise<void> {
+    this.outputCallback(`🎉 Game Over! Final score: ${finalScore}`);
+  }
+
+  async displayBankedPoints(points: number): Promise<void> {
+    this.outputCallback(`💰 You banked ${points} points!`);
+  }
+
+  async displayRoundStart(roundNumber: number): Promise<void> {
+    this.outputCallback(`\n--- Round ${roundNumber} ---`);
+  }
+
+  async displayWinCondition(): Promise<void> {
+    this.outputCallback(`🎉 Congratulations! You won!`);
+  }
+
+  async askForDiceSelection(dice: number[]): Promise<string> {
+    return this.inputCallback(`Select dice values to score: `);
+  }
+
+  async askForBankOrReroll(diceToReroll: number): Promise<string> {
+    return this.inputCallback(`Bank points (b) or reroll ${diceToReroll} dice (r)? `);
+  }
+
+  async askForNewGame(): Promise<string> {
+    return this.inputCallback(`Start New Game? (y/n): `);
+  }
+
+  async askForNextRound(): Promise<string> {
+    return this.inputCallback(`Continue to next round? (y/n): `);
+  }
+
+  async displayWelcome(): Promise<void> {
+    // Welcome message is already shown in initial state
+    this.hasShownWelcome = true;
+  }
+
+  async displayGoodbye(): Promise<void> {
+    this.outputCallback('Thanks for playing Farkle!');
+  }
+
+  async displayInvalidInput(): Promise<void> {
+    this.outputCallback('Invalid input. Please try again.');
+  }
+
+  async displayInvalidDiceSelection(): Promise<void> {
+    this.outputCallback('Invalid dice selection. Please select valid dice values.');
+  }
+
+  async log(message: string, delayBefore?: number, delayAfter?: number): Promise<void> {
+    if (delayBefore) await this.sleep(delayBefore);
+    this.outputCallback(message);
+    if (delayAfter) await this.sleep(delayAfter);
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 }
 
 export const GameInterface: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>({
+  const [gameOutput, setGameOutput] = useState('🎲 Welcome to Farkle!\n\nClick "Start New Game" to begin.');
+  const [inputValue, setInputValue] = useState('');
+  const [isWaitingForInput, setIsWaitingForInput] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState('');
+  const [gameState, setGameState] = useState({
     isActive: false,
     gameScore: 0,
     roundNumber: 1,
     rollNumber: 1,
     roundPoints: 0,
-    currentDice: [],
-    selectedIndices: []
+    currentDice: [] as number[],
+    selectedIndices: [] as number[]
   });
 
-  const [inputValue, setInputValue] = useState('');
-  const [gameOutput, setGameOutput] = useState('Welcome to Farkle!\nClick "Start New Game" to begin.');
-
-  // Simulate dice roll
-  const rollDice = (count: number = 6): number[] => {
-    return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
-  };
+  const gameEngineRef = useRef<GameEngine | null>(null);
+  const resolveInputRef = useRef<((value: string) => void) | null>(null);
 
   const appendToOutput = (text: string) => {
     setGameOutput(prev => prev + '\n' + text);
   };
 
-  const startNewGame = () => {
-    const newDice = rollDice();
-    setGameState({
-      isActive: true,
-      gameScore: 0,
-      roundNumber: 1,
-      rollNumber: 1,
-      roundPoints: 0,
-      currentDice: newDice,
-      selectedIndices: []
+  const handleInput = async (question: string): Promise<string> => {
+    setIsWaitingForInput(true);
+    setCurrentQuestion(question);
+    
+    return new Promise((resolve) => {
+      resolveInputRef.current = resolve;
     });
-    setGameOutput('--- Round 1 ---\nRoll #1:\n' + newDice.join(' '));
   };
 
-  const processDiceSelection = (input: string) => {
-    if (!input.trim()) return;
-
-    appendToOutput(`> ${input}`);
-
-    // Simple validation - just check if all characters are 1-6
-    const diceValues = input.split('').map(Number);
-    const isValid = diceValues.every(v => v >= 1 && v <= 6);
-
-    if (isValid) {
-      const selectedDice = diceValues.filter(v => gameState.currentDice.includes(v));
-      if (selectedDice.length > 0) {
-        appendToOutput(`You selected dice: ${selectedDice.join(', ')}`);
-        appendToOutput(`Points for this roll: ${selectedDice.length * 100}`);
-        setGameState(prev => ({
-          ...prev,
-          roundPoints: prev.roundPoints + selectedDice.length * 100
-        }));
-      } else {
-        appendToOutput('Invalid selection. Please select valid dice values.');
-      }
-    } else {
-      appendToOutput('Invalid input. Please enter numbers 1-6.');
-    }
-
-    setInputValue('');
-  };
-
-  const bankPoints = () => {
-    if (gameState.roundPoints > 0) {
-      const newGameScore = gameState.gameScore + gameState.roundPoints;
-      const newRoundNumber = gameState.roundNumber + 1;
-      const newDice = rollDice();
-      
-      appendToOutput(`You banked ${gameState.roundPoints} points!`);
-      appendToOutput(`Game score: ${newGameScore}`);
-      
-      setGameState({
-        ...gameState,
-        gameScore: newGameScore,
-        roundNumber: newRoundNumber,
-        rollNumber: 1,
-        roundPoints: 0,
-        currentDice: newDice,
-        selectedIndices: []
-      });
-      
-      appendToOutput(`--- Round ${newRoundNumber} ---`);
-      appendToOutput(`Roll #1:\n${newDice.join(' ')}`);
+  const handleSubmit = () => {
+    if (inputValue.trim() && isWaitingForInput) {
+      resolveInputRef.current?.(inputValue.trim());
+      setInputValue('');
+      // Focus will be restored by the autoFocus prop when isWaitingForInput changes
     }
   };
 
-  const rerollDice = () => {
-    const newRollNumber = gameState.rollNumber + 1;
-    const newDice = rollDice();
-    
-    setGameState({
-      ...gameState,
-      rollNumber: newRollNumber,
-      currentDice: newDice,
-      selectedIndices: []
-    });
-    
-    appendToOutput(`Roll #${newRollNumber}:\n${newDice.join(' ')}`);
-  };
+  const startNewGame = async () => {
+    if (gameEngineRef.current) return;
 
-  const flop = () => {
-    const newRoundNumber = gameState.roundNumber + 1;
-    const newDice = rollDice();
+    const updateGameStateCallback = (state: any) => {
+      setGameState(prev => ({ ...prev, ...state }));
+    };
+
+    const gameInterface = new ReactGameInterface(appendToOutput, handleInput, updateGameStateCallback);
+    gameEngineRef.current = new GameEngine(gameInterface);
     
-    appendToOutput('You flopped! Round points forfeited.');
+    setGameState(prev => ({ ...prev, isActive: true }));
     
-    setGameState({
-      ...gameState,
-      roundNumber: newRoundNumber,
-      rollNumber: 1,
-      roundPoints: 0,
-      currentDice: newDice,
-      selectedIndices: []
-    });
-    
-    appendToOutput(`--- Round ${newRoundNumber} ---`);
-    appendToOutput(`Roll #1:\n${newDice.join(' ')}`);
+    try {
+      await gameEngineRef.current.run();
+    } catch (error) {
+      console.error('Game error:', error);
+    } finally {
+      gameEngineRef.current = null;
+      setGameState(prev => ({ ...prev, isActive: false }));
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      processDiceSelection(inputValue);
+    if (e.key === 'Enter' && isWaitingForInput) {
+      handleSubmit();
     }
   };
 
@@ -155,7 +239,7 @@ export const GameInterface: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-4xl text-center mb-8">🎲 Farkle Game</h1>
+      <h1 className="text-4xl text-center mb-8 text-green-500">🎲 Farkle Game</h1>
       
       <GameStatus
         gameScore={gameState.gameScore}
@@ -173,20 +257,29 @@ export const GameInterface: React.FC = () => {
         {gameOutput}
       </GameOutput>
       
-      <div className="flex gap-4 mb-4">
-        <GameInput
-          value={inputValue}
-          onChange={setInputValue}
-          onKeyPress={handleKeyPress}
-          disabled={!gameState.isActive}
-        />
-        <GameButton
-          onClick={() => processDiceSelection(inputValue)}
-          disabled={!gameState.isActive}
-        >
-          Submit
-        </GameButton>
-      </div>
+      {isWaitingForInput && (
+        <div className="mb-2 p-2 bg-blue-900 border border-blue-500 text-blue-200 font-mono text-sm">
+          💬 {currentQuestion}
+        </div>
+      )}
+      
+              <div className="flex gap-2">
+          <GameInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleSubmit}
+            placeholder="Enter dice values (e.g., 125)..."
+            disabled={!isWaitingForInput}
+            autoFocus={isWaitingForInput}
+          />
+          <GameButton
+            onClick={handleSubmit}
+            disabled={!isWaitingForInput || !inputValue.trim()}
+            variant="primary"
+          >
+            Submit
+          </GameButton>
+        </div>
       
       <div className="flex gap-4 justify-center">
         <GameButton
@@ -194,25 +287,6 @@ export const GameInterface: React.FC = () => {
           disabled={gameState.isActive}
         >
           Start New Game
-        </GameButton>
-        <GameButton
-          onClick={bankPoints}
-          disabled={!gameState.isActive || gameState.roundPoints === 0}
-        >
-          Bank Points
-        </GameButton>
-        <GameButton
-          onClick={rerollDice}
-          disabled={!gameState.isActive}
-        >
-          Reroll Dice
-        </GameButton>
-        <GameButton
-          onClick={flop}
-          disabled={!gameState.isActive}
-          variant="danger"
-        >
-          Flop
         </GameButton>
       </div>
     </div>

@@ -14,7 +14,7 @@ export const GameOutput: React.FC<GameOutputProps> = ({
   return (
     <div 
       id={id}
-      className={`bg-terminal-input border-2 border-terminal-border p-4 h-96 overflow-y-auto mb-4 whitespace-pre-wrap font-mono text-terminal-text ${className}`}
+      className={`bg-black border-2 border-green-500 p-4 h-96 overflow-y-auto mb-4 whitespace-pre-wrap font-mono text-green-500 ${className}`}
     >
       {children}
     </div>

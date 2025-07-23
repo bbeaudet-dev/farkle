@@ -16,7 +16,7 @@ export const GameStatus: React.FC<GameStatusProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`mb-6 p-4 border-2 border-terminal-border bg-terminal-input ${className}`}>
+    <div className={`mb-6 p-4 border-2 border-green-500 bg-black ${className}`}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div>
           Game Score: <span className="font-bold">{gameScore}</span>

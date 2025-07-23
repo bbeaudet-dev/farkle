@@ -16,7 +16,7 @@ export const Dice: React.FC<DiceProps> = ({
   const baseClasses = "inline-block w-8 h-8 border-2 text-center leading-6 mx-1 font-mono transition-colors";
   const selectedClasses = selected 
     ? "border-green-400 bg-green-400 text-black" 
-    : "border-terminal-border bg-terminal-input text-terminal-text hover:border-green-400";
+    : "border-green-500 bg-black text-green-500 hover:border-green-400";
   
   return (
     <div 

@@ -2,222 +2,252 @@
 
 ## Game State Relationships
 
-```
-GameState
-├── roundNumber: number
-├── gameScore: number
-├── forfeitedPointsTotal: number
-├── rollCount: number
-├── hotDiceTotal: number
-├── consecutiveFlopCount: number
-├── roundState: RoundState | null
-├── isActive: boolean
-└── endReason?: GameEndReason
+```mermaid
+classDiagram
+    class GameState {
+        +roundNumber: number
+        +gameScore: number
+        +forfeitedPointsTotal: number
+        +rollCount: number
+        +hotDiceTotal: number
+        +consecutiveFlopCount: number
+        +roundState: RoundState
+        +isActive: boolean
+        +endReason: GameEndReason
+    }
 
-RoundState
-├── roundNumber: number
-├── hand: DieValue[]
-├── roundPoints: number
-├── rollHistory: RollState[]
-├── hotDiceCount: number
-├── forfeitedPoints: number
-├── isActive: boolean
-└── endReason?: RoundEndReason
+    class RoundState {
+        +roundNumber: number
+        +hand: DieValue[]
+        +roundPoints: number
+        +rollHistory: RollState[]
+        +hotDiceCount: number
+        +forfeitedPoints: number
+        +isActive: boolean
+        +endReason: RoundEndReason
+    }
 
-RollState
-├── rollNumber: number
-├── dice: DieValue[]
-├── maxRollPoints: number
-├── rollPoints: number
-├── scoringSelection: number[]
-├── combinations: ScoringCombination[]
-├── isHotDice: boolean
-└── isFlop: boolean
+    class RollState {
+        +rollNumber: number
+        +dice: DieValue[]
+        +maxRollPoints: number
+        +rollPoints: number
+        +scoringSelection: number[]
+        +combinations: ScoringCombination[]
+        +isHotDice: boolean
+        +isFlop: boolean
+    }
+
+    GameState --> RoundState : contains
+    RoundState --> RollState : contains
 ```
 
 ## CLI Interaction Flow
 
-```
-Welcome to Farkle!
-    ↓
-Start New Game? (y/n)
-    ↓
---- Round X ---
-    ↓
-Roll #Y:
-  1   2   3   4   5   6
-[2] [1] [5] [3] [1] [4]
-    ↓
-Select dice positions to score:
-    ↓
-You selected dice: 1, 3, 4, 5, 6 (2, 5, 3, 1, 4)
-Combinations: three_of_a_kind (2, 2, 2), single_one (1)
-Points for this roll: 400
-Round points so far: 400 (if not first roll)
-    ↓
-Bank points (b) or reroll X dice (r)?
-    ↓
-[Bank] → Round ends, points added to game score
-[Reroll] → New roll with remaining dice
+```mermaid
+flowchart TD
+    A[Welcome to Farkle!] --> B[Start New Game? y/n]
+    B -->|n| C[Goodbye!]
+    B -->|y| D[--- Round X ---]
+    D --> E[Roll #Y: Display Dice Values]
+    E --> F[Select dice values to score]
+    F --> G{Valid Selection?}
+    G -->|No| H[Invalid selection message]
+    H --> F
+    G -->|Yes| I[Show combinations and points]
+    I --> J[Bank points or reroll?]
+    J -->|Bank| K[Round ends, add to game score]
+    J -->|Reroll| L[Continue with remaining dice]
+    K --> M{Game Score >= 10000?}
+    M -->|Yes| N[Congratulations! You win!]
+    M -->|No| O[Start next round?]
+    O -->|Yes| D
+    O -->|No| P[Game over - final stats]
+    L --> E
 ```
 
 ## Scoring Engine Data Flow
 
-```
-Input: Dice Array [2, 1, 5, 3, 1, 4]
-    ↓
-countDice() → [0, 2, 1, 1, 1, 1] (counts for 1-6)
-    ↓
-getScoringCombinations()
-├── Check Straight (1-6) → No
-├── Check Three Pairs → No
-├── Check Two Triplets → No
-├── Check 6 of a Kind → No
-├── Check 5 of a Kind → No
-├── Check 4 of a Kind → No
-├── Check 3 of a Kind → Yes: [2, 2, 2] = 200 points
-└── Check Singles → Yes: [1] = 100 points
-    ↓
-Output: [
-  {type: "three_of_a_kind", dice: [2,2,2], points: 200},
-  {type: "single_one", dice: [1], points: 100}
-]
-    ↓
-isValidScoringSelection() → Validates user selection
-    ↓
-Total Points: 300
+```mermaid
+flowchart LR
+    A["Dice Array [2,1,5,3,1,4]"] --> B[countDice]
+    B --> C["Count Array [0,2,1,1,1,1]"]
+    C --> D[getScoringCombinations]
+
+    D --> E{Check Straight?}
+    E -->|No| F{Check Three Pairs?}
+    F -->|No| G{Check Two Triplets?}
+    G -->|No| H{Check 6 of a Kind?}
+    H -->|No| I{Check 5 of a Kind?}
+    I -->|No| J{Check 4 of a Kind?}
+    J -->|No| K{Check 3 of a Kind?}
+    K -->|Yes| L["Add 3-of-a-kind [2,2,2] = 200 pts"]
+    K -->|No| M{Check Singles?}
+    M -->|Yes| N["Add single_one [1] = 100 pts"]
+
+    L --> O[Combinations Array]
+    N --> O
+    O --> P[isValidScoringSelection]
+    P --> Q["Total Points: 300"]
 ```
 
 ## State Transitions
 
 ### Game State Transitions
 
-```
-Game Start
-    ↓
-Round 1 → Round 2 → Round 3 → ... → Game End
-    ↓                    ↓
-  Bank Points         Win Condition
-    ↓                    ↓
-  Next Round         Congratulations!
+```mermaid
+stateDiagram-v2
+    [*] --> GameStart
+    GameStart --> Round1: Initialize
+    Round1 --> Round2: Bank Points
+    Round2 --> Round3: Bank Points
+    Round3 --> RoundN: Bank Points
+    RoundN --> GameEnd: Win Condition
+    RoundN --> GameEnd: Quit
+    GameEnd --> [*]
 ```
 
 ### Round State Transitions
 
-```
-Round Start (Roll all dice)
-    ↓
-Roll Dice
-    ↓
-[Flop Detected] → Round End (Forfeit Points)
-    ↓
-[Valid Roll] → User Selects Dice
-    ↓
-[User Flops] → Round End (Forfeit Points)
-    ↓
-[User Scores] → Update Round Points
-    ↓
-[Hot Dice] → Reset Hand to Full Set
-    ↓
-[Bank Points] → Round End (Add to Game Score)
-    ↓
-[Reroll] → Continue Round
+```mermaid
+stateDiagram-v2
+    [*] --> RoundStart: Roll all dice
+    RoundStart --> RollDice: Roll
+    RollDice --> FlopDetected: No scoring combinations
+    RollDice --> ValidRoll: Has scoring combinations
+    ValidRoll --> UserSelectsDice: Display options
+    UserSelectsDice --> UserFlops: Invalid selection
+    UserSelectsDice --> UserScores: Valid selection
+    UserScores --> UpdateRoundPoints: Calculate points
+    UpdateRoundPoints --> HotDice: All dice scored
+    UpdateRoundPoints --> BankPoints: User chooses bank
+    UpdateRoundPoints --> Reroll: User chooses reroll
+    HotDice --> ResetHand: Full dice set
+    ResetHand --> RollDice
+    Reroll --> RollDice
+    BankPoints --> RoundEnd: Add to game score
+    FlopDetected --> RoundEnd: Forfeit points
+    UserFlops --> RoundEnd: Forfeit points
+    RoundEnd --> [*]
 ```
 
 ### Roll State Transitions
 
-```
-Roll Start
-    ↓
-Display Dice
-    ↓
-[No Scoring Combinations] → Flop
-    ↓
-[Scoring Combinations Available] → User Input
-    ↓
-[Invalid Selection] → Re-prompt
-    ↓
-[Valid Selection] → Calculate Points
-    ↓
-[All Dice Scored] → Hot Dice
-    ↓
-[Some Dice Scored] → Update Hand
-    ↓
-[Bank] → End Round
-    ↓
-[Reroll] → Next Roll
+```mermaid
+stateDiagram-v2
+    [*] --> RollStart
+    RollStart --> DisplayDice: Show current roll
+    DisplayDice --> NoScoring: No combinations
+    DisplayDice --> ScoringAvailable: Has combinations
+    NoScoring --> Flop: Automatic flop
+    ScoringAvailable --> UserInput: Prompt for selection
+    UserInput --> InvalidSelection: Invalid input
+    UserInput --> ValidSelection: Valid input
+    InvalidSelection --> UserInput: Re-prompt
+    ValidSelection --> CalculatePoints: Process selection
+    CalculatePoints --> AllDiceScored: Hot dice
+    CalculatePoints --> SomeDiceScored: Partial scoring
+    AllDiceScored --> HotDice: Reset to full set
+    SomeDiceScored --> UpdateHand: Remove scored dice
+    HotDice --> Bank: User choice
+    UpdateHand --> Bank: User choice
+    HotDice --> Reroll: User choice
+    UpdateHand --> Reroll: User choice
+    Bank --> EndRound: Round complete
+    Reroll --> NextRoll: Continue round
+    Flop --> EndRound: Round complete
+    EndRound --> [*]
 ```
 
 ## Hot Dice Handling
 
-```
-Normal Roll: 6 dice
-    ↓
-User scores 4 dice → 2 dice remain
-    ↓
-Reroll: 2 dice
-    ↓
-User scores 2 dice → 0 dice remain
-    ↓
-HOT DICE! → Reset to 6 dice
-    ↓
-Continue same round
+```mermaid
+flowchart TD
+    A[Start: 6 dice] --> B[User scores 4 dice]
+    B --> C[2 dice remain]
+    C --> D[Reroll: 2 dice]
+    D --> E[User scores 2 dice]
+    E --> F[0 dice remain]
+    F --> G[HOT DICE!]
+    G --> H[Reset to 6 dice]
+    H --> I[Continue same round]
+    I --> A
 ```
 
 ## Flop Detection Flow
 
-```
-Roll Dice
-    ↓
-getScoringCombinations(dice)
-    ↓
-[No combinations found] → Automatic Flop
-    ↓
-Update consecutiveFlopCount
-    ↓
-[Count >= 3] → Apply -1000 penalty
-    ↓
-Forfeit round points
-    ↓
-End round
+```mermaid
+flowchart TD
+    A[Roll Dice] --> B[getScoringCombinations]
+    B --> C{Any combinations found?}
+    C -->|No| D[Automatic Flop]
+    C -->|Yes| E[Continue normal flow]
+    D --> F[Update consecutiveFlopCount]
+    F --> G{Count >= 3?}
+    G -->|Yes| H[Apply -1000 penalty]
+    G -->|No| I[Continue]
+    H --> J[Forfeit round points]
+    I --> J
+    J --> K[End round]
 ```
 
 ## Three-Flop Penalty System
 
-```
-Flop #1: Consecutive count = 1
-Flop #2: Consecutive count = 2 → Warning message
-Flop #3: Consecutive count = 3 → -1000 points penalty
-    ↓
-[Bank points] → Reset consecutive count to 0
-    ↓
-[Continue playing] → Count resets on next bank
+```mermaid
+flowchart TD
+    A[Flop #1] --> B[Consecutive count = 1]
+    B --> C[Flop #2]
+    C --> D[Consecutive count = 2]
+    D --> E[Warning message]
+    E --> F[Flop #3]
+    F --> G[Consecutive count = 3]
+    G --> H[-1000 points penalty]
+    H --> I{Bank points?}
+    I -->|Yes| J[Reset count to 0]
+    I -->|No| K[Continue with penalty]
+    J --> L[Continue playing]
+    K --> L
 ```
 
 ## File Architecture
 
-```
-src/
-├── cli.ts          # Main CLI interface and game loop
-├── config.ts       # Game configuration and rules
-├── types.ts        # TypeScript type definitions
-├── scoring.ts      # Scoring engine and validation
-├── gameState.ts    # State management functions
-└── utils.ts        # Utility functions and formatting
+```mermaid
+graph TD
+    A[src/] --> B[cli.ts]
+    A --> C[config.ts]
+    A --> D[types.ts]
+    A --> E[scoring.ts]
+    A --> F[gameState.ts]
+    A --> G[utils.ts]
 
-docs/
-├── specs/
-│   └── farkle-rules.md      # Game rules specification
-└── architecture/
-    └── farkle-diagrams.md   # This file
+    H[docs/] --> I[specs/farkle-rules.md]
+    H --> J[architecture/farkle-diagrams.md]
+
+    K[Root] --> A
+    K --> H
+    K --> L[package.json]
+    K --> M[tsconfig.json]
+    K --> N[README.md]
 ```
 
 ## Data Flow Summary
 
-1. **Configuration** → **Game State** → **Round State** → **Roll State**
-2. **User Input** → **Validation** → **Scoring** → **State Update**
-3. **State Changes** → **Display Updates** → **User Feedback**
-4. **Game Events** → **Statistics Tracking** → **Final Summary**
+```mermaid
+flowchart LR
+    A[Configuration] --> B[Game State]
+    B --> C[Round State]
+    C --> D[Roll State]
+
+    E[User Input] --> F[Validation]
+    F --> G[Scoring]
+    G --> H[State Update]
+
+    I[State Changes] --> J[Display Updates]
+    J --> K[User Feedback]
+
+    L[Game Events] --> M[Statistics Tracking]
+    M --> N[Final Summary]
+```
 
 The architecture follows a clean separation of concerns with:
 

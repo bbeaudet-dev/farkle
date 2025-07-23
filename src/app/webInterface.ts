@@ -1,0 +1,134 @@
+import { DieValue, ScoringCombination } from '../game/types';
+import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
+import { DisplayFormatter } from '../game/display';
+
+/**
+ * Web interface implementation for the game
+ * This is a simple implementation that outputs to console.log for now
+ * In a real implementation, this would update DOM elements
+ */
+export class WebInterface implements GameInterface {
+  private outputElement: HTMLElement | null = null;
+  private inputElement: HTMLInputElement | null = null;
+  private submitButton: HTMLButtonElement | null = null;
+  private pendingResolve: ((value: string) => void) | null = null;
+
+  constructor() {
+    // For now, we'll use console.log as the output
+    // In a real implementation, this would be DOM elements
+    console.log('WebInterface initialized - output will go to console for now');
+  }
+
+  // Input methods
+  async ask(question: string): Promise<string> {
+    console.log(`[INPUT] ${question}`);
+    // In a real implementation, this would show an input field and wait for user
+    // For now, we'll simulate with a prompt
+    return prompt(question) || '';
+  }
+
+  async askForDiceSelection(dice: DieValue[]): Promise<string> {
+    return this.ask(DisplayFormatter.formatDiceSelectionPrompt());
+  }
+
+  async askForBankOrReroll(diceToReroll: number): Promise<string> {
+    return this.ask(DisplayFormatter.formatBankOrRerollPrompt(diceToReroll));
+  }
+
+  async askForNewGame(): Promise<string> {
+    return this.ask(DisplayFormatter.formatNewGamePrompt());
+  }
+
+  async askForNextRound(): Promise<string> {
+    return this.ask(DisplayFormatter.formatNextRoundPrompt());
+  }
+
+  // Display methods
+  async log(message: string, delayBefore: number = 0, delayAfter: number = 0): Promise<void> {
+    if (delayBefore > 0) await this.sleep(delayBefore);
+    console.log(`[WEB] ${message}`);
+    // In a real implementation, this would append to a DOM element
+    if (delayAfter > 0) await this.sleep(delayAfter);
+  }
+
+  async displayRoll(rollNumber: number, dice: DieValue[]): Promise<void> {
+    await this.log(DisplayFormatter.formatRoll(rollNumber, dice));
+  }
+
+  async displayScoringResult(selectedIndices: number[], dice: DieValue[], combinations: ScoringCombination[], points: number): Promise<void> {
+    await this.log(DisplayFormatter.formatScoringResult(selectedIndices, dice, combinations, points));
+  }
+
+  async displayRoundPoints(points: number): Promise<void> {
+    await this.log(DisplayFormatter.formatRoundPoints(points));
+  }
+
+  async displayGameScore(score: number): Promise<void> {
+    await this.log(DisplayFormatter.formatGameScore(score));
+  }
+
+  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): Promise<void> {
+    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, threeFlopPenalty));
+  }
+
+  async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {
+    const lines = DisplayFormatter.formatGameEnd(gameState, isWin);
+    for (const line of lines) {
+      await this.log(line);
+    }
+  }
+
+  async displayHotDice(): Promise<void> {
+    await this.log(DisplayFormatter.formatHotDice());
+  }
+
+  async displayBankedPoints(points: number): Promise<void> {
+    await this.log(DisplayFormatter.formatBankedPoints(points));
+  }
+
+  async displayWelcome(): Promise<void> {
+    await this.log(DisplayFormatter.formatWelcome());
+  }
+
+  async displayRoundStart(roundNumber: number): Promise<void> {
+    await this.log(DisplayFormatter.formatRoundStart(roundNumber));
+  }
+
+  async displayWinCondition(): Promise<void> {
+    await this.log(DisplayFormatter.formatWinCondition());
+  }
+
+  async displayGoodbye(): Promise<void> {
+    await this.log(DisplayFormatter.formatGoodbye());
+  }
+
+  // Utility methods
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Method to set up DOM elements (for future use)
+  setupDOM(outputId: string, inputId: string, submitId: string): void {
+    this.outputElement = document.getElementById(outputId) as HTMLElement;
+    this.inputElement = document.getElementById(inputId) as HTMLInputElement;
+    this.submitButton = document.getElementById(submitId) as HTMLButtonElement;
+    
+    if (this.submitButton && this.inputElement) {
+      this.submitButton.addEventListener('click', () => {
+        if (this.pendingResolve && this.inputElement) {
+          this.pendingResolve(this.inputElement.value);
+          this.inputElement.value = '';
+          this.pendingResolve = null;
+        }
+      });
+    }
+  }
+
+  // Method to append text to DOM (for future use)
+  private appendToDOM(text: string): void {
+    if (this.outputElement) {
+      this.outputElement.innerHTML += `<div>${text}</div>`;
+      this.outputElement.scrollTop = this.outputElement.scrollHeight;
+    }
+  }
+} 

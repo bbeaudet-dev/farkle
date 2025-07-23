@@ -371,6 +371,22 @@ As a general rule, all addition effects should take place before any multiplicat
 3. Update existing types to support new properties
 4. **Integration Test**: Verify game state can be created and serialized
 
+### Phase 1a.1: Scoring Logic Refactor & Effects
+
+- All scoring logic now accepts the full `diceHand: Die[]` (all dice in play for the round, scored and unscored), `selectedIndices: number[]`, and a context object (charms, materials, etc.).
+- **New Materials and Charms that affect scoring:**
+  - **Mirror (Material):** Any die with material “Mirror” acts as a wild (can be any value for combination checking).
+  - **Shortcut (Charm):** If active, reduces the straight requirement from 6 in a row to 5 in a row.
+- Scoring logic considers both scored and unscored dice for material/charm effects.
+- All display and scoring functions use this pattern.
+- All type errors and interface mismatches are fixed as part of this refactor.
+
+### Phase 1a.2: Scoring Effects System Integration
+
+- The scoring system is now architected to support advanced effects (Mirror, Shortcut, etc.), but these effects are NOT yet active in the game logic.
+- All standard Farkle scoring logic (triplets, pairs, four/five/six of a kind, singles, etc.) is restored and should work as before.
+- This phase is for verifying the system works with other features before enabling advanced effects.
+
 ### Phase 1b: Dice Set Configuration
 
 1. Implement dice set config in `config.ts` (all properties parameterized)

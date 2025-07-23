@@ -1,7 +1,13 @@
 import { FARKLE_CONFIG } from './config';
-import { DieValue, ScoringCombination } from './core/types';
-import { getScoringCombinations, isValidScoringSelection, rollDice } from './scoring';
+import { Die, DieValue, ScoringCombination, Charm } from './core/types';
+import { getScoringCombinations } from './scoring';
+import { rollDice } from './scoring';
 import { validateDiceSelection } from './utils';
+import { getRandomInt } from './utils';
+
+interface ScoringContext {
+  charms: Charm[];
+}
 
 /**
  * Pure game logic functions - no I/O, no side effects
@@ -36,60 +42,40 @@ export interface RoundActionResult {
 /**
  * Validates dice selection and returns scoring result
  */
-export function validateDiceSelectionAndScore(input: string, dice: DieValue[]): ScoringResult {
-  const selectedIndices = validateDiceSelection(input, dice);
-  const scoringResult = isValidScoringSelection(selectedIndices, dice);
-  
-  return { selectedIndices, scoringResult };
+export function validateDiceSelectionAndScore(input: string, diceHand: Die[], context: ScoringContext): { selectedIndices: number[], scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[] } } {
+  const selectedIndices = validateDiceSelection(input, diceHand.map(die => die.rolledValue) as DieValue[]);
+  const combos = getScoringCombinations(diceHand, selectedIndices, context);
+  const totalComboDice = combos.reduce((sum, c) => sum + c.dice.length, 0);
+  const valid = combos.length > 0 && totalComboDice === selectedIndices.length;
+  const points = combos.reduce((sum, c) => sum + c.points, 0);
+  return {
+    selectedIndices,
+    scoringResult: { valid, points, combinations: combos },
+  };
 }
 
 /**
  * Checks if a roll is a flop (no scoring combinations)
  */
-export function isFlop(dice: DieValue[]): boolean {
-  return getScoringCombinations(dice).length === 0;
+export function isFlop(diceHand: Die[]): boolean {
+  // For isFlop, treat all dice as selected and use an empty context
+  const selectedIndices = diceHand.map((_, i) => i);
+  return getScoringCombinations(diceHand, selectedIndices, { charms: [] }).length === 0;
 }
 
 /**
  * Processes a dice scoring action
  */
 export function processDiceScoring(
-  dice: DieValue[], 
-  selectedIndices: number[], 
+  diceHand: Die[],
+  selectedIndices: number[],
   scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[] }
-): RoundActionResult {
-  if (!scoringResult.valid) {
-    return {
-      roundActive: true,
-      newHand: dice,
-      hotDice: false,
-      flop: false,
-      banked: false,
-      pointsScored: 0,
-      message: 'Invalid selection. Please select a valid scoring combination.'
-    };
-  }
-
-  // Calculate new hand after scoring
-  let newHand: DieValue[] = [];
-  if (dice.length - selectedIndices.length === 0) {
-    // Hot dice (all dice scored)
-    newHand = [];
-  } else {
-    // Remove scored dice, keep unscored dice
-    newHand = dice.filter((_, i) => !selectedIndices.includes(i));
-  }
-
+): { newHand: Die[], hotDice: boolean } {
+  // Remove scored dice from diceHand
+  const newHand = diceHand.filter((_, i) => !selectedIndices.includes(i));
+  // Hot dice if all dice scored
   const hotDice = newHand.length === 0;
-
-  return {
-    roundActive: true,
-    newHand,
-    hotDice,
-    flop: false,
-    banked: false,
-    pointsScored: scoringResult.points
-  };
+  return { newHand, hotDice };
 }
 
 /**
@@ -111,25 +97,29 @@ export function processBankAction(
 }
 
 /**
+ * Rolls a single die and returns a new Die object with the rolled value set.
+ */
+export function rollSingleDie(die: Die): Die {
+  const randomIndex = getRandomInt(0, die.allowedValues.length - 1);
+  return {
+    ...die,
+    rolledValue: die.allowedValues[randomIndex],
+    scored: false,
+  };
+}
+
+/**
  * Processes a reroll action
  */
 export function processRerollAction(
-  currentHand: DieValue[],
-  hotDice: boolean
-): RoundActionResult {
-  let diceToRoll = currentHand.length;
-  if (diceToRoll === 0) diceToRoll = FARKLE_CONFIG.numDice; // Hot dice
-  
-  const rerolled = rollDice(diceToRoll);
-  
-  return {
-    roundActive: true,
-    newHand: rerolled,
-    hotDice: false,
-    flop: false,
-    banked: false,
-    pointsScored: 0
-  };
+  diceHand: Die[],
+  hotDice: boolean,
+  fullDiceSet?: Die[]
+): { newHand: Die[] } {
+  // If hotDice, reroll the full dice set; otherwise, reroll the current hand
+  const diceToReroll = hotDice && fullDiceSet ? fullDiceSet : diceHand;
+  const newHand = diceToReroll.map(rollSingleDie);
+  return { newHand };
 }
 
 /**
@@ -159,7 +149,7 @@ export function processFlop(
  * Calculates dice to reroll for display purposes
  */
 export function calculateDiceToReroll(selectedIndices: number[], diceLength: number): number {
-  return selectedIndices.length === diceLength ? FARKLE_CONFIG.numDice : diceLength - selectedIndices.length;
+  return selectedIndices.length === diceLength ? diceLength : diceLength - selectedIndices.length;
 }
 
 /**
@@ -178,17 +168,15 @@ export function updateGameStateAfterRound(
   roundActionResult: RoundActionResult
 ): void {
   if (roundActionResult.banked) {
-    gameState.gameScore += roundActionResult.pointsScored;
-    gameState.consecutiveFlopCount = 0;
+    gameState.score += roundActionResult.pointsScored;
+    gameState.consecutiveFlops = 0;
   } else if (roundActionResult.flop) {
-    gameState.consecutiveFlopCount++;
-    gameState.forfeitedPointsTotal += roundActionResult.pointsScored;
-    
-    if (gameState.consecutiveFlopCount >= 3) {
-      gameState.gameScore -= FARKLE_CONFIG.penalties.threeFlopPenalty;
+    gameState.consecutiveFlops++;
+    if (gameState.consecutiveFlops >= 3) {
+      gameState.score -= FARKLE_CONFIG.penalties.threeFlopPenalty;
+      // Do NOT reset consecutiveFlops here; only reset on bank
     }
   }
-  
   if (roundActionResult.hotDice) {
     gameState.hotDiceTotal++;
   }

@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialGameState, createInitialRoundState, resetDiceScoredState } from '../core/gameState';
-import type { GameState, RoundState, Dice } from '../core/types';
+import { GameState, RoundState, DiceSetConfig, Die } from '../core/types';
+import { BASIC_DICE_SET as DEFAULT_DICE_SET } from '../content/diceSets';
 
 describe('Game State', () => {
   describe('createInitialGameState', () => {
     it('should create a valid game state with all required properties', () => {
-      const gameState = createInitialGameState();
+      const gameState = createInitialGameState(DEFAULT_DICE_SET);
       
       // Check all required properties exist
       expect(gameState).toHaveProperty('score', 0);
@@ -16,14 +17,14 @@ describe('Game State', () => {
       expect(gameState).toHaveProperty('charms');
       expect(gameState).toHaveProperty('consumables');
       expect(gameState).toHaveProperty('diceSet');
-      expect(gameState).toHaveProperty('straightCounter', 0);
+      expect(gameState).toHaveProperty('combinationCounters');
       expect(gameState).toHaveProperty('hotDiceCounter', 0);
       expect(gameState).toHaveProperty('globalHotDiceCounter', 0);
       expect(gameState).toHaveProperty('diceSetConfig');
     });
 
     it('should create 6 dice with correct initial state', () => {
-      const gameState = createInitialGameState();
+      const gameState = createInitialGameState(DEFAULT_DICE_SET);
       
       expect(gameState.diceSet).toHaveLength(6);
       
@@ -37,7 +38,7 @@ describe('Game State', () => {
     });
 
     it('should have correct dice set configuration', () => {
-      const gameState = createInitialGameState();
+      const gameState = createInitialGameState(DEFAULT_DICE_SET);
       
       expect(gameState.diceSetConfig.name).toBe('Basic');
       expect(gameState.diceSetConfig.startingMoney).toBe(10);
@@ -47,7 +48,7 @@ describe('Game State', () => {
     });
 
     it('should initialize empty arrays for charms and consumables', () => {
-      const gameState = createInitialGameState();
+      const gameState = createInitialGameState(DEFAULT_DICE_SET);
       
       expect(gameState.charms).toEqual([]);
       expect(gameState.consumables).toEqual([]);
@@ -60,7 +61,7 @@ describe('Game State', () => {
       
       expect(roundState).toHaveProperty('roundNumber', 1);
       expect(roundState).toHaveProperty('roundPoints', 0);
-      expect(roundState).toHaveProperty('hand');
+      expect(roundState).toHaveProperty('diceHand');
       expect(roundState).toHaveProperty('rollHistory');
       expect(roundState).toHaveProperty('hotDiceCount', 0);
       expect(roundState).toHaveProperty('forfeitedPoints', 0);
@@ -73,17 +74,17 @@ describe('Game State', () => {
       expect(roundState.roundNumber).toBe(5);
     });
 
-    it('should initialize empty arrays for hand and roll history', () => {
+    it('should initialize empty arrays for diceHand and roll history', () => {
       const roundState = createInitialRoundState();
       
-      expect(roundState.hand).toEqual([]);
+      expect(roundState.diceHand).toEqual([]);
       expect(roundState.rollHistory).toEqual([]);
     });
   });
 
   describe('resetDiceScoredState', () => {
     it('should reset all dice scored state to false', () => {
-      const gameState = createInitialGameState();
+      const gameState = createInitialGameState(DEFAULT_DICE_SET);
       
       // Mark some dice as scored
       gameState.diceSet[0].scored = true;
@@ -107,7 +108,7 @@ describe('Game State', () => {
 
   describe('Game State Serialization', () => {
     it('should serialize and deserialize correctly', () => {
-      const gameState = createInitialGameState();
+      const gameState = createInitialGameState(DEFAULT_DICE_SET);
       
       const serialized = JSON.stringify(gameState);
       const deserialized = JSON.parse(serialized) as GameState;

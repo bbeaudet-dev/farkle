@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { DieValue, ScoringCombination } from './types';
+import { DieValue, ScoringCombination } from './core/types';
 import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils';
 
 /**

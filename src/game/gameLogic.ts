@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { DieValue, ScoringCombination, RoundEndReason } from './types';
+import { DieValue, ScoringCombination } from './core/types';
 import { getScoringCombinations, isValidScoringSelection, rollDice } from './scoring';
 import { validateDiceSelection } from './utils';
 

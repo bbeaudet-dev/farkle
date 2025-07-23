@@ -1,6 +1,6 @@
 import readline from 'readline';
 import { FARKLE_CONFIG } from '../game/config';
-import { DieValue, ScoringCombination } from '../game/types';
+import { DieValue, ScoringCombination } from '../game/core/types';
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
 

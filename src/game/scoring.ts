@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { DieValue, ScoringCombination, ScoringCombinationType } from './types';
+import { DieValue, ScoringCombination, ScoringCombinationType } from './core/types';
 
 export function rollDice(numDice: number): DieValue[] {
   return Array.from({ length: numDice }, () => (Math.floor(Math.random() * FARKLE_CONFIG.numFaces) + 1) as DieValue);

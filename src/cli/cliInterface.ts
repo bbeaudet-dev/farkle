@@ -1,6 +1,6 @@
 import readline from 'readline';
 import { FARKLE_CONFIG } from '../game/config';
-import { DieValue, ScoringCombination } from '../game/core/types';
+import { DieValue, ScoringCombination, GameState, Die } from '../game/core/types';
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
 
@@ -24,7 +24,7 @@ export class CLIInterface implements GameInterface {
     });
   }
 
-  async askForDiceSelection(dice: DieValue[]): Promise<string> {
+  async askForDiceSelection(dice: Die[]): Promise<string> {
     return this.ask(DisplayFormatter.formatDiceSelectionPrompt());
   }
 
@@ -40,6 +40,22 @@ export class CLIInterface implements GameInterface {
     return this.ask(DisplayFormatter.formatNextRoundPrompt());
   }
 
+  async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
+    let prompt = 'Select a dice set:\n';
+    diceSetNames.forEach((name, i) => {
+      prompt += `  ${i + 1}. ${name}\n`;
+    });
+    prompt += 'Enter the number of your choice: ';
+    while (true) {
+      const input = await this.ask(prompt);
+      const idx = parseInt(input.trim(), 10) - 1;
+      if (!isNaN(idx) && idx >= 0 && idx < diceSetNames.length) {
+        return idx;
+      }
+      await this.log('Invalid selection. Please enter a valid number.');
+    }
+  }
+
   // Display methods
   async log(message: string, delayBefore: number = FARKLE_CONFIG.cli.defaultDelay, delayAfter: number = FARKLE_CONFIG.cli.defaultDelay): Promise<void> {
     if (delayBefore > 0) await this.sleep(delayBefore);
@@ -47,11 +63,11 @@ export class CLIInterface implements GameInterface {
     if (delayAfter > 0) await this.sleep(delayAfter);
   }
 
-  async displayRoll(rollNumber: number, dice: DieValue[]): Promise<void> {
+  async displayRoll(rollNumber: number, dice: Die[]): Promise<void> {
     await this.log(DisplayFormatter.formatRoll(rollNumber, dice));
   }
 
-  async displayScoringResult(selectedIndices: number[], dice: DieValue[], combinations: ScoringCombination[], points: number): Promise<void> {
+  async displayScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): Promise<void> {
     await this.log(DisplayFormatter.formatScoringResult(selectedIndices, dice, combinations, points));
   }
 
@@ -100,6 +116,14 @@ export class CLIInterface implements GameInterface {
 
   async displayGoodbye(): Promise<void> {
     await this.log(DisplayFormatter.formatGoodbye());
+  }
+
+  async displayBetweenRounds(gameState: GameState): Promise<void> {
+    await this.log('\n--- Between Rounds ---');
+    await this.log(`Money: $${gameState.money}`);
+    await this.log(`Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c) => c.name).join(', ') : 'None'}`);
+    await this.log(`Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c) => c.name).join(', ') : 'None'}`);
+    await this.log('----------------------\n');
   }
 
   // Utility methods

@@ -1,21 +1,22 @@
-import { DieValue, ScoringCombination } from './core/types';
+import { Die, ScoringCombination, GameState } from './core/types';
 
 /**
  * Interface for displaying game output
  */
 export interface DisplayInterface {
   log(message: string, delayBefore?: number, delayAfter?: number): Promise<void>;
-  displayRoll(rollNumber: number, dice: DieValue[]): Promise<void>;
-  displayScoringResult(selectedIndices: number[], dice: DieValue[], combinations: ScoringCombination[], points: number): Promise<void>;
-  displayRoundPoints(points: number): Promise<void>;
-  displayGameScore(score: number): Promise<void>;
-  displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): Promise<void>;
-  displayGameEnd(gameState: any, isWin: boolean): Promise<void>;
-  displayHotDice(): Promise<void>;
-  displayBankedPoints(points: number): Promise<void>;
   displayWelcome(): Promise<void>;
   displayRoundStart(roundNumber: number): Promise<void>;
+  displayRoll(rollNumber: number, dice: Die[]): Promise<void>;
+  displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): Promise<void>;
+  displayHotDice(): Promise<void>;
+  displayScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): Promise<void>;
+  displayRoundPoints(points: number): Promise<void>;
+  displayBankedPoints(points: number): Promise<void>;
+  displayGameScore(score: number): Promise<void>;
+  displayBetweenRounds(gameState: GameState): Promise<void>;
   displayWinCondition(): Promise<void>;
+  displayGameEnd(gameState: GameState, isWin: boolean): Promise<void>;
   displayGoodbye(): Promise<void>;
 }
 
@@ -24,7 +25,7 @@ export interface DisplayInterface {
  */
 export interface InputInterface {
   ask(question: string): Promise<string>;
-  askForDiceSelection(dice: DieValue[]): Promise<string>;
+  askForDiceSelection(dice: Die[]): Promise<string>;
   askForBankOrReroll(diceToReroll: number): Promise<string>;
   askForNewGame(): Promise<string>;
   askForNextRound(): Promise<string>;

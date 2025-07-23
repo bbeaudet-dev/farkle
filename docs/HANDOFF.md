@@ -34,66 +34,24 @@ farkle/
 └── vitest.config.ts
 ```
 
-## Key Technical Decisions
+## Phases
 
-### 1. Simplified Type System
+### 1a: Core State & Types (COMPLETE)
 
-- **REMOVED**: `DiceWithMaterial` interface (was causing confusion)
-- **CURRENT**: Single `Dice` interface with runtime state:
+- Unified types, state, and modular structure.
 
-```typescript
-interface Dice {
-  value: number;
-  material: DiceMaterial;
-  scored: boolean; // Runtime state
-}
-```
+### **1a.5: Scoring Logic Refactor & Effects (IN PROGRESS)**
 
-### 2. GameState Structure
+- Refactor all scoring logic to accept the full `diceHand: Die[]` (all dice in play for the round, scored and unscored), `selectedIndices: number[]`, and a context object (charms, materials, etc.).
+- Implement support for:
+  - Materials that affect scoring (e.g., “Mirror” wild dice)
+  - Charms that affect combination requirements (e.g., “Shortcut” for 5-in-a-row straight)
+- Update all scoring and display functions to use this pattern.
+- Fix all type errors and interface mismatches as part of this refactor.
 
-```typescript
-interface GameState {
-  score: number;
-  money: number;
-  charms: Charm[];
-  consumables: Consumable[];
-  diceSet: Dice[];
-  straightCounter: number;
-  hotDiceCounter: number; // Per-round counter
-  globalHotDiceCounter: number; // Global counter
-  diceSetConfig: DiceSetConfig;
-}
-```
+### 1b: Dice Set Configuration (NEXT)
 
-### 3. Order of Operations (Scoring)
-
-1. Validate play
-2. Calculate base score
-3. Apply charm effects
-4. Apply dice material effects
-5. Apply hot dice effects
-6. Apply multipliers
-7. Update game state
-8. Add to round score
-9. Item phase (consumables)
-
-## Current Implementation Status
-
-### ✅ Phase 1a: Core State & Types (COMPLETE)
-
-- [x] Simplified and unified TypeScript interfaces
-- [x] GameState and RoundState factory functions
-- [x] Project folder restructuring
-- [x] Vitest testing framework setup
-- [x] Integration tests for game state
-- [x] All import paths updated
-- [x] Old conflicting files deleted
-
-### 🔄 Phase 1b: Dice Set Configuration (NEXT)
-
-- [ ] Update `config.ts` for dice sets
-- [ ] Implement dice set selection at game start
-- [ ] Update game engine to use new config
+- Multiple dice sets, selection at game start, etc.
 
 ### ⏳ Phase 1c: Game Start Selection (PENDING)
 
@@ -249,13 +207,4 @@ npm run test:ui     # Run tests with UI
 
 ## Handoff Instructions for New Agent
 
-1. **Start with Phase 1b**: Implement dice set configuration in `config.ts`
-2. **Follow the spec**: Use `docs/specs/farkle-enhanced-rules.md` as the authoritative guide
-3. **Test everything**: Write tests for each new feature
-4. **Maintain types**: Keep the simplified type system
-5. **Fix game engine**: Update `gameEngine.ts` to align with new GameState
-6. **Continue phases**: Work through phases 1c, 2, 3, 4, 5 in order
-
-## Contact
-
-This handoff document contains all the context needed to continue development. The project is well-structured, tested, and ready for the next phase of implementation.
+1. **Start with Phase 1b**: Implement dice set configuration in `

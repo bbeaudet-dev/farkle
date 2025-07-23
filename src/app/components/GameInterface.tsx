@@ -8,6 +8,7 @@ import {
   GameInput,
   GameButton
 } from './ui';
+import { GameState, Die, ScoringCombination } from '../../game/core/types';
 
 // React implementation of the GameInterface
 class ReactGameInterface implements IGameInterface {
@@ -45,16 +46,14 @@ class ReactGameInterface implements IGameInterface {
   }
 
   // Display methods
-  async displayRoll(rollNumber: number, dice: number[]): Promise<void> {
-    this.outputCallback(`Roll #${rollNumber}:\n${dice.join(' ')}`);
-    this.updateGameState({ rollNumber, currentDice: dice, selectedIndices: [] });
+  async displayRoll(rollNumber: number, dice: Die[]): Promise<void> {
+    // Example: just log the values for now
+    console.log(`Roll #${rollNumber}: ${dice.map(die => die.rolledValue).join(' ')}`);
   }
-
-  async displayScoringResult(selectedIndices: number[], dice: number[], combinations: any[], points: number): Promise<void> {
-    const selectedDice = selectedIndices.map(i => dice[i]);
-    this.outputCallback(`You selected dice: ${selectedDice.join(', ')}`);
-    this.outputCallback(`Points for this roll: ${points}`);
-    this.updateGameState({ selectedIndices });
+  async displayScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): Promise<void> {
+    // Example: just log the values for now
+    const diceValues = dice.map(die => die.rolledValue);
+    console.log(`Selected: ${selectedIndices.map(i => diceValues[i]).join(', ')} | Points: ${points}`);
   }
 
   async displayRoundPoints(points: number): Promise<void> {
@@ -102,8 +101,11 @@ class ReactGameInterface implements IGameInterface {
     this.outputCallback(`Final score: ${stats.finalScore}`);
   }
 
-  async displayGameEnd(finalScore: number): Promise<void> {
-    this.outputCallback(`🎉 Game Over! Final score: ${finalScore}`);
+  async displayBetweenRounds(gameState: GameState): Promise<void> {
+    // No-op for now
+  }
+  async displayGameEnd(gameState: GameState, isWin: boolean): Promise<void> {
+    this.outputCallback(`🎉 Game Over! Final score: ${gameState.score}`);
   }
 
   async displayBankedPoints(points: number): Promise<void> {
@@ -118,8 +120,9 @@ class ReactGameInterface implements IGameInterface {
     this.outputCallback(`🎉 Congratulations! You won!`);
   }
 
-  async askForDiceSelection(dice: number[]): Promise<string> {
-    return this.inputCallback(`Select dice values to score: `);
+  async askForDiceSelection(dice: Die[]): Promise<string> {
+    // Example: just prompt for values
+    return window.prompt('Select dice values to score:') || '';
   }
 
   async askForBankOrReroll(diceToReroll: number): Promise<string> {

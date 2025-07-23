@@ -1,4 +1,4 @@
-import { DieValue, ScoringCombination } from '../game/core/types';
+import { Die, ScoringCombination } from '../game/core/types';
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
 
@@ -27,8 +27,8 @@ export class WebInterface implements GameInterface {
     return prompt(question) || '';
   }
 
-  async askForDiceSelection(dice: DieValue[]): Promise<string> {
-    return this.ask(DisplayFormatter.formatDiceSelectionPrompt());
+  async askForDiceSelection(dice: Die[]): Promise<string> {
+    return window.prompt('Select dice values to score:') || '';
   }
 
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
@@ -51,12 +51,13 @@ export class WebInterface implements GameInterface {
     if (delayAfter > 0) await this.sleep(delayAfter);
   }
 
-  async displayRoll(rollNumber: number, dice: DieValue[]): Promise<void> {
-    await this.log(DisplayFormatter.formatRoll(rollNumber, dice));
+  async displayRoll(rollNumber: number, dice: Die[]): Promise<void> {
+    console.log(`Roll #${rollNumber}: ${dice.map(die => die.rolledValue).join(' ')}`);
   }
 
-  async displayScoringResult(selectedIndices: number[], dice: DieValue[], combinations: ScoringCombination[], points: number): Promise<void> {
-    await this.log(DisplayFormatter.formatScoringResult(selectedIndices, dice, combinations, points));
+  async displayScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): Promise<void> {
+    const diceValues = dice.map(die => die.rolledValue);
+    console.log(`Selected: ${selectedIndices.map(i => diceValues[i]).join(', ')} | Points: ${points}`);
   }
 
   async displayRoundPoints(points: number): Promise<void> {
@@ -100,6 +101,10 @@ export class WebInterface implements GameInterface {
 
   async displayGoodbye(): Promise<void> {
     await this.log(DisplayFormatter.formatGoodbye());
+  }
+
+  async displayBetweenRounds(gameState: any): Promise<void> {
+    // No-op for now
   }
 
   // Utility methods

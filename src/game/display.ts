@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { DieValue, ScoringCombination } from './core/types';
+import { Die, ScoringCombination } from './core/types';
 import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils';
 
 /**
@@ -7,18 +7,27 @@ import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStat
  * These can be used by both CLI and web interfaces
  */
 export class DisplayFormatter {
-  static formatRoll(rollNumber: number, dice: DieValue[]): string {
-    return `\nRoll #${rollNumber}:\n${formatDiceValues(dice)}`;
+  static formatRoll(rollNumber: number, dice: Die[]): string {
+    return `\nRoll #${rollNumber}:\n${formatDiceValues(dice.map(die => die.rolledValue!))}`;
   }
 
-  static formatScoringResult(selectedIndices: number[], dice: DieValue[], combinations: ScoringCombination[], points: number): string {
-    const selectedDice = selectedIndices.map(i => dice[i]);
-    const result = [`You selected dice: ${selectedIndices.map(i => i + 1).join(', ')} (${selectedDice.join(', ')})`];
-    
-    if (FARKLE_CONFIG.display.showCombinations) {
-      result.push(`Combinations: ${formatCombinations(combinations)}`);
+  static formatScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): string {
+    const diceValues = dice.map(die => die.rolledValue!);
+    const selectedDice = selectedIndices.map(i => diceValues[i]);
+    const selectedIndicesDisplay = selectedIndices.map(i => (i + 1)).join(', ');
+    const result = [`You selected dice: ${selectedDice.join(', ')} (${selectedIndicesDisplay})`];
+    if (combinations.length > 0) {
+      // Group by combination type
+      const grouped: Record<string, { values: number[]; indices: number[] }> = {};
+      combinations.forEach(c => {
+        if (!grouped[c.type]) grouped[c.type] = { values: [], indices: [] };
+        grouped[c.type].values.push(...c.dice.map(i => diceValues[i]));
+        grouped[c.type].indices.push(...c.dice.map(i => i + 1));
+      });
+      result.push('Combinations: ' + Object.entries(grouped).map(([type, { values, indices }]) => {
+        return `${type} ${values.join(', ')} (${indices.join(', ')})`;
+      }).join('; '));
     }
-    
     result.push(`Points for this roll: ${points}`);
     return result.join('\n');
   }
@@ -88,7 +97,7 @@ export class DisplayFormatter {
   }
 
   static formatDiceSelectionPrompt(): string {
-    return 'Select dice values to score (e.g., 125 for dice showing 1, 2, 5): ';
+    return 'Select dice values to score: ';
   }
 
   static formatNewGamePrompt(): string {

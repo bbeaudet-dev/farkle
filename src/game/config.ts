@@ -1,6 +1,6 @@
 export const FARKLE_CONFIG = {
-  numDice: 6,
-  numFaces: 6,
+  // numDice: 6, // Removed for dice set config
+  // numFaces: 6, // Removed for dice set config
   winCondition: 10000,
   cli: {
     defaultDelay: 100,
@@ -23,9 +23,9 @@ export const FARKLE_CONFIG = {
     threePairs: 1250,
     straight: 2000,
     twoTriplets: 2500,
-    fourOfAKindMultiplier: 2,
-    fiveOfAKindMultiplier: 3,
-    sixOfAKindMultiplier: 4,
+    fourOfAKindMultiplier: 3,
+    fiveOfAKindMultiplier: 4,
+    sixOfAKindMultiplier: 5,
     sixOnes: 5000,
   },
 }; 

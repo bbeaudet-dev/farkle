@@ -1,43 +1,36 @@
-import { GameState, RoundState, DiceSetConfig, Dice } from './types';
+import { GameState, RoundState, DiceSetConfig, Die, CombinationCounters } from './types';
+import { BASIC_DICE_SET } from '../content/diceSets';
+import { SCORING_COMBINATIONS } from '../content/scoringCombinations';
+import { getRandomInt } from '../utils';
 
-// Basic dice set configuration
-const BASIC_DICE_SET: DiceSetConfig = {
-  name: "Basic",
-  dice: [
-    { id: "d1", sides: 6, allowedValues: [1,2,3,4,5,6], material: "plastic" },
-    { id: "d2", sides: 6, allowedValues: [1,2,3,4,5,6], material: "plastic" },
-    { id: "d3", sides: 6, allowedValues: [1,2,3,4,5,6], material: "plastic" },
-    { id: "d4", sides: 6, allowedValues: [1,2,3,4,5,6], material: "plastic" },
-    { id: "d5", sides: 6, allowedValues: [1,2,3,4,5,6], material: "plastic" },
-    { id: "d6", sides: 6, allowedValues: [1,2,3,4,5,6], material: "plastic" }
-  ],
-  startingMoney: 10,
-  charmSlots: 3,
-  consumableSlots: 2,
-};
+function createInitialCombinationCounters(): CombinationCounters {
+  return Object.fromEntries(SCORING_COMBINATIONS.map(c => [c.type, 0])) as CombinationCounters;
+}
 
-// Convert dice config to runtime dice state
-function createDiceFromConfig(diceConfig: Omit<Dice, 'scored'>[]): Dice[] {
+// Convert die config to runtime die state
+function createDiceFromConfig(diceConfig: Omit<Die, 'scored' | 'rolledValue'>[]): Die[] {
   return diceConfig.map(die => ({
     ...die,
     scored: false, // Initialize as not scored
+    rolledValue: die.allowedValues[getRandomInt(0, die.allowedValues.length - 1)],
   }));
 }
 
-export function createInitialGameState(): GameState {
+export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState {
   return {
     score: 0,
     roundNumber: 1,
     rollCount: 0,
+    diceSet: createDiceFromConfig(diceSetConfig.dice),
+    diceSetConfig,
     consecutiveFlops: 0,
-    money: BASIC_DICE_SET.startingMoney,
-    charms: [],
-    consumables: [],
-    diceSet: createDiceFromConfig(BASIC_DICE_SET.dice),
-    straightCounter: 0,
     hotDiceCounter: 0,
     globalHotDiceCounter: 0,
-    diceSetConfig: BASIC_DICE_SET,
+    money: diceSetConfig.startingMoney,
+    charms: [],
+    consumables: [],
+    combinationCounters: createInitialCombinationCounters(),
+    isActive: true,
   };
 }
 
@@ -45,7 +38,7 @@ export function createInitialRoundState(roundNumber: number = 1): RoundState {
   return {
     roundNumber,
     roundPoints: 0,
-    hand: [],
+    diceHand: [],
     rollHistory: [],
     hotDiceCount: 0,
     forfeitedPoints: 0,
@@ -54,7 +47,7 @@ export function createInitialRoundState(roundNumber: number = 1): RoundState {
 }
 
 // Utility function to reset dice scored state (for hot dice)
-export function resetDiceScoredState(diceSet: Dice[]): void {
+export function resetDiceScoredState(diceSet: Die[]): void {
   diceSet.forEach(die => {
     die.scored = false;
   });

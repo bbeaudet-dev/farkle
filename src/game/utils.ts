@@ -2,20 +2,11 @@ import { FARKLE_CONFIG } from './config';
 import { DieValue } from './core/types';
 
 /**
- * Centers a string within a specified width
- */
-export function center(str: string, width: number): string {
-  const len = str.length;
-  const left = Math.floor((width - len) / 2);
-  const right = width - len - left;
-  return ' '.repeat(left) + str + ' '.repeat(right);
-}
-
-/**
  * Formats dice values for display (no brackets, no indices)
+ * TODO: change dice from number[] to Die[], display all aspects of the die
  */
-export function formatDiceValues(dice: DieValue[]): string {
-  return dice.map((v) => center(v.toString(), 3)).join(' ');
+export function formatDiceValues(dice: number[]): string {
+  return dice.map((v) => v.toString()).join(' ');
 }
 
 /**
@@ -96,4 +87,11 @@ export function validateDiceSelection(input: string, dice: DieValue[]): number[]
   }
   
   return selectedIndices.sort((a, b) => a - b);
+} 
+
+/**
+ * Returns a random integer between min and max, inclusive.
+ */
+export function getRandomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 } 

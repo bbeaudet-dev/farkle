@@ -196,7 +196,7 @@ export const GameInterface: React.FC = () => {
   const handleSubmit = () => {
     if (inputValue.trim() && isWaitingForInput) {
       resolveInputRef.current?.(inputValue.trim());
-      setInputValue('');
+    setInputValue('');
       // Focus will be restored by the autoFocus prop when isWaitingForInput changes
     }
   };
@@ -264,22 +264,22 @@ export const GameInterface: React.FC = () => {
       )}
       
               <div className="flex gap-2">
-          <GameInput
-            value={inputValue}
-            onChange={setInputValue}
+        <GameInput
+          value={inputValue}
+          onChange={setInputValue}
             onSubmit={handleSubmit}
             placeholder="Enter dice values (e.g., 125)..."
             disabled={!isWaitingForInput}
             autoFocus={isWaitingForInput}
-          />
-          <GameButton
+        />
+        <GameButton
             onClick={handleSubmit}
             disabled={!isWaitingForInput || !inputValue.trim()}
             variant="primary"
-          >
-            Submit
-          </GameButton>
-        </div>
+        >
+          Submit
+        </GameButton>
+      </div>
       
       <div className="flex gap-4 justify-center">
         <GameButton

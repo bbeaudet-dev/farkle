@@ -10,9 +10,9 @@ interface GameInputProps {
   autoFocus?: boolean;
 }
 
-export const GameInput: React.FC<GameInputProps> = ({
-  value,
-  onChange,
+export const GameInput: React.FC<GameInputProps> = ({ 
+  value, 
+  onChange, 
   onSubmit,
   placeholder = '',
   disabled = false,

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 Farkle Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'mono': ['Courier New', 'monospace'],
+                    },
+                    colors: {
+                        'terminal': {
+                            'bg': '#1a1a1a',
+                            'text': '#00ff00',
+                            'border': '#00ff00',
+                            'input': '#000000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dice {
+            @apply inline-block w-8 h-8 border-2 border-terminal-border text-center leading-6 mx-1 bg-terminal-input text-terminal-text font-mono;
+        }
+        
+        .game-output {
+            @apply bg-terminal-input border-2 border-terminal-border p-4 h-96 overflow-y-auto mb-4 whitespace-pre-wrap font-mono text-terminal-text;
+        }
+        
+        .game-input {
+            @apply bg-terminal-input text-terminal-text border-2 border-terminal-border p-2 font-mono text-lg flex-1;
+        }
+        
+        .game-button {
+            @apply bg-terminal-text text-terminal-input border-none px-4 py-2 font-mono text-lg cursor-pointer hover:bg-green-400;
+        }
+    </style>
+</head>
+<body class="bg-terminal-bg text-terminal-text font-mono p-6">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl text-center mb-8">🎲 Farkle Game</h1>
+        
+        <!-- Game Status -->
+        <div class="mb-6 p-4 border-2 border-terminal-border bg-terminal-input">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>Game Score: <span id="gameScore" class="font-bold">0</span></div>
+                <div>Round: <span id="roundNumber" class="font-bold">1</span></div>
+                <div>Roll: <span id="rollNumber" class="font-bold">1</span></div>
+                <div>Round Points: <span id="roundPoints" class="font-bold">0</span></div>
+            </div>
+        </div>
+        
+        <!-- Dice Display -->
+        <div class="mb-6 p-4 border-2 border-terminal-border bg-terminal-input">
+            <h3 class="text-lg mb-2">Current Roll:</h3>
+            <div id="diceDisplay" class="flex justify-center">
+                <!-- Dice will be inserted here -->
+            </div>
+        </div>
+        
+        <!-- Game Output -->
+        <div id="gameOutput" class="game-output">
+            Welcome to Farkle!
+            Click "Start New Game" to begin.
+        </div>
+        
+        <!-- Input Section -->
+        <div class="flex gap-4 mb-4">
+            <input type="text" id="userInput" class="game-input" placeholder="Enter dice values (e.g., 125)..." autocomplete="off">
+            <button id="submitButton" class="game-button">Submit</button>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex gap-4 justify-center">
+            <button id="startGameBtn" class="game-button">Start New Game</button>
+            <button id="bankBtn" class="game-button" disabled>Bank Points</button>
+            <button id="rerollBtn" class="game-button" disabled>Reroll Dice</button>
+            <button id="flopBtn" class="game-button" disabled>Flop</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            isActive: false,
+            gameScore: 0,
+            roundNumber: 1,
+            rollNumber: 1,
+            roundPoints: 0,
+            currentDice: []
+        };
+
+        // DOM elements
+        const gameOutput = document.getElementById('gameOutput');
+        const userInput = document.getElementById('userInput');
+        const submitButton = document.getElementById('submitButton');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const bankBtn = document.getElementById('bankBtn');
+        const rerollBtn = document.getElementById('rerollBtn');
+        const flopBtn = document.getElementById('flopBtn');
+        const diceDisplay = document.getElementById('diceDisplay');
+
+        // Update display functions
+        function updateGameStatus() {
+            document.getElementById('gameScore').textContent = gameState.gameScore;
+            document.getElementById('roundNumber').textContent = gameState.roundNumber;
+            document.getElementById('rollNumber').textContent = gameState.rollNumber;
+            document.getElementById('roundPoints').textContent = gameState.roundPoints;
+        }
+
+        function displayDice(dice) {
+            diceDisplay.innerHTML = dice.map(value => 
+                `<div class="dice">${value}</div>`
+            ).join('');
+        }
+
+        function appendToOutput(text) {
+            gameOutput.textContent += '\n' + text;
+            gameOutput.scrollTop = gameOutput.scrollHeight;
+        }
+
+        function clearInput() {
+            userInput.value = '';
+            userInput.focus();
+        }
+
+        // Simulate dice roll
+        function rollDice(count = 6) {
+            return Array.from({length: count}, () => Math.floor(Math.random() * 6) + 1);
+        }
+
+        // Game actions
+        function startNewGame() {
+            gameState = {
+                isActive: true,
+                gameScore: 0,
+                roundNumber: 1,
+                rollNumber: 1,
+                roundPoints: 0,
+                currentDice: rollDice()
+            };
+            
+            updateGameStatus();
+            displayDice(gameState.currentDice);
+            appendToOutput('--- Round 1 ---');
+            appendToOutput(`Roll #1:\n${gameState.currentDice.join(' ')}`);
+            
+            // Enable/disable buttons
+            startGameBtn.disabled = true;
+            bankBtn.disabled = false;
+            rerollBtn.disabled = false;
+            flopBtn.disabled = false;
+        }
+
+        function processDiceSelection(input) {
+            if (!input.trim()) return;
+            
+            appendToOutput(`> ${input}`);
+            
+            // Simple validation - just check if all characters are 1-6
+            const diceValues = input.split('').map(Number);
+            const isValid = diceValues.every(v => v >= 1 && v <= 6);
+            
+            if (isValid) {
+                const selectedDice = diceValues.filter(v => gameState.currentDice.includes(v));
+                if (selectedDice.length > 0) {
+                    appendToOutput(`You selected dice: ${selectedDice.join(', ')}`);
+                    appendToOutput(`Points for this roll: ${selectedDice.length * 100}`);
+                    gameState.roundPoints += selectedDice.length * 100;
+                    updateGameStatus();
+                } else {
+                    appendToOutput('Invalid selection. Please select valid dice values.');
+                }
+            } else {
+                appendToOutput('Invalid input. Please enter numbers 1-6.');
+            }
+            
+            clearInput();
+        }
+
+        // Event listeners
+        startGameBtn.addEventListener('click', startNewGame);
+        
+        submitButton.addEventListener('click', () => {
+            processDiceSelection(userInput.value);
+        });
+        
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                processDiceSelection(userInput.value);
+            }
+        });
+
+        bankBtn.addEventListener('click', () => {
+            if (gameState.roundPoints > 0) {
+                gameState.gameScore += gameState.roundPoints;
+                appendToOutput(`You banked ${gameState.roundPoints} points!`);
+                appendToOutput(`Game score: ${gameState.gameScore}`);
+                gameState.roundNumber++;
+                gameState.rollNumber = 1;
+                gameState.roundPoints = 0;
+                gameState.currentDice = rollDice();
+                updateGameStatus();
+                displayDice(gameState.currentDice);
+                appendToOutput(`--- Round ${gameState.roundNumber} ---`);
+                appendToOutput(`Roll #1:\n${gameState.currentDice.join(' ')}`);
+            }
+        });
+
+        rerollBtn.addEventListener('click', () => {
+            gameState.rollNumber++;
+            gameState.currentDice = rollDice();
+            updateGameStatus();
+            displayDice(gameState.currentDice);
+            appendToOutput(`Roll #${gameState.rollNumber}:\n${gameState.currentDice.join(' ')}`);
+        });
+
+        flopBtn.addEventListener('click', () => {
+            appendToOutput('You flopped! Round points forfeited.');
+            gameState.roundNumber++;
+            gameState.rollNumber = 1;
+            gameState.roundPoints = 0;
+            gameState.currentDice = rollDice();
+            updateGameStatus();
+            displayDice(gameState.currentDice);
+            appendToOutput(`--- Round ${gameState.roundNumber} ---`);
+            appendToOutput(`Roll #1:\n${gameState.currentDice.join(' ')}`);
+        });
+
+        // Focus input on load
+        userInput.focus();
+    </script>
+</body>
+</html> 

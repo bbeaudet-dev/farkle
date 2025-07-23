@@ -4,18 +4,42 @@
   "description": "A fully-featured command-line implementation of the classic dice game Farkle",
   "main": "src/cli.ts",
   "scripts": {
-    "start": "ts-node src/cli.ts",
-    "build": "tsc",
-    "dev": "ts-node --watch src/cli.ts"
+    "cli": "ts-node src/cli/cli.ts",
+    "web": "ts-node src/app/web.ts",
+    "server": "ts-node src/server/server.ts",
+    "app": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev": "nodemon --exec ts-node src/cli/cli.ts",
+    "dev:web": "nodemon --exec ts-node src/app/web.ts",
+    "dev:server": "nodemon --exec ts-node src/server/server.ts",
+    "dev:app": "vite"
   },
-  "keywords": ["farkle", "dice", "game", "cli", "typescript"],
+  "keywords": [
+    "farkle",
+    "dice",
+    "game",
+    "cli",
+    "typescript"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
     "ts-node": "^10.9.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/express": "^5.0.3",
     "@types/node": "^18.0.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "autoprefixer": "^10.4.21",
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10",
+    "postcss": "^8.5.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.11",
     "typescript": "^4.9.0"
   }
 }

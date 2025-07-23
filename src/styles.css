@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for Farkle game */
+@layer components {
+  .dice {
+    @apply inline-block w-8 h-8 border-2 border-terminal-border text-center leading-6 mx-1 bg-terminal-input text-terminal-text font-mono;
+  }
+  
+  .game-output {
+    @apply bg-terminal-input border-2 border-terminal-border p-4 h-96 overflow-y-auto mb-4 whitespace-pre-wrap font-mono text-terminal-text;
+  }
+  
+  .game-input {
+    @apply bg-terminal-input text-terminal-text border-2 border-terminal-border p-2 font-mono text-lg flex-1;
+  }
+  
+  .game-button {
+    @apply bg-terminal-text text-terminal-input border-none px-4 py-2 font-mono text-lg cursor-pointer hover:bg-green-400;
+  }
+} 

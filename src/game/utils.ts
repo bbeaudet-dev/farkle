@@ -12,17 +12,10 @@ export function center(str: string, width: number): string {
 }
 
 /**
- * Formats dice positions for display (1-based indices)
- */
-export function formatDicePositions(dice: DieValue[]): string {
-  return dice.map((_, i) => center((i + 1).toString(), 3)).join(' ');
-}
-
-/**
- * Formats dice values in brackets for display
+ * Formats dice values for display (no brackets, no indices)
  */
 export function formatDiceValues(dice: DieValue[]): string {
-  return dice.map((v) => `[${v}]`).join(' ');
+  return dice.map((v) => center(v.toString(), 3)).join(' ');
 }
 
 /**
@@ -44,9 +37,9 @@ export function formatFlopMessage(
   let message = `No scoring combinations, you flopped! Round points forfeited: ${forfeitedPoints}`;
   
   if (consecutiveFlops === FARKLE_CONFIG.penalties.consecutiveFlopWarning) {
-    message += ` (2 consecutive flops - one more and you lose ${threeFlopPenalty} points!)`;
+    message += `\n(2 consecutive flops - one more and you lose ${threeFlopPenalty} points!)`;
   } else if (consecutiveFlops >= 3) {
-    message += ` (3 consecutive flops - you lose ${threeFlopPenalty} points! Game score: ${gameScore})`;
+    message += `\n(3 consecutive flops - you lose ${threeFlopPenalty} points! Game score: ${gameScore})`;
   }
   
   return message;
@@ -73,13 +66,34 @@ export function formatGameStats(stats: {
 
 /**
  * Validates user input for dice selection
+ * Accepts dice values (e.g., "125" for dice showing 1, 2, 5)
  */
-export function validateDiceSelection(input: string, maxDice: number): number[] {
-  const indices = input
-    .split(',')
-    .map((s) => parseInt(s.trim(), 10) - 1)
-    .filter((i) => !isNaN(i) && i >= 0 && i < maxDice);
+export function validateDiceSelection(input: string, dice: DieValue[]): number[] {
+  const trimmed = input.trim();
+  if (!trimmed) return [];
+
+  const selectedIndices: number[] = [];
   
-  // Remove duplicates
-  return [...new Set(indices)];
+  // Parse each character as a dice value
+  for (const char of trimmed) {
+    const diceValue = parseInt(char, 10) as DieValue;
+    if (isNaN(diceValue) || diceValue < 1 || diceValue > 6) {
+      return []; // Invalid dice value
+    }
+    
+    // Find all indices where this dice value appears
+    const matchingIndices = dice
+      .map((value, index) => value === diceValue ? index : -1)
+      .filter(index => index !== -1);
+    
+    // Add the first occurrence that hasn't been selected yet
+    for (const index of matchingIndices) {
+      if (!selectedIndices.includes(index)) {
+        selectedIndices.push(index);
+        break; // Only select one instance of each dice value
+      }
+    }
+  }
+  
+  return selectedIndices.sort((a, b) => a - b);
 } 

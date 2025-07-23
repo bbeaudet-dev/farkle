@@ -149,10 +149,7 @@ function createInitialRoundState(roundNumber: number): RoundState;
 // Center text within specified width
 function center(str: string, width: number): string;
 
-// Format dice positions for display
-function formatDicePositions(dice: DieValue[]): string;
-
-// Format dice values in brackets
+// Format dice values for display
 function formatDiceValues(dice: DieValue[]): string;
 
 // Format scoring combinations for display
@@ -176,7 +173,8 @@ function formatGameStats(stats: {
 }): string[];
 
 // Validate user input for dice selection
-function validateDiceSelection(input: string, maxDice: number): number[];
+// Accepts dice values (e.g., "125" for dice showing 1, 2, 5)
+function validateDiceSelection(input: string, dice: DieValue[]): number[];
 ```
 
 ## CLI Functions (`src/cli.ts`)

@@ -1,6 +1,6 @@
 import { FARKLE_CONFIG } from './config';
-import { GameEndReason, DieValue } from './types';
-import { createInitialGameState, createInitialRoundState } from './gameState';
+import { GameEndReason, DieValue } from './core/types';
+import { createInitialGameState, createInitialRoundState } from './core/gameState';
 import { GameInterface } from './interfaces';
 import {
   validateDiceSelectionAndScore,

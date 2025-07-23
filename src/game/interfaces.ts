@@ -1,4 +1,4 @@
-import { DieValue, ScoringCombination } from './types';
+import { DieValue, ScoringCombination } from './core/types';
 
 /**
  * Interface for displaying game output

@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { DieValue } from './types';
+import { DieValue } from './core/types';
 
 /**
  * Centers a string within a specified width

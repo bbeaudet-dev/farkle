@@ -1,10 +1,12 @@
-# Enhanced Farkle Game Specification
+# Enhanced Rollio Game Specification
+
+> **Note:** To update the game name everywhere (docs, code, UI), use the update-name script: `npm run update-name -- <NewName>`. All name variants are defined in `src/game/nameConfig.ts`.
 
 ## Balatro-Inspired Features
 
 ### Overview
 
-This document specifies the enhanced Farkle game with Balatro-like features including charms (jokers), dice materials, consumables, a money system, and fully configurable dice sets.
+This document specifies the enhanced Rollio game with Balatro-like features including charms (jokers), dice materials, consumables, a money system, and fully configurable dice sets.
 
 ## Core Systems
 
@@ -316,6 +318,35 @@ As a general rule, all addition effects should take place before any multiplicat
 - **Calculation**: 100 × hot dice counter per volcano die in hand
 - **Priority**: High (additions before multiplications)
 
+### 5. Rainbow Dice (NEW MATERIAL)
+
+- **Effect**: When a Rainbow die is scored, roll for the following effects (all can trigger independently):
+  - 1 in 5 chance: +200 points to roll points
+  - 1 in 10 chance: +$10 to player's money
+  - 1 in 100 chance: Clone itself (add a new die to the set, identical to the triggering Rainbow die)
+- **Notes**: Probabilities can be affected by charms (see Weighted Dice). Each effect is checked separately per scoring event.
+
+### 6. New Charms (Advanced)
+
+- **Weighted Dice**
+
+  - **Effect**: Doubles the probability of all chance-based effects (e.g., Rainbow dice, probability-based consumables)
+  - **Type**: Passive
+  - **Stacking**: Does not stack with itself
+
+- **Rabbit's Foot**
+  - **Effect**: Score multiplier based on the number of successful Rainbow die effect triggers (any of the three effects). Starts at 1x, adds +0.1x for each successful trigger since acquiring the charm.
+  - **Type**: Passive
+  - **Stacking**: Does not stack with itself
+  - **Notes**: Each effect triggered in a single scoring counts separately (e.g., if all three effects trigger, +0.3x)
+
+### 7. New Probability-Based Consumable (Example)
+
+- **Lucky Coin**
+  - **Effect**: When used, has a 1 in 3 chance to double your current round points, a 1 in 6 chance to grant an extra reroll this round, and a 1 in 20 chance to instantly bank your round points (ending the round but banking all points safely).
+  - **Type**: One-time use
+  - **Notes**: All effects are checked independently when the consumable is used. Probabilities are affected by Weighted Dice charm.
+
 ## Detailed Consumable Specifications
 
 ### 1. Money Doubler
@@ -430,29 +461,14 @@ As a general rule, all addition effects should take place before any multiplicat
 4. Implement Consumable Generator (item phase)
 5. **Integration Test**: Test complex charm interactions and order of operations
 
-### Phase 4a: Dice Material Framework
-
-1. Implement dice material system framework
-2. Add material tracking to dice state
-3. Implement material effect calculation system
-4. **Integration Test**: Verify materials are tracked and effects calculated
-
-### Phase 4b: Dice Materials Implementation
-
-1. Implement Crystal Dice (with hot dice reset logic)
-2. Implement Wooden Dice
-3. Implement Golden Dice
-4. Implement Volcano Dice
-5. **Integration Test**: Test each material effect and verify order of operations
-
-### Phase 5a: Consumable Framework
+### Phase 4a: Consumable Framework
 
 1. Implement consumable system framework
 2. Add consumable usage system (can be used at any prompt)
 3. Implement slot management (slots can only increase, never decrease)
 4. **Integration Test**: Verify consumables can be used and slots managed
 
-### Phase 5b: Consumables Implementation
+### Phase 4b: Consumables Implementation
 
 1. Implement Money Doubler
 2. Implement Extra Die
@@ -462,6 +478,29 @@ As a general rule, all addition effects should take place before any multiplicat
 6. Implement Chisel
 7. Implement Pottery Wheel
 8. **Integration Test**: Test each consumable and verify effects
+
+### Phase 5a: Dice Material Framework
+
+1. Implement dice material system framework
+2. Add material tracking to dice state
+3. Implement material effect calculation system
+4. **Integration Test**: Verify materials are tracked and effects calculated
+
+### Phase 5b: Dice Materials Implementation
+
+1. Implement Crystal Dice (with hot dice reset logic)
+2. Implement Wooden Dice
+3. Implement Golden Dice
+4. Implement Volcano Dice
+5. Implement Rainbow Dice (see advanced rules)
+6. **Integration Test**: Test each material effect and verify order of operations
+
+### Phase 5c: Material-Dependent Features & Revisit
+
+1. Revisit and update consumables and charms that depend on the material system (e.g., Material Enchanter, Chisel, Pottery Wheel)
+2. Implement new material-based features (Rainbow, Weighted Dice, Rabbit's Foot, Lucky Coin, etc.)
+3. Refactor and polish all material-related effects for consistency
+4. **Integration Test**: Test all material-dependent features and their interactions
 
 ### Phase 6: Final Integration & Balance
 

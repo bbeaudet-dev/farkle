@@ -1,7 +1,7 @@
 {
-  "name": "farkle-cli",
+  "name": "rollio-cli",
   "version": "1.0.0",
-  "description": "A fully-featured command-line implementation of the classic dice game Farkle",
+  "description": "A fully-featured command-line implementation of the dice-rolling roguelike Rollio",
   "main": "src/cli.ts",
   "scripts": {
     "cli": "ts-node src/cli/cli.ts",
@@ -16,10 +16,11 @@
     "dev:app": "vite",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "update-name": "ts-node scripts/updateName.ts"
   },
   "keywords": [
-    "farkle",
+    "rollio",
     "dice",
     "game",
     "cli",

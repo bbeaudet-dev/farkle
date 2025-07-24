@@ -1,8 +1,10 @@
-# Farkle CLI API Documentation
+# Rollio CLI API Documentation
+
+> **Note:** To update the game name everywhere (docs, code, UI), use the update-name script: `npm run update-name -- <NewName>`. All name variants are defined in `src/game/nameConfig.ts`.
 
 ## Overview
 
-This document provides detailed information about the Farkle CLI game's API, including types, functions, and configuration options for developers who want to extend or modify the codebase.
+This document provides detailed information about the Rollio CLI game's API, including types, functions, and configuration options for developers who want to extend or modify the codebase.
 
 ## Core Types
 

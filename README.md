@@ -1,6 +1,8 @@
-# 🎲 Farkle Game
+# 🎲 Rollio Game
 
-A modular Farkle dice game with multiple interfaces: CLI, Web, and React App.
+> **Note:** The game name is now fully parametrized. See `src/game/nameConfig.ts` for all variants and update as needed.
+
+A modular Rollio dice game with multiple interfaces: CLI, Web, and React App.
 
 ## 📁 Project Structure
 

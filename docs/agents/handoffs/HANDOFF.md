@@ -1,8 +1,10 @@
-# Farkle Enhanced Game - Agent Handoff Document
+# Rollio Enhanced Game - Agent Handoff Document
+
+> **Note:** To update the game name everywhere (docs, code, UI), use the update-name script: `npm run update-name -- <NewName>`. All name variants are defined in `src/game/nameConfig.ts`.
 
 ## Project Overview
 
-Enhanced Farkle game inspired by Balatro, adding complex features like charms (passive bonuses), consumables (usable items), dice materials (properties affecting dice behavior), and a money system. Built with TypeScript, modular architecture, and comprehensive testing.
+Enhanced Rollio game inspired by Balatro, adding complex features like charms (passive bonuses), consumables (usable items), dice materials (properties affecting dice behavior), and a money system. Built with TypeScript, modular architecture, and comprehensive testing.
 
 ## Current Branch
 

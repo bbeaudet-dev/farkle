@@ -1,4 +1,6 @@
-# Farkle Rules & Game State Specification
+# Rollio Rules & Game State Specification
+
+> **Note:** To update the game name everywhere (docs, code, UI), use the update-name script: `npm run update-name -- <NewName>`. All name variants are defined in `src/game/nameConfig.ts`.
 
 ## Terminology
 
@@ -6,12 +8,12 @@
 - **Hand:** The current dice available to roll (can be less than setSize if some have been scored in the round).
 - **Roll:** A single roll of all dice in the current hand.
 - **Hot Dice:** When all dice in the set have been scored in a series of consecutive rolls within the same round, the player may choose to reroll all dice in the set and continue the same round. Hot dice can occur multiple times per round. In other words, hot dice resets the Hand size back to the Set size.
-- **Round:** Begins when the player rolls all dice in the set. Consists of one or more rolls. Ends when the player banks or flops (Farkle).
+- **Round:** Begins when the player rolls all dice in the set. Consists of one or more rolls. Ends when the player banks or flops (Rollio).
 - **Game:** Consists of one or more rounds. Ends when the player banks enough points to reach or exceed the win condition, initially set at 10,000.
 - **Max Roll Points:** The maximum points possible from a roll, based on the best valid combination(s) that can be scored.
 - **Roll Points:** The points the player actually chooses to score from a roll.
 - **Round Points:** The sum of all roll points in the current round (not yet banked).
-- **Forfeited Points:** The tallied round points lost if a player Farkles.
+- **Forfeited Points:** The tallied round points lost if a player Rollio.
 - **Banked/Game Score:** The player’s permanent score for a single game, only increased when banking. Does not persist across games.
 
 ## Game Flow
@@ -19,14 +21,14 @@
 1. **Start of Round:** Player rolls all dice in the set (6 dice).
 2. **Roll:**
    - Player rolls all dice in their current hand (remaining non-scored dice).
-   - If no scoring combinations are present, this is a Farkle (flop): round ends, round points are forfeited, and round score is zero.
+   - If no scoring combinations are present, this is a Rollio (flop): round ends, round points are forfeited, and round score is zero.
    - If at least one scoring combination is present, player selects which dice to score (by index).
    - After scoring, player may choose to bank (ending the round and adding round points to game score) or reroll the remaining dice (hand).
    - If all dice in the set are scored in a round (hot dice), player may choose to reroll, allowing them to roll all set dice and continue the same round.
    - Player may only bank points directly after scoring at least one die and before choosing to reroll.
 3. **End of Round:**
-   - If Farkle: round points are forfeited (display forfeited points), round score is zero.
-   - If three Farkles occur in a row, immediately subtract 1,000 points from game score (can go negative).
+   - If Rollio: round points are forfeited (display forfeited points), round score is zero.
+   - If three Rollios occur in a row, immediately subtract 1,000 points from game score (can go negative).
    - If banked: round points are added to game score.
    - Track hot dice occurrences per round/game.
    - Track forfeited points per round and running total for the game.
@@ -67,7 +69,7 @@
   - Round points
   - Roll history (each roll: dice, max roll points, roll points, scoring selection, combination(s))
   - Hot dice occurrences in this round
-  - Forfeited points (if round ends in Farkle)
+  - Forfeited points (if round ends in Rollio)
   - Whether round is active or ended, and how it ended (e.g. flop, bank)
 
 ## Banking & Rerolling
@@ -75,14 +77,14 @@
 - Player may only bank points after scoring at least one die from the current roll and before choosing to roll again within the same round.
 - Once reroll is chosen, player must roll and score at least one die before next opportunity to bank.
 
-## Farkle Penalty
+## Rollio Penalty
 
-- Three consecutive Farkles: immediately subtract 1,000 points from game score (can go negative).
+- Three consecutive Rollios: immediately subtract 1,000 points from game score (can go negative).
 
 ## Notes
 
 - All rules and terminology should be implemented as described here for clarity and extensibility.
-- This spec is the single source of truth for Farkle game logic and state management.
+- This spec is the single source of truth for Rollio game logic and state management.
 
 ## Implementation Phases
 

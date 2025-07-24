@@ -1,4 +1,6 @@
-# Farkle Architecture & Data Flow Diagrams
+# Rollio Architecture & Data Flow Diagrams
+
+> **Note:** To update the game name everywhere (docs, code, UI), use the update-name script: `npm run update-name -- <NewName>`. All name variants are defined in `src/game/nameConfig.ts`.
 
 ## Game State Relationships
 
@@ -46,7 +48,7 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    A[Welcome to Farkle!] --> B[Start New Game? y/n]
+    A[Welcome to Rollio!] --> B[Start New Game? y/n]
     B -->|n| C[Goodbye!]
     B -->|y| D[--- Round X ---]
     D --> E[Roll #Y: Display Dice Values]

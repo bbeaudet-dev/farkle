@@ -23,8 +23,8 @@ export async function applyConsumableEffect(idx: number, gameState: any, roundSt
       break;
     }
     case 'materialEnchanter':
-      // TODO: Material change logic
-      await gameInterface.log('🔮 Material Enchanter effect not yet implemented.');
+      // TODO (Phase 5): Implement material change logic once material system is complete
+      await gameInterface.log('🔮 Material Enchanter effect not yet implemented. (Requires material system)');
       break;
     case 'charmGiver': {
       const maxCharms = gameState.charmSlots;
@@ -53,12 +53,12 @@ export async function applyConsumableEffect(idx: number, gameState: any, roundSt
       await gameInterface.log('🧳 Slot Expander used! You now have an extra charm slot.');
       break;
     case 'chisel':
-      // TODO: Downgrade die logic
-      await gameInterface.log('🪓 Chisel effect not yet implemented.');
+      // TODO (Phase 5): Implement downgrade die logic once material system is complete
+      await gameInterface.log('🪓 Chisel effect not yet implemented. (Requires material system)');
       break;
     case 'potteryWheel':
-      // TODO: Upgrade die logic
-      await gameInterface.log('🧱 Pottery Wheel effect not yet implemented.');
+      // TODO (Phase 5): Implement upgrade die logic once material system is complete
+      await gameInterface.log('🧱 Pottery Wheel effect not yet implemented. (Requires material system)');
       break;
     case 'forfeitRecovery':
       const lastForfeit = gameState.lastForfeitedPoints || 0;

@@ -23,14 +23,15 @@ export function formatFlopMessage(
   forfeitedPoints: number, 
   consecutiveFlops: number, 
   gameScore: number,
-  threeFlopPenalty: number
+  consecutiveFlopPenalty: number,
+  consecutiveFlopWarningCount: number
 ): string {
   let message = `No scoring combinations, you flopped! Round points forfeited: ${forfeitedPoints}`;
   
-  if (consecutiveFlops === FARKLE_CONFIG.penalties.consecutiveFlopWarning) {
-    message += `\n(2 consecutive flops - one more and you lose ${threeFlopPenalty} points!)`;
-  } else if (consecutiveFlops >= 3) {
-    message += `\n(3 consecutive flops - you lose ${threeFlopPenalty} points! Game score: ${gameScore})`;
+  if (consecutiveFlops === consecutiveFlopWarningCount) {
+    message += `\n(${consecutiveFlopWarningCount} consecutive flops - one more and you lose ${consecutiveFlopPenalty} points!)`;
+  } else if (consecutiveFlops >= consecutiveFlopWarningCount + 1) {
+    message += `\n(${consecutiveFlopWarningCount + 1} consecutive flops - you lose ${consecutiveFlopPenalty} points! Game score: ${gameScore})`;
   }
   
   return message;

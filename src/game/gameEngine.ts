@@ -21,6 +21,7 @@ import { setDebugMode } from './utils/debug';
 import { CharmManager } from './core/charmSystem';
 import { registerCharms } from './content/charms/index';
 import { applyConsumableEffect } from './consumableEffects';
+import { DisplayFormatter } from './display';
 
 /**
  * Game engine that orchestrates the game using pure logic and interface
@@ -43,40 +44,52 @@ export class GameEngine {
    */
   async run(): Promise<void> {
     await this.interface.displayWelcome();
-    
-    // Prompt for dice set selection
-    const diceSetNames = ALL_DICE_SETS.map(ds => typeof ds === 'function' ? 'Chaos' : ds.name);
-    const diceSetIdx = await (this.interface as any).askForDiceSetSelection(diceSetNames);
-    const selectedSet = ALL_DICE_SETS[diceSetIdx];
-    const diceSetConfig = typeof selectedSet === 'function' ? selectedSet() : selectedSet;
-    await this.interface.log(`Selected Dice Set: ${diceSetConfig.name}`);
-    
+
+    // Prompt for new game first
     const start = await this.interface.askForNewGame();
     if (start.trim().toLowerCase() !== 'y') {
       await this.interface.displayGoodbye();
       return;
     }
 
-    // Phase 1c: Charm and Material Selection
-    await this.interface.log('\n🎭 GAME SETUP - CHARM & MATERIAL & CONSUMABLE SELECTION');
-    
+    // Prompt for game rules using interface method
+    const { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty } = await this.interface.askForGameRules();
+
+    // Prompt for dice set selection
+    const diceSetNames = ALL_DICE_SETS.map(ds => typeof ds === 'function' ? 'Chaos' : ds.name);
+    const diceSetIdx = await (this.interface as any).askForDiceSetSelection(diceSetNames);
+    const selectedSet = ALL_DICE_SETS[diceSetIdx];
+    const diceSetConfig = typeof selectedSet === 'function' ? selectedSet() : selectedSet;
+    await this.interface.log(`Selected Dice Set: ${diceSetConfig.name}`);
+
+    // Material Assignment (before charms)
+    const availableMaterials = MATERIALS.map(material => `${material.name} - ${material.description}`);
+    const assignedMaterialIndices = await this.interface.askForMaterialAssignment(diceSetConfig.dice.length, availableMaterials);
+
     // Charm Selection
     const availableCharms = CHARMS.map(charm => `${charm.name} (${charm.rarity}) - ${charm.description}`);
     const selectedCharmIndices = await this.interface.askForCharmSelection(availableCharms, 3);
-    
-    // Material Assignment
-    const availableMaterials = MATERIALS.map(material => `${material.name} - ${material.description}`);
-    const assignedMaterialIndices = await this.interface.askForMaterialAssignment(diceSetConfig.dice.length, availableMaterials);
-    
+
     // Determine consumable slots (default 2)
     const consumableSlots = diceSetConfig.consumableSlots ?? 2;
     // Consumable Selection
     const availableConsumables = CONSUMABLES.map(consumable => `${consumable.name} (${consumable.rarity}) - ${consumable.description}`);
     const selectedConsumableIndices = await this.interface.askForConsumableSelection(availableConsumables, consumableSlots);
-    
+
     // Create game state with selected charms, materials, and consumables
     let gameState = createInitialGameState(diceSetConfig);
-    
+    gameState.winCondition = winCondition;
+    gameState.consecutiveFlopLimit = consecutiveFlopLimit;
+    gameState.consecutiveFlopPenalty = penaltyEnabled ? consecutiveFlopPenalty : 0;
+    gameState.flopPenaltyEnabled = penaltyEnabled;
+
+    // Assign materials to dice
+    gameState.diceSet = gameState.diceSet.map((die, index) => ({
+      ...die,
+      material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType,
+      abbreviation: MATERIALS[assignedMaterialIndices[index]].abbreviation
+    }));
+
     // Add selected charms to game state and charm manager
     gameState.charms = selectedCharmIndices.map(index => {
       const charm = CHARMS[index];
@@ -84,23 +97,17 @@ export class GameEngine {
         ...charm,
         active: true
       };
-      
-      // Add to charm manager for runtime processing
       this.charmManager.addCharm(runtimeCharm);
-      
       return runtimeCharm;
     });
-    
-    // Assign materials to dice
-    gameState.diceSet = gameState.diceSet.map((die, index) => ({
-      ...die,
-      material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType
-    }));
-    
+
     // Add selected consumables to game state
     gameState.consumables = selectedConsumableIndices.map((index: number) => ({ ...CONSUMABLES[index] }));
-    
-    await this.interface.log('\n✅ Game setup complete! Starting your adventure...');
+
+    // Set starting money (already set in createInitialGameState)
+
+    // Display setup summary
+    await this.interface.log(DisplayFormatter.formatGameSetupSummary(gameState));
 
     while (gameState.isActive) {
       await this.playRound(gameState, diceSetConfig.name);
@@ -317,7 +324,7 @@ export class GameEngine {
         roundState.roundPoints,
         gameState.consecutiveFlops,
         gameState.gameScore,
-        FARKLE_CONFIG.penalties.threeFlopPenalty
+        (gameState.consecutiveFlopPenalty ?? FARKLE_CONFIG.penalties.consecutiveFlopPenalty)
       );
       return true; // Flop occurred
     }

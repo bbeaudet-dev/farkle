@@ -104,7 +104,7 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
-    let prompt = 'Available Dice Sets:\n';
+    let prompt = '\nAvailable Dice Sets:\n';
     diceSetNames.forEach((name, i) => {
       prompt += `  ${i + 1}. ${name}\n`;
     });
@@ -171,6 +171,25 @@ export class CLIInterface implements GameInterface {
     return selectedIndices;
   }
 
+  async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
+    const FARKLE_CONFIG = require('../game/config').FARKLE_CONFIG;
+    const winConditionInput = await this.ask('Set win condition (default 10000): ');
+    const winCondition = winConditionInput.trim() === '' ? FARKLE_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || FARKLE_CONFIG.winCondition;
+
+    const penaltyEnabledInput = await this.ask('Enable flop penalty? (y/n, default y): ');
+    const penaltyEnabled = penaltyEnabledInput.trim() === '' ? true : penaltyEnabledInput.trim().toLowerCase() === 'y';
+
+    let consecutiveFlopLimit = FARKLE_CONFIG.penalties.consecutiveFlopLimit;
+    let consecutiveFlopPenalty = FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+    if (penaltyEnabled) {
+      const flopLimitInput = await this.ask(`Set consecutive flop limit before penalty (default ${FARKLE_CONFIG.penalties.consecutiveFlopLimit}): `);
+      consecutiveFlopLimit = flopLimitInput.trim() === '' ? FARKLE_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || FARKLE_CONFIG.penalties.consecutiveFlopLimit;
+      const flopPenaltyInput = await this.ask(`Set penalty amount (default ${FARKLE_CONFIG.penalties.consecutiveFlopPenalty}): `);
+      consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? FARKLE_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+    }
+    return { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty };
+  }
+
   // Display methods
   async log(message: string, delayBefore: number = FARKLE_CONFIG.cli.defaultDelay, delayAfter: number = FARKLE_CONFIG.cli.defaultDelay): Promise<void> {
     if (delayBefore > 0) await this.sleep(delayBefore);
@@ -198,8 +217,8 @@ export class CLIInterface implements GameInterface {
     }
   }
 
-  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): Promise<void> {
-    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, threeFlopPenalty), FARKLE_CONFIG.cli.messageDelay);
+  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
+    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), FARKLE_CONFIG.cli.messageDelay);
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {

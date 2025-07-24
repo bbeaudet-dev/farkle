@@ -72,8 +72,8 @@ export class WebInterface implements GameInterface {
     await this.log(DisplayFormatter.formatGameScore(score));
   }
 
-  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): Promise<void> {
-    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, threeFlopPenalty));
+  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
+    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount));
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {

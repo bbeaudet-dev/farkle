@@ -1,6 +1,7 @@
 import { FARKLE_CONFIG } from './config';
 import { Die, ScoringCombination } from './core/types';
 import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils';
+import { MATERIALS } from './content/materials';
 
 /**
  * Pure display functions that format text for output
@@ -8,7 +9,11 @@ import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStat
  */
 export class DisplayFormatter {
   static formatRoll(rollNumber: number, dice: Die[]): string {
-    return `\nRoll #${rollNumber}:\n${formatDiceValues(dice.map(die => die.rolledValue!))}`;
+    const valuesLine = dice.map(die => String(die.rolledValue!).padEnd(3)).join('');
+    // Show material abbreviations with spaces between each
+    const materialMap = Object.fromEntries(MATERIALS.map(m => [m.id, m.abbreviation]));
+    const abbrevLine = dice.map(die => materialMap[die.material] || '--').join(' ');
+    return `\nRoll #${rollNumber}:\n${valuesLine}\n${abbrevLine}`;
   }
 
   static formatScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): string {
@@ -40,8 +45,8 @@ export class DisplayFormatter {
     return `Game score: ${score}`;
   }
 
-  static formatFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): string {
-    return formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, threeFlopPenalty);
+  static formatFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): string {
+    return formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount);
   }
 
   static formatGameEnd(gameState: any, isWin: boolean): string[] {
@@ -109,5 +114,22 @@ export class DisplayFormatter {
 
   static formatNextRoundPrompt(): string {
     return '\nStart next round? (y/n): ';
+  }
+
+  static formatGameSetupSummary(gameState: any): string {
+    const lines: string[] = [];
+    lines.push('\n=== GAME SETUP COMPLETE ===');
+    lines.push(`Money: $${gameState.money}`);
+    lines.push(`Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c: any) => c.name).join(', ') : 'None'}`);
+    lines.push(`Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c: any) => c.name).join(', ') : 'None'}`);
+    lines.push(`Dice Set: ${gameState.diceSetConfig?.name || (gameState.diceSet.length + ' dice')}`);
+    lines.push('Dice:');
+    const materialMap = Object.fromEntries(MATERIALS.map(m => [m.id, m.abbreviation]));
+    gameState.diceSet.forEach((die: any, i: number) => {
+      const abbrev = materialMap[die.material] || '--';
+      lines.push(`  Die ${i + 1}: ${abbrev} (${die.sides} sides)`);
+    });
+    lines.push('===========================\n');
+    return lines.join('\n');
   }
 } 

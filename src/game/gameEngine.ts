@@ -20,6 +20,7 @@ import { ScoringCombination } from './core/types';
 import { setDebugMode } from './utils/debug';
 import { CharmManager } from './core/charmSystem';
 import { registerCharms } from './content/charms/index';
+import { applyConsumableEffect } from './consumableEffects';
 
 /**
  * Game engine that orchestrates the game using pure logic and interface
@@ -297,48 +298,7 @@ export class GameEngine {
 
   // Add this method to handle consumable usage
   async useConsumable(idx: number, gameState: any, roundState: any): Promise<void> {
-    const consumable = gameState.consumables[idx];
-    if (!consumable) return;
-    switch (consumable.id) {
-      case 'moneyDoubler':
-        gameState.money *= 2;
-        await this.interface.log('💰 Money Doubler used! Your money has been doubled.');
-        break;
-      case 'extraDie':
-        // TODO: Add extra die logic
-        await this.interface.log('🎲 Extra Die will be added next round.');
-        break;
-      case 'materialEnchanter':
-        // TODO: Material change logic
-        await this.interface.log('🔮 Material Enchanter effect not yet implemented.');
-        break;
-      case 'charmGiver':
-        // TODO: Random charm logic
-        await this.interface.log('🎁 Charm Giver effect not yet implemented.');
-        break;
-      case 'slotExpander':
-        gameState.consumableSlots = (gameState.consumableSlots || 2) + 1;
-        await this.interface.log('🧳 Slot Expander used! You now have an extra consumable slot.');
-        break;
-      case 'chisel':
-        // TODO: Downgrade die logic
-        await this.interface.log('🪓 Chisel effect not yet implemented.');
-        break;
-      case 'potteryWheel':
-        // TODO: Upgrade die logic
-        await this.interface.log('🧱 Pottery Wheel effect not yet implemented.');
-        break;
-      case 'forfeitRecovery':
-        const lastForfeit = gameState.lastForfeitedPoints || 50;
-        const recovered = Math.floor(lastForfeit * 0.5);
-        gameState.roundState.roundPoints += recovered;
-        await this.interface.log(`🩹 Forfeit Recovery used! Recovered ${recovered} points.`);
-        break;
-      default:
-        await this.interface.log('Unknown consumable effect.');
-    }
-    // Remove the used consumable
-    gameState.consumables.splice(idx, 1);
+    await applyConsumableEffect(idx, gameState, roundState, this.interface, this.charmManager);
   }
 
   // Helper: Display a roll and check for flop. Returns true if flop (round should end), false otherwise.

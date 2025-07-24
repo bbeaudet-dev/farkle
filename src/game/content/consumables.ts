@@ -30,7 +30,7 @@ export const CONSUMABLES = [
   {
     id: 'slotExpander',
     name: 'Slot Expander',
-    description: 'Permanently increases your consumable slots by 1.',
+    description: 'Permanently increases your consumable and slots by 1.',
     uses: 1,
     rarity: 'legendary'
   },

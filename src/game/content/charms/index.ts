@@ -6,6 +6,9 @@ import { VolcanoAmplifierCharm } from './VolcanoAmplifierCharm';
 import { StraightCollectorCharm } from './StraightCollectorCharm';
 import { RoundMultiplierCharm } from './RoundMultiplierCharm';
 import { ConsumableGeneratorCharm } from './ConsumableGeneratorCharm';
+import { OddCollectorCharm } from './OddCollectorCharm';
+import { EvenPerfectionCharm } from './EvenPerfectionCharm';
+import { MoneyMagnetCharm } from './MoneyMagnetCharm';
 
 /**
  * Register all charm implementations with the registry
@@ -20,4 +23,7 @@ export function registerCharms(): void {
   registry.register(StraightCollectorCharm, 'straightCollector');
   registry.register(RoundMultiplierCharm, 'roundMultiplier');
   registry.register(ConsumableGeneratorCharm, 'consumableGenerator');
+  registry.register(OddCollectorCharm, 'oddCollector');
+  registry.register(EvenPerfectionCharm, 'evenPerfection');
+  registry.register(MoneyMagnetCharm, 'moneyMagnet');
 } 

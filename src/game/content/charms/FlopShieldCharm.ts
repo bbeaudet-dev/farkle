@@ -1,4 +1,4 @@
-import { BaseCharm, CharmScoringContext } from '../../core/charmSystem';
+import { BaseCharm, CharmFlopContext, CharmScoringContext } from '../../core/charmSystem';
 
 export class FlopShieldCharm extends BaseCharm {
   constructor(charm: any) {
@@ -11,10 +11,7 @@ export class FlopShieldCharm extends BaseCharm {
     return 0;
   }
 
-  /**
-   * Special method for Flop Shield to prevent a flop
-   */
-  preventFlop(): boolean {
+  onFlop(context: CharmFlopContext): boolean {
     if (this.canUse()) {
       this.use();
       return true;

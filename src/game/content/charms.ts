@@ -7,7 +7,9 @@ export type CharmType =
   | 'volcanoAmplifier'
   | 'straightCollector'
   | 'roundMultiplier'
-  | 'consumableGenerator';
+  | 'consumableGenerator'
+  | 'oddCollector'
+  | 'evenPerfection';
 
 export const CHARMS: Omit<Charm, 'active'>[] = [
   {
@@ -51,5 +53,23 @@ export const CHARMS: Omit<Charm, 'active'>[] = [
     name: 'Consumable Generator',
     description: 'Creates a random consumable when scoring 4+ of a digit',
     rarity: 'legendary'
+  },
+  {
+    id: 'oddCollector',
+    name: 'Odd Collector',
+    description: '+15 points for each odd number in the selected dice',
+    rarity: 'uncommon'
+  },
+  {
+    id: 'evenPerfection',
+    name: 'Even Perfection',
+    description: 'If all selected dice are even, gain +300 points',
+    rarity: 'rare'
+  },
+  {
+    id: 'moneyMagnet',
+    name: 'Money Magnet',
+    description: '+5 points for every $1 you have',
+    rarity: 'common'
   }
 ]; 

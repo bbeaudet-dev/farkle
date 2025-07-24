@@ -1,10 +1,17 @@
 import { GameState, RoundState, DiceSetConfig, Die, CombinationCounters } from './types';
 import { BASIC_DICE_SET } from '../content/diceSets';
-import { SCORING_COMBINATIONS } from '../content/scoringCombinations';
 import { getRandomInt } from '../utils';
+import { validateDiceSetConfig } from '../validation/diceSetValidation';
+
+// Define all possible scoring combination types
+const ALL_SCORING_TYPES = [
+  'godStraight', 'straight', 'fourPairs', 'threePairs', 'tripleTriplets', 'twoTriplets',
+  'sevenOfAKind', 'sixOfAKind', 'fiveOfAKind', 'fourOfAKind', 'threeOfAKind',
+  'singleOne', 'singleFive'
+] as const;
 
 function createInitialCombinationCounters(): CombinationCounters {
-  return Object.fromEntries(SCORING_COMBINATIONS.map(c => [c.type, 0])) as CombinationCounters;
+  return Object.fromEntries(ALL_SCORING_TYPES.map(c => [c, 0])) as CombinationCounters;
 }
 
 // Convert die config to runtime die state
@@ -17,8 +24,10 @@ function createDiceFromConfig(diceConfig: Omit<Die, 'scored' | 'rolledValue'>[])
 }
 
 export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState {
+  validateDiceSetConfig(diceSetConfig);
+  
   return {
-    score: 0,
+    gameScore: 0,
     roundNumber: 1,
     rollCount: 0,
     diceSet: createDiceFromConfig(diceSetConfig.dice),
@@ -31,6 +40,7 @@ export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState 
     consumables: [],
     combinationCounters: createInitialCombinationCounters(),
     isActive: true,
+    forfeitedPointsTotal: 0,
   };
 }
 

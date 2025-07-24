@@ -9,7 +9,7 @@ export interface DisplayInterface {
   displayRoundStart(roundNumber: number): Promise<void>;
   displayRoll(rollNumber: number, dice: Die[]): Promise<void>;
   displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, threeFlopPenalty: number): Promise<void>;
-  displayHotDice(): Promise<void>;
+  displayHotDice(count?: number): Promise<void>;
   displayScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): Promise<void>;
   displayRoundPoints(points: number): Promise<void>;
   displayBankedPoints(points: number): Promise<void>;
@@ -29,6 +29,7 @@ export interface InputInterface {
   askForBankOrReroll(diceToReroll: number): Promise<string>;
   askForNewGame(): Promise<string>;
   askForNextRound(): Promise<string>;
+  askForPartitioningChoice(numPartitionings: number): Promise<string>;
 }
 
 /**

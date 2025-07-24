@@ -1,6 +1,6 @@
 import { FARKLE_CONFIG } from './config';
 import { Die, DieValue, ScoringCombination, Charm } from './core/types';
-import { getScoringCombinations } from './scoring';
+import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from './scoring';
 import { rollDice } from './scoring';
 import { validateDiceSelection } from './utils';
 import { getRandomInt } from './utils';
@@ -42,15 +42,17 @@ export interface RoundActionResult {
 /**
  * Validates dice selection and returns scoring result
  */
-export function validateDiceSelectionAndScore(input: string, diceHand: Die[], context: ScoringContext): { selectedIndices: number[], scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[] } } {
+export function validateDiceSelectionAndScore(input: string, diceHand: Die[], context: ScoringContext): { selectedIndices: number[], scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[], allPartitionings: ScoringCombination[][] } } {
   const selectedIndices = validateDiceSelection(input, diceHand.map(die => die.rolledValue) as DieValue[]);
   const combos = getScoringCombinations(diceHand, selectedIndices, context);
+  const allPartitionings = getAllPartitionings(diceHand, selectedIndices, context);
   const totalComboDice = combos.reduce((sum, c) => sum + c.dice.length, 0);
   const valid = combos.length > 0 && totalComboDice === selectedIndices.length;
   const points = combos.reduce((sum, c) => sum + c.points, 0);
+  
   return {
     selectedIndices,
-    scoringResult: { valid, points, combinations: combos },
+    scoringResult: { valid, points, combinations: combos, allPartitionings },
   };
 }
 
@@ -58,9 +60,7 @@ export function validateDiceSelectionAndScore(input: string, diceHand: Die[], co
  * Checks if a roll is a flop (no scoring combinations)
  */
 export function isFlop(diceHand: Die[]): boolean {
-  // For isFlop, treat all dice as selected and use an empty context
-  const selectedIndices = diceHand.map((_, i) => i);
-  return getScoringCombinations(diceHand, selectedIndices, { charms: [] }).length === 0;
+  return !hasAnyScoringCombination(diceHand);
 }
 
 /**
@@ -68,7 +68,7 @@ export function isFlop(diceHand: Die[]): boolean {
  */
 export function processDiceScoring(
   diceHand: Die[],
-  selectedIndices: number[],
+  selectedIndices: number[], 
   scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[] }
 ): { newHand: Die[], hotDice: boolean } {
   // Remove scored dice from diceHand
@@ -168,16 +168,20 @@ export function updateGameStateAfterRound(
   roundActionResult: RoundActionResult
 ): void {
   if (roundActionResult.banked) {
-    gameState.score += roundActionResult.pointsScored;
+    gameState.gameScore += roundActionResult.pointsScored;
     gameState.consecutiveFlops = 0;
   } else if (roundActionResult.flop) {
     gameState.consecutiveFlops++;
+    // Add forfeited points to total
+    gameState.forfeitedPointsTotal += roundState.roundPoints;
     if (gameState.consecutiveFlops >= 3) {
-      gameState.score -= FARKLE_CONFIG.penalties.threeFlopPenalty;
+      gameState.gameScore -= FARKLE_CONFIG.penalties.threeFlopPenalty;
       // Do NOT reset consecutiveFlops here; only reset on bank
     }
   }
   if (roundActionResult.hotDice) {
-    gameState.hotDiceTotal++;
+    gameState.globalHotDiceCounter++;
   }
+  // Update roll count based on round history
+  gameState.rollCount += roundState.rollHistory.length;
 } 

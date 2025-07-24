@@ -40,7 +40,11 @@ export class WebInterface implements GameInterface {
   }
 
   async askForNextRound(): Promise<string> {
-    return this.ask(DisplayFormatter.formatNextRoundPrompt());
+    return window.prompt('Play another round? (y/n):') || '';
+  }
+
+  async askForPartitioningChoice(numPartitionings: number): Promise<string> {
+    return window.prompt(`Choose a partitioning (1-${numPartitionings}):`) || '';
   }
 
   // Display methods
@@ -79,8 +83,8 @@ export class WebInterface implements GameInterface {
     }
   }
 
-  async displayHotDice(): Promise<void> {
-    await this.log(DisplayFormatter.formatHotDice());
+  async displayHotDice(count?: number): Promise<void> {
+    await this.log(DisplayFormatter.formatHotDice(count));
   }
 
   async displayBankedPoints(points: number): Promise<void> {

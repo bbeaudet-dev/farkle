@@ -17,16 +17,23 @@ import { CHARMS } from './content/charms';
 import { MATERIALS } from './content/materials';
 import { ScoringCombination } from './core/types';
 import { setDebugMode } from './utils/debug';
+import { CharmManager } from './core/charmSystem';
+import { registerCharms } from './content/charms/index';
 
 /**
  * Game engine that orchestrates the game using pure logic and interface
  */
 export class GameEngine {
   private interface: GameInterface;
+  private charmManager: CharmManager;
 
   constructor(gameInterface: GameInterface, debugMode: boolean = false) {
     this.interface = gameInterface;
+    this.charmManager = new CharmManager();
     setDebugMode(debugMode);
+    
+    // Register all charm implementations
+    registerCharms();
   }
 
   /**
@@ -62,13 +69,18 @@ export class GameEngine {
     // Create game state with selected charms and materials
     let gameState = createInitialGameState(diceSetConfig);
     
-    // Add selected charms to game state (convert to runtime Charm type)
+    // Add selected charms to game state and charm manager
     gameState.charms = selectedCharmIndices.map(index => {
       const charm = CHARMS[index];
-      return {
+      const runtimeCharm = {
         ...charm,
         active: true
       };
+      
+      // Add to charm manager for runtime processing
+      this.charmManager.addCharm(runtimeCharm);
+      
+      return runtimeCharm;
     });
     
     // Assign materials to dice
@@ -153,13 +165,22 @@ export class GameEngine {
         selectedPartitioning = scoringResult.allPartitionings[choiceIndex];
       }
       
-      // Display scoring results using the selected partitioning
-      const selectedPoints = selectedPartitioning.reduce((sum, c) => sum + c.points, 0);
-      await this.interface.displayScoringResult(selectedIndices, roundState.diceHand, selectedPartitioning, selectedPoints);
-      roundState.roundPoints += selectedPoints;
+      // Apply charm effects to scoring
+      const basePoints = selectedPartitioning.reduce((sum, c) => sum + c.points, 0);
+      const charmContext = {
+        gameState,
+        roundState,
+        basePoints,
+        combinations: selectedPartitioning,
+        selectedIndices
+      };
+      const finalPoints = this.charmManager.applyCharmEffects(charmContext);
+      
+      await this.interface.displayScoringResult(selectedIndices, roundState.diceHand, selectedPartitioning, finalPoints);
+      roundState.roundPoints += finalPoints;
       
       // Remove scored dice from diceHand
-      const scoringActionResult = processDiceScoring(roundState.diceHand, selectedIndices, { valid: true, points: selectedPoints, combinations: selectedPartitioning });
+      const scoringActionResult = processDiceScoring(roundState.diceHand, selectedIndices, { valid: true, points: finalPoints, combinations: selectedPartitioning });
       roundState.diceHand = scoringActionResult.newHand;
       
       // Update roll history
@@ -167,7 +188,7 @@ export class GameEngine {
         rollNumber,
         diceHand: roundState.diceHand,
         maxRollPoints: 0, // TODO: calculate this
-        rollPoints: selectedPoints,
+        rollPoints: finalPoints,
         scoringSelection: selectedIndices,
         combinations: selectedPartitioning,
         isHotDice: scoringActionResult.hotDice,
@@ -175,7 +196,7 @@ export class GameEngine {
       });
       
       // Show round points if not first roll
-      const hadPointsBeforeThisRoll = roundState.roundPoints > selectedPoints;
+      const hadPointsBeforeThisRoll = roundState.roundPoints > finalPoints;
       if (hadPointsBeforeThisRoll) {
         await this.interface.displayRoundPoints(roundState.roundPoints);
       }
@@ -193,8 +214,10 @@ export class GameEngine {
       const diceToReroll = roundState.diceHand.length;
       const action = await this.interface.askForBankOrReroll(diceToReroll);
       if (action.trim().toLowerCase() === 'b') {
-        const bankResult = processBankAction(roundState.roundPoints, gameState.gameScore);
-        await this.interface.displayBankedPoints(roundState.roundPoints);
+        // Apply charm bank effects
+        const bankedPoints = this.charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
+        const bankResult = processBankAction(bankedPoints, gameState.gameScore);
+        await this.interface.displayBankedPoints(bankedPoints);
         updateGameStateAfterRound(gameState, roundState, bankResult);
         await this.interface.displayGameScore(gameState.gameScore);
         roundActive = false;
@@ -220,6 +243,12 @@ export class GameEngine {
   private async displayRollAndCheckFlop(roundState: any, gameState: any, interfaceObj: GameInterface, rollNumber: number): Promise<boolean> {
     await interfaceObj.displayRoll(rollNumber, roundState.diceHand);
     if (isFlop(roundState.diceHand)) {
+      // Try to prevent flop with charms
+      const flopPrevented = this.charmManager.tryPreventFlop({ gameState, roundState });
+      if (flopPrevented) {
+        console.log('🎭 Flop prevented by charm!');
+        return false;
+      }
       // Update state first
       updateGameStateAfterRound(gameState, roundState, processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore));
       // Now display the message using updated state

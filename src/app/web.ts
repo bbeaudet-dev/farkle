@@ -4,11 +4,11 @@ import { WebInterface } from './webInterface';
 import { GameEngine } from '../game/gameEngine';
 
 /**
- * Web entry point for Farkle game
+ * Web entry point for Rollio game
  * This can be used for testing the web interface
  */
 async function main(): Promise<void> {
-  console.log('Starting Farkle Web Interface...');
+  console.log('Starting Rollio Web Interface...');
   
   const debugMode = process.argv.includes('--debug');
   const webInterface = new WebInterface();

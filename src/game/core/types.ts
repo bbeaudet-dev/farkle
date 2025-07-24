@@ -86,6 +86,7 @@ export interface RoundState {
   hotDiceCount: number;
   forfeitedPoints: number;
   isActive: boolean;
+  crystalsScoredThisRound?: number;
 }
 
 export interface GameState {

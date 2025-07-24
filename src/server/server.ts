@@ -38,7 +38,7 @@ app.post('/api/game/action', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🎲 Farkle server running on http://localhost:${PORT}`);
+  console.log(`🎲 Rollio server running on http://localhost:${PORT}`);
   console.log(`📁 Static files served from: ${path.join(__dirname, '../public')}`);
 });
 

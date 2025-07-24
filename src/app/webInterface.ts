@@ -47,6 +47,19 @@ export class WebInterface implements GameInterface {
     return window.prompt(`Choose a partitioning (1-${numPartitionings}):`) || '';
   }
 
+  async askForGameRules() {
+    return { winCondition: 10000, penaltyEnabled: true, consecutiveFlopLimit: 3, consecutiveFlopPenalty: 1000 };
+  }
+  async askForCharmSelection(availableCharms: string[], numToSelect: number) {
+    return Array.from({ length: numToSelect }, (_, i) => i);
+  }
+  async askForConsumableSelection(availableConsumables: string[], numToSelect: number) {
+    return Array.from({ length: numToSelect }, (_, i) => i);
+  }
+  async askForMaterialAssignment(diceCount: number, availableMaterials: string[]) {
+    return Array.from({ length: diceCount }, () => 0);
+  }
+
   // Display methods
   async log(message: string, delayBefore: number = 0, delayAfter: number = 0): Promise<void> {
     if (delayBefore > 0) await this.sleep(delayBefore);

@@ -415,7 +415,7 @@ As a general rule, all addition effects should take place before any multiplicat
 ### Phase 1a.2: Scoring Effects System Integration
 
 - The scoring system is now architected to support advanced effects (Mirror, Shortcut, etc.), but these effects are NOT yet active in the game logic.
-- All standard Farkle scoring logic (triplets, pairs, four/five/six of a kind, singles, etc.) is restored and should work as before.
+- All standard Rollio scoring logic (triplets, pairs, four/five/six of a kind, singles, etc.) is restored and should work as before.
 - This phase is for verifying the system works with other features before enabling advanced effects.
 
 ### Phase 1b: Dice Set Configuration
@@ -516,7 +516,7 @@ As a general rule, all addition effects should take place before any multiplicat
 - All order of operations and item phase are clearly defined
 - Integration testing occurs throughout development, not just at the end
 
-This spec provides the foundation for implementing these Balatro-inspired features while maintaining the core Farkle gameplay. All details from previous specs and user requests are included and clarified.
+This spec provides the foundation for implementing these Balatro-inspired features while maintaining the core Rollio gameplay. All details from previous specs and user requests are included and clarified.
 
 ### Flop System and Penalty Logic (Updated)
 

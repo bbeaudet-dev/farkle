@@ -3,8 +3,8 @@ export const FARKLE_CONFIG = {
   // numFaces: 6, // Removed for dice set config
   winCondition: 10000,
   cli: {
-    defaultDelay: 75,
-    messageDelay: 150,
+    defaultDelay: 25,
+    messageDelay: 100,
     noDelay: 0,
   },
   display: {

@@ -1,6 +1,6 @@
 import { FARKLE_CONFIG } from './config';
 import { Die, ScoringCombination } from './core/types';
-import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils';
+import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils/effectUtils';
 import { MATERIALS } from './content/materials';
 
 /**
@@ -33,16 +33,16 @@ export class DisplayFormatter {
         return `${type} ${values.join(', ')} (${indices.join(', ')})`;
       }).join('; '));
     }
-    result.push(`Points for this roll: ${points}`);
+    result.push(`Points for this roll: ${Math.ceil(points)}`);
     return result.join('\n');
   }
 
   static formatRoundPoints(points: number): string {
-    return `Round points so far: ${points}`;
+    return `Round points so far: ${Math.ceil(points)}`;
   }
 
   static formatGameScore(score: number): string {
-    return `Game score: ${score}`;
+    return `Game score: ${Math.ceil(score)}`;
   }
 
   static formatFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): string {
@@ -68,7 +68,7 @@ export class DisplayFormatter {
     });
     
     lines.push(...stats);
-    lines.push(`\n${isWin ? 'Thanks for playing Farkle!' : 'Thanks for playing!'}`);
+    lines.push(`\n${isWin ? 'Thanks for playing Rollio!' : 'Thanks for playing!'}`);
     
     return lines;
   }
@@ -81,11 +81,11 @@ export class DisplayFormatter {
   }
 
   static formatBankedPoints(points: number): string {
-    return `You banked ${points} points!`;
+    return `You banked ${Math.ceil(points)} points!`;
   }
 
   static formatWelcome(): string {
-    return 'Welcome to Farkle!';
+    return 'Welcome to Rollio!';
   }
 
   static formatRoundStart(roundNumber: number): string {

@@ -1,8 +1,10 @@
-# Rollio Scoring Optimization Specification
+# Rollio Scoring Optimization Specification v2
+
+TODO: NEEDS MANUAL REVIEW
 
 ## Overview
 
-This document specifies the comprehensive partitioning algorithm implementation for Rollio scoring combinations. The algorithm addresses the core challenge of finding all valid ways to partition a set of selected dice into scoring combinations, ensuring all selected dice are used exactly once.
+This document specifies the comprehensive partitioning algorithm implementation for Rollio scoring combinations, plus future enhancements for interleaved scoring effects. The algorithm addresses the core challenge of finding all valid ways to partition a set of selected dice into scoring combinations, ensuring all selected dice are used exactly once.
 
 ## Problem Statement
 
@@ -92,7 +94,7 @@ function buildPartitionings(
 - **Four-of-a-Kind**: 250 × face value
 - **Five-of-a-Kind**: 500 × face value
 - **Six-of-a-Kind**: 1000 × face value
-- **"N"-of-a-Kind**: Score(N) = 2 * Score(N-1) * face value
+- **"N"-of-a-Kind**: Score(N) = 2 _ Score(N-1) _ face value
 
 ### Special Combinations
 
@@ -142,7 +144,7 @@ function buildPartitionings(
 
 - **Combinations Found**: Multiple individual combinations
 - **Partitionings Attempted**: 98,432 potential partitionings
-- **Valid Partitionings**: 2 unique and valid partitionings 
+- **Valid Partitionings**: 2 unique and valid partitionings
 - **Execution Time**: ~580ms for test case
 - **Memory Usage**: Acceptable for typical game scenarios
 
@@ -183,7 +185,7 @@ Debug - First partitioning: ['threeOfAKind', 'threeOfAKind', 'singleOne']
 
 ## Current Implementation Status
 
-### In-Progress Features & Issues
+### ✅ Completed Features
 
 - Combination generation
 - Core partitioning algorithm
@@ -192,25 +194,15 @@ Debug - First partitioning: ['threeOfAKind', 'threeOfAKind', 'singleOne']
 - Support for all scoring combination types
 - Debug logging and testing framework
 - Integration with main scoring system
-- Finding and returning unique and valid partitinings
+- Finding and returning unique and valid partitionings
 - Performance optimization for edge cases with many partitionings / possible combinations
-- User interface for partitioning selection
+- Basic user interface for partitioning selection (defaults to highest points)
 
-### Implementation Details
+### ❌ Unimplemented Features
 
-**File**: `src/game/scoring.ts`
-
-**Key Functions**:
-
-- `findAllValidPartitionings()`: Main partitioning algorithm
-- `findAllPossibleCombinations()`: Individual combination generation
-- `getScoringCombinations()`: Public interface
-
-**Debug Features**:
-
-- Comprehensive logging of all steps
-- Performance metrics
-- Validation checks
+- **User Choice Interface**: Present all valid partitionings to user for selection
+- **Advanced Performance Optimization**: Memoization and parallel processing
+- **Extended Combination Types**: 7+ consecutive straights, mixed combinations
 
 ## Future Enhancements
 
@@ -223,6 +215,7 @@ Debug - First partitioning: ['threeOfAKind', 'threeOfAKind', 'singleOne']
 - Display all valid partitionings with their scores
 - Allow user to choose preferred partitioning
 - Highlight highest-scoring option
+- Limit display to top 3-5 options if more than 10 exist
 
 ### Performance Optimization
 
@@ -238,6 +231,112 @@ Debug - First partitioning: ['threeOfAKind', 'threeOfAKind', 'singleOne']
 - Mixed combinations
 - Special dice set combinations
 
+## Interleaved Scoring System (Future Enhancement)
+
+### Current Scoring Flow
+
+**Sequential Processing**:
+
+1. Apply all charm effects (batch)
+2. Apply all material effects (batch)
+3. Apply all other bonuses (batch)
+4. Log results by type
+
+**Limitations**:
+
+- Effects cannot react to each other
+- No dependency between different effect types
+- Limited interaction between charms, materials, and other bonuses
+
+### Proposed Interleaved System
+
+**Event-Driven Pipeline**:
+
+```typescript
+interface ScoringEvent {
+  type: "charm" | "material" | "bonus" | "consumable";
+  effect: string;
+  dice: Die[];
+  score: number;
+  context: ScoringContext;
+}
+
+interface ScoringPipeline {
+  events: ScoringEvent[];
+  currentScore: number;
+  diceHand: Die[];
+  selectedIndices: number[];
+  gameState: GameState;
+  roundState: RoundState;
+}
+```
+
+**Interleaved Processing**:
+
+1. **Event Generation**: Create events for all applicable effects
+2. **Priority Sorting**: Sort events by priority/order
+3. **Sequential Execution**: Execute events in order, allowing each to modify the pipeline
+4. **Reactive Effects**: Effects can trigger new events or modify existing ones
+5. **Logging**: Log each event as it occurs
+
+**Benefits**:
+
+- Effects can react to each other
+- Support for conditional effects ("if charm X triggered, then material Y gets bonus")
+- More complex scoring interactions
+- Better debugging and transparency
+
+**Example Interleaved Flow**:
+
+```
+1. Crystal Material Effect (+50% for each previous crystal)
+2. Crystal Charm Effect (doubles crystal bonuses)
+3. Rainbow Material Effect (chance-based bonus)
+4. Rabbit's Foot Charm Effect (multiplier based on rainbow triggers)
+5. Score Multiplier Charm Effect (final multiplier)
+```
+
+### Implementation Strategy
+
+**Phase 1: Foundation**
+
+- Define `ScoringEvent` and `ScoringPipeline` interfaces
+- Create event generation system
+- Implement basic sequential execution
+
+**Phase 2: Priority System**
+
+- Add priority levels to effects
+- Implement priority-based sorting
+- Support for conditional execution
+
+**Phase 3: Reactive Effects**
+
+- Allow effects to trigger new events
+- Support for effect dependencies
+- Chain reaction handling
+
+**Phase 4: Advanced Features**
+
+- Effect cancellation/modification
+- Complex conditional logic
+- Performance optimization
+
+### Migration Path
+
+**Current → Interleaved**:
+
+1. Keep current batch system as fallback
+2. Implement interleaved system alongside
+3. Gradually migrate effects to new system
+4. Remove old system once migration complete
+
+**Backward Compatibility**:
+
+- All existing effects continue to work
+- New effects can use interleaved system
+- Gradual migration without breaking changes
+
 ## Integration with Game Engine
 
 ### Current Integration
@@ -252,6 +351,7 @@ Debug - First partitioning: ['threeOfAKind', 'threeOfAKind', 'singleOne']
 **UI Enhancement**: Display all partitionings to user
 **Scoring Context**: Full support for charms, materials, and other effects
 **Game State**: Integration with hot dice and other game mechanics
+**Interleaved System**: Event-driven scoring pipeline
 
 ## Error Handling
 
@@ -270,11 +370,17 @@ Debug - First partitioning: ['threeOfAKind', 'threeOfAKind', 'singleOne']
 
 ## Conclusion
 
-The partitioning algorithm will successfully address the core challenge of finding all valid ways to score dice combinations in Rollio. The implementation will demonstrate:
+The partitioning algorithm successfully addresses the core challenge of finding all valid ways to score dice combinations in Rollio. The implementation demonstrates:
 
 - **Completeness**: Finds all possible valid partitionings
 - **Performance**: Acceptable performance for typical game scenarios
 - **Robustness**: Comprehensive validation and error handling
 - **Extensibility**: Foundation for future enhancements
 
-While the current implementation returns the first valid partitioning, the foundation is in place for presenting multiple options to users and implementing advanced selection logic. The algorithm provides a robust foundation for future enhancements to the Rollio scoring system.
+The proposed interleaved scoring system will provide a more flexible and powerful foundation for complex scoring interactions, while maintaining backward compatibility with the current system. This evolution will support the game's growth into more sophisticated roguelike mechanics while preserving the core Rollio experience.
+
+## Edge Case: Four of a Kind Booster and Non-4oaK Combinations
+
+- The Four of a Kind Booster should trigger whenever four (or more) of a dice value are scored in a single action, even if they are not scored as a four-of-a-kind, five-of-a-kind, etc. combination.
+- Example: If the player scores 666622 as three pairs, the booster should still trigger because four 6s were scored, even though the combination is not explicitly a four-of-a-kind.
+- This is a subtle scoring edge case and should be handled in the scoring pipeline.

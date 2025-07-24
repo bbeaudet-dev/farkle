@@ -2,8 +2,8 @@ import { FARKLE_CONFIG } from './config';
 import { Die, DieValue, ScoringCombination, Charm, GameState } from './core/types';
 import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from './scoring';
 import { rollDice } from './scoring';
-import { validateDiceSelection } from './utils';
-import { getRandomInt } from './utils';
+import { validateDiceSelection } from './utils/effectUtils';
+import { getRandomInt } from './utils/effectUtils';
 
 interface ScoringContext {
   charms: Charm[];

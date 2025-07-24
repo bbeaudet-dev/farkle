@@ -18,13 +18,17 @@ export class CLIInterface implements GameInterface {
   }
 
   // Input methods
-  async ask(question: string, consumables?: any[], useCallback?: (idx: number) => Promise<void>): Promise<string> {
+  async ask(question: string, defaultValue?: string, options?: { consumables?: any[], useCallback?: (idx: number) => Promise<void> }): Promise<string> {
     while (true) {
-      const input = await new Promise<string>((resolve) => {
+      const inputRaw = await new Promise<string>((resolve) => {
         this.rl.question(question, resolve);
       });
-      if (input.trim().toLowerCase() === 'use' && consumables && useCallback) {
-        await this.promptAndUseConsumable(consumables, useCallback);
+      const input = typeof inputRaw === 'string' ? inputRaw : '';
+      if (input.trim() === '' && defaultValue !== undefined) {
+        return String(defaultValue);
+      }
+      if (options && input.trim().toLowerCase() === 'use' && options.consumables && options.useCallback) {
+        await this.promptAndUseConsumable(options.consumables, options.useCallback);
         continue;
       }
       return input;
@@ -49,8 +53,15 @@ export class CLIInterface implements GameInterface {
     }
   }
 
-  async askForDiceSelection(dice: Die[]): Promise<string> {
-    return this.ask(DisplayFormatter.formatDiceSelectionPrompt());
+  async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>): Promise<string> {
+    while (true) {
+      const input = await this.ask(DisplayFormatter.formatDiceSelectionPrompt(), undefined, { consumables, useCallback });
+      if (input.trim().toLowerCase() === 'use' && consumables && useCallback) {
+        await this.promptAndUseConsumable(consumables, useCallback);
+        continue;
+      }
+      return input;
+    }
   }
 
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
@@ -58,12 +69,12 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForNewGame(): Promise<string> {
-    return this.ask(DisplayFormatter.formatNewGamePrompt());
+    return this.ask(DisplayFormatter.formatNewGamePrompt(), 'y');
   }
 
   async askForNextRound(gameState?: any, roundState?: any, useCallback?: (idx: number) => Promise<void>): Promise<string> {
     while (true) {
-      const input = await this.ask('Play another round? (y/n): ', gameState?.consumables, useCallback);
+      const input = await this.ask('Play another round? (y/n): ', gameState?.consumables, { consumables: gameState?.consumables, useCallback });
       if (input.trim().toLowerCase() === 'use') {
         continue;
       }
@@ -75,7 +86,7 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {
-    return this.ask(`Choose a partitioning (1-${numPartitionings}): `);
+    return this.ask(`Choose a partitioning (1-${numPartitionings}): `, '1');
   }
 
   async askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]> {
@@ -89,7 +100,7 @@ export class CLIInterface implements GameInterface {
     const assignedIndices: number[] = [];
     for (let i = 0; i < diceCount; i++) {
       while (true) {
-        const input = await this.ask(`Assign material to die ${i + 1}: `);
+        const input = await this.ask(`Assign material to die ${i + 1}: `, '1');
         const idx = parseInt(input.trim(), 10) - 1;
         if (!isNaN(idx) && idx >= 0 && idx < availableMaterials.length) {
           assignedIndices.push(idx);
@@ -110,7 +121,7 @@ export class CLIInterface implements GameInterface {
     });
     prompt += 'Select a dice set: ';
     while (true) {
-      const input = await this.ask(prompt);
+      const input = await this.ask(prompt, '1');
       const idx = parseInt(input.trim(), 10) - 1;
       if (!isNaN(idx) && idx >= 0 && idx < diceSetNames.length) {
         return idx;
@@ -128,7 +139,7 @@ export class CLIInterface implements GameInterface {
     const selectedIndices: number[] = [];
     for (let i = 0; i < numToSelect; i++) {
       while (true) {
-        const input = await this.ask(`Select charm ${i + 1}: `);
+        const input = await this.ask(`Select charm ${i + 1}: `, '1');
         const idx = parseInt(input.trim(), 10) - 1;
         if (!isNaN(idx) && idx >= 0 && idx < availableCharms.length) {
           if (selectedIndices.includes(idx)) {
@@ -154,7 +165,7 @@ export class CLIInterface implements GameInterface {
     const selectedIndices: number[] = [];
     for (let i = 0; i < numToSelect; i++) {
       while (true) {
-        const input = await this.ask(`Select consumable ${i + 1}: `);
+        const input = await this.ask(`Select consumable ${i + 1}: `, '1');
         const idx = parseInt(input.trim(), 10) - 1;
         if (!isNaN(idx) && idx >= 0 && idx < availableConsumables.length) {
           if (selectedIndices.includes(idx)) {
@@ -173,18 +184,18 @@ export class CLIInterface implements GameInterface {
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
     const FARKLE_CONFIG = require('../game/config').FARKLE_CONFIG;
-    const winConditionInput = await this.ask('Set win condition (default 10000): ');
+    const winConditionInput = await this.ask('Set win condition (default 10000): ', FARKLE_CONFIG.winCondition.toString());
     const winCondition = winConditionInput.trim() === '' ? FARKLE_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || FARKLE_CONFIG.winCondition;
 
-    const penaltyEnabledInput = await this.ask('Enable flop penalty? (y/n, default y): ');
+    const penaltyEnabledInput = await this.ask('Enable flop penalty? (y/n, default y): ', 'y');
     const penaltyEnabled = penaltyEnabledInput.trim() === '' ? true : penaltyEnabledInput.trim().toLowerCase() === 'y';
 
     let consecutiveFlopLimit = FARKLE_CONFIG.penalties.consecutiveFlopLimit;
     let consecutiveFlopPenalty = FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
     if (penaltyEnabled) {
-      const flopLimitInput = await this.ask(`Set consecutive flop limit before penalty (default ${FARKLE_CONFIG.penalties.consecutiveFlopLimit}): `);
+      const flopLimitInput = await this.ask(`Set consecutive flop limit before penalty (default ${FARKLE_CONFIG.penalties.consecutiveFlopLimit}): `, FARKLE_CONFIG.penalties.consecutiveFlopLimit.toString());
       consecutiveFlopLimit = flopLimitInput.trim() === '' ? FARKLE_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || FARKLE_CONFIG.penalties.consecutiveFlopLimit;
-      const flopPenaltyInput = await this.ask(`Set penalty amount (default ${FARKLE_CONFIG.penalties.consecutiveFlopPenalty}): `);
+      const flopPenaltyInput = await this.ask(`Set penalty amount (default ${FARKLE_CONFIG.penalties.consecutiveFlopPenalty}): `, FARKLE_CONFIG.penalties.consecutiveFlopPenalty.toString());
       consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? FARKLE_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
     }
     return { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty };

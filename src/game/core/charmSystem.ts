@@ -1,4 +1,5 @@
 import { Charm, CharmRarity } from './types';
+import { formatNoEffectLog } from '../utils/effectUtils';
 
 /**
  * Base class for all charms
@@ -28,7 +29,7 @@ export abstract class BaseCharm implements Charm {
   /**
    * Called when a flop is about to occur. Return true to prevent the flop, false/undefined otherwise.
    */
-  onFlop?(context: CharmFlopContext): boolean | void;
+  onFlop?(context: CharmFlopContext): boolean | { prevented: boolean, log?: string } | void;
 
   /**
    * Called when the player banks points at the end of a round. Can modify the banked points or trigger effects.
@@ -125,8 +126,8 @@ export class CharmManager {
     return this.charms.filter(charm => charm.active);
   }
 
-  getAllCharms(): BaseCharm[] {
-    return [...this.charms];
+  public getAllCharms(): BaseCharm[] {
+    return this.charms;
   }
 
   /**
@@ -135,36 +136,33 @@ export class CharmManager {
   applyCharmEffects(context: CharmScoringContext): number {
     let modifiedPoints = context.basePoints;
     
-    console.log(`🎭 CHARM EFFECTS: Base points: ${context.basePoints}`);
-    
     this.charms.forEach(charm => {
       if (charm.canUse()) {
         const charmEffect = charm.onScoring(context);
-        console.log(`  ${charm.name}: +${charmEffect} points (${charm.uses || '∞'} uses left)`);
         modifiedPoints += charmEffect;
-      } else {
-        console.log(`  ${charm.name}: Skipped (inactive or no uses left)`);
       }
     });
 
-    console.log(`🎭 CHARM EFFECTS: Final points: ${modifiedPoints} (${modifiedPoints - context.basePoints} bonus)`);
     return modifiedPoints;
   }
 
   /**
-   * Call onFlop on all active charms. If any return true, the flop is prevented.
+   * Call onFlop on all active charms. If any return a log, the flop is prevented.
+   * Returns { prevented: boolean, log: string | null }
    */
-  tryPreventFlop(context: CharmFlopContext): boolean {
+  tryPreventFlop(context: CharmFlopContext): { prevented: boolean, log: string | null } {
     for (const charm of this.getActiveCharms()) {
       if (charm.onFlop && charm.canUse()) {
-        const prevented = charm.onFlop(context);
-        if (prevented) {
-          console.log(`🎭 CHARM: ${charm.name} prevented a flop! (${charm.uses || '∞'} uses left)`);
-          return true;
+        const result = charm.onFlop(context);
+        if (result && typeof result === 'object' && result.prevented) {
+          return { prevented: true, log: result.log || null };
+        } else if (result === true) {
+          // For backward compatibility
+          return { prevented: true, log: null };
         }
       }
     }
-    return false;
+    return { prevented: false, log: null };
   }
 
   /**
@@ -176,11 +174,30 @@ export class CharmManager {
       if (charm.onBank && charm.canUse()) {
         const result = charm.onBank({ ...context, bankedPoints: modified });
         if (typeof result === 'number') {
-          console.log(`🎭 CHARM: ${charm.name} modified banked points: +${result - modified}`);
           modified = result;
         }
       }
     });
     return modified;
   }
+}
+
+// Add a helper to format charm effect logs for display
+export function formatCharmEffectLogs(basePoints: number, charmResults: Array<{ name: string, effect: number, uses: number | undefined, logs?: string[] }>, finalPoints: number): string[] {
+  const logs: string[] = [];
+  logs.push(`🎭 CHARM EFFECTS: Base points: ${basePoints}`);
+  let hadEffect = false;
+  for (const { name, effect, uses, logs: charmLogs } of charmResults) {
+    let usesStr = uses === 0 ? '0 uses left' : (uses == null ? '∞ uses left' : `${uses} uses left`);
+    logs.push(`  ${name}: +${effect} points (${usesStr})`);
+    if (charmLogs && charmLogs.length > 0) {
+      logs.push(...charmLogs.map(l => `    ${l}`));
+    }
+    if (effect !== 0) hadEffect = true;
+  }
+  logs.push(`🎭 CHARM EFFECTS: Final points: ${finalPoints} (${finalPoints - basePoints} bonus)`);
+  // Use the shared utility for no effect
+  const noEffectLog = formatNoEffectLog('🎭 CHARM EFFECTS', hadEffect, basePoints, finalPoints);
+  if (noEffectLog.length > 0) return noEffectLog;
+  return logs;
 } 

@@ -1,6 +1,6 @@
-# React UI Components for Farkle Game
+# React UI Components for Rollio Game
 
-This directory contains React components that provide a modern, reusable UI for the Farkle game.
+This directory contains React components that provide a modern, reusable UI for the Rollio game.
 
 ## Components
 

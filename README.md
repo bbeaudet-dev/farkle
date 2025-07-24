@@ -97,7 +97,7 @@ npm run dev:web
 
 - **`config.ts`** - Game configuration and rules
 - **`types.ts`** - TypeScript interfaces and types
-- **`scoring.ts`** - Farkle scoring logic
+- **`scoring.ts`** - Rollio scoring logic
 - **`gameState.ts`** - State management
 - **`gameLogic.ts`** - Pure game logic functions
 - **`gameEngine.ts`** - Game orchestration
@@ -158,7 +158,7 @@ npm run build
 
 ## 📚 Game Rules
 
-Farkle is a dice game where players roll 6 dice and score points based on combinations:
+Rollio is a dice game where players roll 6 dice and score points based on combinations:
 
 - **Ones**: 100 points each
 - **Fives**: 50 points each

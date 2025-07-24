@@ -272,8 +272,16 @@ function findAllPossibleCombinations(
     // Generate single combinations (only 1s and 5s) for individual dice
     if (subsetSize === 1) {
       const value = subsetValues[0];
-      if (value === 1) {
-        combinations.push({
+      const dieIndex = subsetIndices[0];
+      
+      // Check if this die was already used in a larger combination
+      const usedInLargerCombo = combinations.some(combo => 
+        combo.dice.includes(dieIndex) && combo.type !== 'singleOne' && combo.type !== 'singleFive'
+      );
+      
+      if (!usedInLargerCombo) {
+        if (value === 1) {
+                  combinations.push({
           type: 'singleOne',
           dice: subsetIndices,
           points: getCombinationPoints('singleOne'),
@@ -284,6 +292,7 @@ function findAllPossibleCombinations(
           dice: subsetIndices,
           points: getCombinationPoints('singleFive'),
         });
+      }
       }
     }
     

@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { GameEndReason, DieValue, Die } from './core/types';
+import { Die, DiceMaterialType } from './core/types';
 import { createInitialGameState, createInitialRoundState } from './core/gameState';
 import { GameInterface } from './interfaces';
 import {
@@ -7,14 +7,14 @@ import {
   isFlop,
   processDiceScoring,
   processBankAction,
-  processRerollAction,
   processFlop,
-  calculateDiceToReroll,
   checkWinCondition,
   updateGameStateAfterRound,
   rollSingleDie
 } from './gameLogic';
 import { ALL_DICE_SETS } from './content/diceSets';
+import { CHARMS } from './content/charms';
+import { MATERIALS } from './content/materials';
 import { ScoringCombination } from './core/types';
 import { setDebugMode } from './utils/debug';
 
@@ -48,7 +48,36 @@ export class GameEngine {
       return;
     }
 
+    // Phase 1c: Charm and Material Selection
+    await this.interface.log('\n🎭 GAME SETUP - CHARM & MATERIAL SELECTION');
+    
+    // Charm Selection
+    const availableCharms = CHARMS.map(charm => `${charm.name} (${charm.rarity}) - ${charm.description}`);
+    const selectedCharmIndices = await this.interface.askForCharmSelection(availableCharms, 3);
+    
+    // Material Assignment
+    const availableMaterials = MATERIALS.map(material => `${material.name} - ${material.description}`);
+    const assignedMaterialIndices = await this.interface.askForMaterialAssignment(diceSetConfig.dice.length, availableMaterials);
+    
+    // Create game state with selected charms and materials
     let gameState = createInitialGameState(diceSetConfig);
+    
+    // Add selected charms to game state (convert to runtime Charm type)
+    gameState.charms = selectedCharmIndices.map(index => {
+      const charm = CHARMS[index];
+      return {
+        ...charm,
+        active: true
+      };
+    });
+    
+    // Assign materials to dice
+    gameState.diceSet = gameState.diceSet.map((die, index) => ({
+      ...die,
+      material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType
+    }));
+    
+    await this.interface.log('\n✅ Game setup complete! Starting your adventure...');
 
     while (gameState.isActive) {
       await this.playRound(gameState, diceSetConfig.name);

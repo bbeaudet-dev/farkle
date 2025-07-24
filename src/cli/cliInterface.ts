@@ -44,6 +44,60 @@ export class CLIInterface implements GameInterface {
     return this.ask(`Choose a partitioning (1-${numPartitionings}): `);
   }
 
+  async askForCharmSelection(availableCharms: string[], numToSelect: number): Promise<number[]> {
+    await this.log('\n🎭 CHARM SELECTION');
+    await this.log(`Choose ${numToSelect} charms from the available pool:`);
+    
+    availableCharms.forEach((charm, i) => {
+      console.log(`  ${i + 1}. ${charm}`);
+    });
+    
+    const selectedIndices: number[] = [];
+    for (let i = 0; i < numToSelect; i++) {
+      while (true) {
+        const input = await this.ask(`Select charm ${i + 1}: `);
+        const idx = parseInt(input.trim(), 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < availableCharms.length) {
+          if (selectedIndices.includes(idx)) {
+            await this.log('Charm already selected. Please choose a different one.');
+            continue;
+          }
+          selectedIndices.push(idx);
+          await this.log(`Selected: ${availableCharms[idx]}`);
+          break;
+        }
+        await this.log('Invalid selection. Please enter a valid number.');
+      }
+    }
+    
+    return selectedIndices;
+  }
+
+  async askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]> {
+    await this.log('\n🎲 MATERIAL ASSIGNMENT');
+    await this.log(`Assign materials to your ${diceCount} dice:`);
+    
+    availableMaterials.forEach((material, i) => {
+      console.log(`  ${i + 1}. ${material}`);
+    });
+    
+    const assignedIndices: number[] = [];
+    for (let i = 0; i < diceCount; i++) {
+      while (true) {
+        const input = await this.ask(`Assign material to die ${i + 1}: `);
+        const idx = parseInt(input.trim(), 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < availableMaterials.length) {
+          assignedIndices.push(idx);
+          await this.log(`Die ${i + 1}: ${availableMaterials[idx]}`);
+          break;
+        }
+        await this.log('Invalid selection. Please enter a valid number.');
+      }
+    }
+    
+    return assignedIndices;
+  }
+
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
     let prompt = 'Available Dice Sets:\n';
     diceSetNames.forEach((name, i) => {

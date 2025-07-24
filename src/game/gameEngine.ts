@@ -1,5 +1,5 @@
 import { FARKLE_CONFIG } from './config';
-import { GameEndReason, DieValue, Die } from './core/types';
+import { Die, DiceMaterialType } from './core/types';
 import { createInitialGameState, createInitialRoundState } from './core/gameState';
 import { GameInterface } from './interfaces';
 import {
@@ -7,26 +7,34 @@ import {
   isFlop,
   processDiceScoring,
   processBankAction,
-  processRerollAction,
   processFlop,
-  calculateDiceToReroll,
   checkWinCondition,
   updateGameStateAfterRound,
   rollSingleDie
 } from './gameLogic';
 import { ALL_DICE_SETS } from './content/diceSets';
+import { CHARMS } from './content/charms';
+import { CONSUMABLES } from './content/consumables';
+import { MATERIALS } from './content/materials';
 import { ScoringCombination } from './core/types';
 import { setDebugMode } from './utils/debug';
+import { CharmManager } from './core/charmSystem';
+import { registerCharms } from './content/charms/index';
 
 /**
  * Game engine that orchestrates the game using pure logic and interface
  */
 export class GameEngine {
   private interface: GameInterface;
+  private charmManager: CharmManager;
 
   constructor(gameInterface: GameInterface, debugMode: boolean = false) {
     this.interface = gameInterface;
+    this.charmManager = new CharmManager();
     setDebugMode(debugMode);
+    
+    // Register all charm implementations
+    registerCharms();
   }
 
   /**
@@ -48,7 +56,50 @@ export class GameEngine {
       return;
     }
 
+    // Phase 1c: Charm and Material Selection
+    await this.interface.log('\n🎭 GAME SETUP - CHARM & MATERIAL & CONSUMABLE SELECTION');
+    
+    // Charm Selection
+    const availableCharms = CHARMS.map(charm => `${charm.name} (${charm.rarity}) - ${charm.description}`);
+    const selectedCharmIndices = await this.interface.askForCharmSelection(availableCharms, 3);
+    
+    // Material Assignment
+    const availableMaterials = MATERIALS.map(material => `${material.name} - ${material.description}`);
+    const assignedMaterialIndices = await this.interface.askForMaterialAssignment(diceSetConfig.dice.length, availableMaterials);
+    
+    // Determine consumable slots (default 2)
+    const consumableSlots = diceSetConfig.consumableSlots ?? 2;
+    // Consumable Selection
+    const availableConsumables = CONSUMABLES.map(consumable => `${consumable.name} (${consumable.rarity}) - ${consumable.description}`);
+    const selectedConsumableIndices = await this.interface.askForConsumableSelection(availableConsumables, consumableSlots);
+    
+    // Create game state with selected charms, materials, and consumables
     let gameState = createInitialGameState(diceSetConfig);
+    
+    // Add selected charms to game state and charm manager
+    gameState.charms = selectedCharmIndices.map(index => {
+      const charm = CHARMS[index];
+      const runtimeCharm = {
+        ...charm,
+        active: true
+      };
+      
+      // Add to charm manager for runtime processing
+      this.charmManager.addCharm(runtimeCharm);
+      
+      return runtimeCharm;
+    });
+    
+    // Assign materials to dice
+    gameState.diceSet = gameState.diceSet.map((die, index) => ({
+      ...die,
+      material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType
+    }));
+    
+    // Add selected consumables to game state
+    gameState.consumables = selectedConsumableIndices.map((index: number) => ({ ...CONSUMABLES[index] }));
+    
+    await this.interface.log('\n✅ Game setup complete! Starting your adventure...');
 
     while (gameState.isActive) {
       await this.playRound(gameState, diceSetConfig.name);
@@ -58,7 +109,7 @@ export class GameEngine {
         gameState.endReason = 'win';
         await this.interface.displayGameEnd(gameState, true);
       } else {
-        const next = await this.interface.askForNextRound();
+        const next = await (this.interface as any).askForNextRound(gameState, null, async (idx: number) => await this.useConsumable(idx, gameState, null));
         if (next.trim().toLowerCase() !== 'y') {
           gameState.isActive = false;
           gameState.endReason = 'quit';
@@ -87,7 +138,7 @@ export class GameEngine {
 
     while (roundActive) {
       // Prompt player to select dice to score
-      const input = await this.interface.askForDiceSelection(roundState.diceHand);
+      const input = await this.askForDiceSelectionWithConsumables(gameState, roundState, roundState.diceHand);
       const { selectedIndices, scoringResult } = validateDiceSelectionAndScore(input, roundState.diceHand, { charms: gameState.charms });
       
       if (!scoringResult.valid) {
@@ -124,13 +175,22 @@ export class GameEngine {
         selectedPartitioning = scoringResult.allPartitionings[choiceIndex];
       }
       
-      // Display scoring results using the selected partitioning
-      const selectedPoints = selectedPartitioning.reduce((sum, c) => sum + c.points, 0);
-      await this.interface.displayScoringResult(selectedIndices, roundState.diceHand, selectedPartitioning, selectedPoints);
-      roundState.roundPoints += selectedPoints;
+      // Apply charm effects to scoring
+      const basePoints = selectedPartitioning.reduce((sum, c) => sum + c.points, 0);
+      const charmContext = {
+        gameState,
+        roundState,
+        basePoints,
+        combinations: selectedPartitioning,
+        selectedIndices
+      };
+      const finalPoints = this.charmManager.applyCharmEffects(charmContext);
+      
+      await this.interface.displayScoringResult(selectedIndices, roundState.diceHand, selectedPartitioning, finalPoints);
+      roundState.roundPoints += finalPoints;
       
       // Remove scored dice from diceHand
-      const scoringActionResult = processDiceScoring(roundState.diceHand, selectedIndices, { valid: true, points: selectedPoints, combinations: selectedPartitioning });
+      const scoringActionResult = processDiceScoring(roundState.diceHand, selectedIndices, { valid: true, points: finalPoints, combinations: selectedPartitioning });
       roundState.diceHand = scoringActionResult.newHand;
       
       // Update roll history
@@ -138,7 +198,7 @@ export class GameEngine {
         rollNumber,
         diceHand: roundState.diceHand,
         maxRollPoints: 0, // TODO: calculate this
-        rollPoints: selectedPoints,
+        rollPoints: finalPoints,
         scoringSelection: selectedIndices,
         combinations: selectedPartitioning,
         isHotDice: scoringActionResult.hotDice,
@@ -146,7 +206,7 @@ export class GameEngine {
       });
       
       // Show round points if not first roll
-      const hadPointsBeforeThisRoll = roundState.roundPoints > selectedPoints;
+      const hadPointsBeforeThisRoll = roundState.roundPoints > finalPoints;
       if (hadPointsBeforeThisRoll) {
         await this.interface.displayRoundPoints(roundState.roundPoints);
       }
@@ -162,10 +222,12 @@ export class GameEngine {
       
       // Prompt for bank or reroll (ALWAYS, even after hot dice)
       const diceToReroll = roundState.diceHand.length;
-      const action = await this.interface.askForBankOrReroll(diceToReroll);
+      const action = await this.askForBankOrRerollWithConsumables(gameState, roundState, diceToReroll);
       if (action.trim().toLowerCase() === 'b') {
-        const bankResult = processBankAction(roundState.roundPoints, gameState.gameScore);
-        await this.interface.displayBankedPoints(roundState.roundPoints);
+        // Apply charm bank effects
+        const bankedPoints = this.charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
+        const bankResult = processBankAction(bankedPoints, gameState.gameScore);
+        await this.interface.displayBankedPoints(bankedPoints);
         updateGameStateAfterRound(gameState, roundState, bankResult);
         await this.interface.displayGameScore(gameState.gameScore);
         roundActive = false;
@@ -174,23 +236,120 @@ export class GameEngine {
         roundState.diceHand = roundState.diceHand.map(rollSingleDie);
         // Reroll, display and flop check
         const newRollNumber = roundState.rollHistory.length + 1;
-        const flopOnReroll = await this.displayRollAndCheckFlop(roundState, gameState, this.interface, newRollNumber);
-        if (flopOnReroll) break;
+        const flopResult = await this.displayRollAndCheckFlop(roundState, gameState, this.interface, newRollNumber);
+        if (flopResult === true) break;
+        if (flopResult === 'flopPrevented') {
+          // Flop was prevented, prompt for bank or reroll
+          const diceToReroll = roundState.diceHand.length;
+          const action = await this.askForBankOrRerollWithConsumables(gameState, roundState, diceToReroll);
+          if (action.trim().toLowerCase() === 'b') {
+            const bankedPoints = this.charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
+            const bankResult = processBankAction(bankedPoints, gameState.gameScore);
+            await this.interface.displayBankedPoints(bankedPoints);
+            updateGameStateAfterRound(gameState, roundState, bankResult);
+            await this.interface.displayGameScore(gameState.gameScore);
+            roundActive = false;
+          } else {
+            // Reroll the same dice and check for a new flop
+            while (true) {
+              roundState.diceHand = roundState.diceHand.map(rollSingleDie);
+              const newRollNumber = roundState.rollHistory.length + 1;
+              const rerollFlopResult = await this.displayRollAndCheckFlop(roundState, gameState, this.interface, newRollNumber);
+              if (rerollFlopResult === true) {
+                // Flop (no more saves), break out to end round
+                roundActive = false;
+                break;
+              } else if (rerollFlopResult === 'flopPrevented') {
+                // Flop saved again, prompt again
+                const rerollAction = await this.askForBankOrRerollWithConsumables(gameState, roundState, roundState.diceHand.length);
+                if (rerollAction.trim().toLowerCase() === 'b') {
+                  const bankedPoints = this.charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
+                  const bankResult = processBankAction(bankedPoints, gameState.gameScore);
+                  await this.interface.displayBankedPoints(bankedPoints);
+                  updateGameStateAfterRound(gameState, roundState, bankResult);
+                  await this.interface.displayGameScore(gameState.gameScore);
+                  roundActive = false;
+                  break;
+                }
+                // else, continue reroll loop
+              } else {
+                // Not a flop, continue round as normal
+                break;
+              }
+            }
+          }
+        }
       }
     }
 
     // End of round
     gameState.roundState = roundState;
     gameState.roundNumber++;
-
+    // Track last forfeited points for Forfeit Recovery
+    if (roundState.forfeitedPoints > 0) {
+      gameState.lastForfeitedPoints = roundState.forfeitedPoints;
+    } else {
+      gameState.lastForfeitedPoints = 0;
+    }
     // Call interface method for between-rounds display
     await this.interface.displayBetweenRounds(gameState);
   }
 
+  // Add this method to handle consumable usage
+  async useConsumable(idx: number, gameState: any, roundState: any): Promise<void> {
+    const consumable = gameState.consumables[idx];
+    if (!consumable) return;
+    switch (consumable.id) {
+      case 'moneyDoubler':
+        gameState.money *= 2;
+        await this.interface.log('💰 Money Doubler used! Your money has been doubled.');
+        break;
+      case 'extraDie':
+        // TODO: Add extra die logic
+        await this.interface.log('🎲 Extra Die will be added next round.');
+        break;
+      case 'materialEnchanter':
+        // TODO: Material change logic
+        await this.interface.log('🔮 Material Enchanter effect not yet implemented.');
+        break;
+      case 'charmGiver':
+        // TODO: Random charm logic
+        await this.interface.log('🎁 Charm Giver effect not yet implemented.');
+        break;
+      case 'slotExpander':
+        gameState.consumableSlots = (gameState.consumableSlots || 2) + 1;
+        await this.interface.log('🧳 Slot Expander used! You now have an extra consumable slot.');
+        break;
+      case 'chisel':
+        // TODO: Downgrade die logic
+        await this.interface.log('🪓 Chisel effect not yet implemented.');
+        break;
+      case 'potteryWheel':
+        // TODO: Upgrade die logic
+        await this.interface.log('🧱 Pottery Wheel effect not yet implemented.');
+        break;
+      case 'forfeitRecovery':
+        const lastForfeit = gameState.lastForfeitedPoints || 50;
+        const recovered = Math.floor(lastForfeit * 0.5);
+        gameState.roundState.roundPoints += recovered;
+        await this.interface.log(`🩹 Forfeit Recovery used! Recovered ${recovered} points.`);
+        break;
+      default:
+        await this.interface.log('Unknown consumable effect.');
+    }
+    // Remove the used consumable
+    gameState.consumables.splice(idx, 1);
+  }
+
   // Helper: Display a roll and check for flop. Returns true if flop (round should end), false otherwise.
-  private async displayRollAndCheckFlop(roundState: any, gameState: any, interfaceObj: GameInterface, rollNumber: number): Promise<boolean> {
+  private async displayRollAndCheckFlop(roundState: any, gameState: any, interfaceObj: GameInterface, rollNumber: number): Promise<boolean | 'flopPrevented'> {
     await interfaceObj.displayRoll(rollNumber, roundState.diceHand);
     if (isFlop(roundState.diceHand)) {
+      // Try to prevent flop with charms
+      const flopPrevented = this.charmManager.tryPreventFlop({ gameState, roundState });
+      if (flopPrevented) {
+        return 'flopPrevented';
+      }
       // Update state first
       updateGameStateAfterRound(gameState, roundState, processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore));
       // Now display the message using updated state
@@ -214,5 +373,22 @@ export class GameEngine {
   private addDieToGameAndHand(gameState: any, roundState: any, newDie: any) {
     gameState.diceSet.push(newDie);
     roundState.hand.push({ ...newDie, scored: false });
+  }
+
+  // Example for askForDiceSelection
+  async askForDiceSelectionWithConsumables(gameState: any, roundState: any, dice: Die[]): Promise<string> {
+    return (this.interface as any).ask(
+      'Select dice values to score: ',
+      gameState.consumables,
+      async (idx: number) => await this.useConsumable(idx, gameState, roundState)
+    );
+  }
+  // Example for askForBankOrReroll
+  async askForBankOrRerollWithConsumables(gameState: any, roundState: any, diceToReroll: number): Promise<string> {
+    return (this.interface as any).ask(
+      `Bank points (b) or reroll ${diceToReroll} dice (r)? `,
+      gameState.consumables,
+      async (idx: number) => await this.useConsumable(idx, gameState, roundState)
+    );
   }
 } 

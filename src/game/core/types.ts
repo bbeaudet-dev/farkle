@@ -1,12 +1,19 @@
 // DICE SET TYPES
 export type DieValue = 1 | 2 | 3 | 4 | 5 | 6;
-export type DiceMaterial = 'plastic' | 'crystal' | 'wooden' | 'golden' | 'volcano' | 'mirror';
+
+export interface DiceMaterial {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export type DiceMaterialType = 'plastic' | 'crystal' | 'wooden' | 'golden' | 'volcano' | 'mirror';
 
 export interface Die {
   id: string;
   sides: number;
   allowedValues: number[];
-  material: DiceMaterial;
+  material: DiceMaterialType;
   scored?: boolean; // Set at runtime
   rolledValue?: number; // Set at runtime
 }
@@ -41,9 +48,12 @@ export interface Charm {
   name: string;
   description: string;
   active: boolean;
+  rarity?: CharmRarity; // For charm selection
   uses?: number; // For limited-use charms
   // Add runtime state/effects as needed
 }
+
+export type CharmRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
 export interface Consumable {
   id: string;

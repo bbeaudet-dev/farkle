@@ -18,10 +18,35 @@ export class CLIInterface implements GameInterface {
   }
 
   // Input methods
-  async ask(question: string): Promise<string> {
-    return new Promise((resolve) => {
-      this.rl.question(question, resolve);
+  async ask(question: string, consumables?: any[], useCallback?: (idx: number) => Promise<void>): Promise<string> {
+    while (true) {
+      const input = await new Promise<string>((resolve) => {
+        this.rl.question(question, resolve);
+      });
+      if (input.trim().toLowerCase() === 'use' && consumables && useCallback) {
+        await this.promptAndUseConsumable(consumables, useCallback);
+        continue;
+      }
+      return input;
+    }
+  }
+
+  async promptAndUseConsumable(consumables: any[], useCallback: (idx: number) => Promise<void>): Promise<void> {
+    if (!consumables || consumables.length === 0) {
+      console.log('No consumables available.');
+      return;
+    }
+    console.log('\nYour Consumables:');
+    consumables.forEach((c, i) => {
+      console.log(`  ${i + 1}. ${c.name} (${c.rarity}) - ${c.description} [${c.uses} use(s) left]`);
     });
+    const choice = await this.ask('Select a consumable to use (or press Enter to cancel): ');
+    const idx = parseInt(choice.trim(), 10) - 1;
+    if (!isNaN(idx) && idx >= 0 && idx < consumables.length) {
+      await useCallback(idx);
+    } else {
+      console.log('Cancelled.');
+    }
   }
 
   async askForDiceSelection(dice: Die[]): Promise<string> {
@@ -36,12 +61,46 @@ export class CLIInterface implements GameInterface {
     return this.ask(DisplayFormatter.formatNewGamePrompt());
   }
 
-  async askForNextRound(): Promise<string> {
-    return this.ask('Play another round? (y/n): ');
+  async askForNextRound(gameState?: any, roundState?: any, useCallback?: (idx: number) => Promise<void>): Promise<string> {
+    while (true) {
+      const input = await this.ask('Play another round? (y/n): ', gameState?.consumables, useCallback);
+      if (input.trim().toLowerCase() === 'use') {
+        continue;
+      }
+      if (input.trim().toLowerCase() === 'y' || input.trim().toLowerCase() === 'n') {
+        return input;
+      }
+      await this.log('Invalid input. Please enter y, n, or use a consumable.');
+    }
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {
     return this.ask(`Choose a partitioning (1-${numPartitionings}): `);
+  }
+
+  async askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]> {
+    await this.log('\n🎲 MATERIAL ASSIGNMENT');
+    await this.log(`Assign materials to your ${diceCount} dice:`);
+    
+    availableMaterials.forEach((material, i) => {
+      console.log(`  ${i + 1}. ${material}`);
+    });
+    
+    const assignedIndices: number[] = [];
+    for (let i = 0; i < diceCount; i++) {
+      while (true) {
+        const input = await this.ask(`Assign material to die ${i + 1}: `);
+        const idx = parseInt(input.trim(), 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < availableMaterials.length) {
+          assignedIndices.push(idx);
+          await this.log(`Die ${i + 1}: ${availableMaterials[idx]}`);
+          break;
+        }
+        await this.log('Invalid selection. Please enter a valid number.');
+      }
+    }
+    
+    return assignedIndices;
   }
 
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
@@ -58,6 +117,58 @@ export class CLIInterface implements GameInterface {
       }
       await this.log('Invalid selection. Please enter a valid number.');
     }
+  }
+
+  async askForCharmSelection(availableCharms: string[], numToSelect: number): Promise<number[]> {
+    await this.log('\n🎭 CHARM SELECTION');
+    await this.log(`Choose ${numToSelect} charms from the available pool:`);
+    availableCharms.forEach((charm, i) => {
+      console.log(`  ${i + 1}. ${charm}`);
+    });
+    const selectedIndices: number[] = [];
+    for (let i = 0; i < numToSelect; i++) {
+      while (true) {
+        const input = await this.ask(`Select charm ${i + 1}: `);
+        const idx = parseInt(input.trim(), 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < availableCharms.length) {
+          if (selectedIndices.includes(idx)) {
+            await this.log('Charm already selected. Please choose a different one.');
+            continue;
+          }
+          selectedIndices.push(idx);
+          await this.log(`Selected: ${availableCharms[idx]}`);
+          break;
+        }
+        await this.log('Invalid selection. Please enter a valid number.');
+      }
+    }
+    return selectedIndices;
+  }
+
+  async askForConsumableSelection(availableConsumables: string[], numToSelect: number): Promise<number[]> {
+    await this.log('\n🧪 CONSUMABLE SELECTION');
+    await this.log(`Choose ${numToSelect} consumables from the available pool:`);
+    availableConsumables.forEach((consumable, i) => {
+      console.log(`  ${i + 1}. ${consumable}`);
+    });
+    const selectedIndices: number[] = [];
+    for (let i = 0; i < numToSelect; i++) {
+      while (true) {
+        const input = await this.ask(`Select consumable ${i + 1}: `);
+        const idx = parseInt(input.trim(), 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < availableConsumables.length) {
+          if (selectedIndices.includes(idx)) {
+            await this.log('Consumable already selected. Please choose a different one.');
+            continue;
+          }
+          selectedIndices.push(idx);
+          await this.log(`Selected: ${availableConsumables[idx]}`);
+          break;
+        }
+        await this.log('Invalid selection. Please enter a valid number.');
+      }
+    }
+    return selectedIndices;
   }
 
   // Display methods

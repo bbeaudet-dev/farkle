@@ -30,6 +30,9 @@ export interface InputInterface {
   askForNewGame(): Promise<string>;
   askForNextRound(): Promise<string>;
   askForPartitioningChoice(numPartitionings: number): Promise<string>;
+  askForCharmSelection(availableCharms: string[], numToSelect: number): Promise<number[]>;
+  askForConsumableSelection(availableConsumables: string[], numToSelect: number): Promise<number[]>;
+  askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]>;
 }
 
 /**

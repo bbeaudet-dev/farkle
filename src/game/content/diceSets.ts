@@ -1,4 +1,5 @@
-import { DiceSetConfig, DiceMaterial } from '../core/types';
+import { DiceSetConfig, DiceMaterialType } from '../core/types';
+import { MATERIALS } from './materials';
 
 export const BASIC_DICE_SET: DiceSetConfig = {
   name: "Basic",
@@ -78,12 +79,12 @@ export const LUXURY_SET: DiceSetConfig = {
 export function CHAOS_SET(): DiceSetConfig {
   // Helper to pick a random element
   const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
-  const materials: DiceMaterial[] = ["plastic", "crystal", "wooden", "golden", "volcano"];
+  const materials: DiceMaterialType[] = MATERIALS.map(m => m.id) as DiceMaterialType[];
   const numDice = Math.floor(Math.random() * 6) + 3; // 3-8 dice
   const dice = Array.from({ length: numDice }, (_, i) => {
     const sides = pick([4, 6, 8, 10, 12, 20]);
     const allowedValues = Array.from({ length: sides }, (_, j) => pick([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])).slice(0, sides);
-    const material = (Math.random() < 0.5 ? "plastic" : pick(materials.filter(m => m !== "plastic"))) as DiceMaterial;
+    const material = (Math.random() < 0.5 ? "plastic" : pick(materials.filter(m => m !== "plastic"))) as DiceMaterialType;
     return {
       id: `d${i+1}`,
       sides,

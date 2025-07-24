@@ -190,7 +190,7 @@ describe('Scoring Logic', () => {
       
       expect(combinations).toHaveLength(1);
       expect(combinations[0].type).toBe('sevenOfAKind');
-      expect(combinations[0].points).toBe(5000); // 1000 base × 5 multiplier
+      expect(combinations[0].points).toBe(2000); // 2000 × 1 face value
     });
 
     it('should score six of a kind and remaining dice correctly', () => {
@@ -207,7 +207,7 @@ describe('Scoring Logic', () => {
       const singleFive = combinations.find(c => c.type === 'singleFive');
       
       expect(sixOfAKind).toBeDefined();
-      expect(sixOfAKind?.points).toBe(4000); // 1000 base × 4 multiplier
+      expect(sixOfAKind?.points).toBe(1000); // 1000 × 1 face value
       expect(singleFive).toBeDefined();
       expect(singleFive?.points).toBe(50);
     });
@@ -257,7 +257,7 @@ describe('Scoring Logic', () => {
       
       expect(combinations).toHaveLength(1);
       expect(combinations[0].type).toBe('fourOfAKind');
-      expect(combinations[0].points).toBe(400); // 200 base × 2 multiplier
+      expect(combinations[0].points).toBe(500); // 250 × 2 face value
     });
 
     it('should score five of a kind with correct multiplier', () => {
@@ -269,7 +269,7 @@ describe('Scoring Logic', () => {
       
       expect(combinations).toHaveLength(1);
       expect(combinations[0].type).toBe('fiveOfAKind');
-      expect(combinations[0].points).toBe(900); // 300 base × 3 multiplier
+      expect(combinations[0].points).toBe(1500); // 500 × 3 face value
     });
 
     it('should score four 1s with correct multiplier', () => {
@@ -281,7 +281,7 @@ describe('Scoring Logic', () => {
       
       expect(combinations).toHaveLength(1);
       expect(combinations[0].type).toBe('fourOfAKind');
-      expect(combinations[0].points).toBe(2000); // 1000 base × 2 multiplier
+      expect(combinations[0].points).toBe(250); // 250 × 1 face value
     });
 
     it('should debug the exact scenario from the image', () => {

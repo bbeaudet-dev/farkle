@@ -1,5 +1,5 @@
-import { FARKLE_CONFIG } from './config';
-import { DieValue } from './core/types';
+import { FARKLE_CONFIG } from '../config';
+import { DieValue } from '../core/types';
 
 /**
  * Formats dice values for display (no brackets, no indices)
@@ -23,14 +23,15 @@ export function formatFlopMessage(
   forfeitedPoints: number, 
   consecutiveFlops: number, 
   gameScore: number,
-  threeFlopPenalty: number
+  consecutiveFlopPenalty: number,
+  consecutiveFlopWarningCount: number
 ): string {
-  let message = `No scoring combinations, you flopped! Round points forfeited: ${forfeitedPoints}`;
+  let message = `No valid scoring combinations found, you flopped! Round points forfeited: ${forfeitedPoints}`;
   
-  if (consecutiveFlops === FARKLE_CONFIG.penalties.consecutiveFlopWarning) {
-    message += `\n(2 consecutive flops - one more and you lose ${threeFlopPenalty} points!)`;
-  } else if (consecutiveFlops >= 3) {
-    message += `\n(3 consecutive flops - you lose ${threeFlopPenalty} points! Game score: ${gameScore})`;
+  if (consecutiveFlops === consecutiveFlopWarningCount) {
+    message += `\n(${consecutiveFlopWarningCount} consecutive flops - one more and you lose ${consecutiveFlopPenalty} points!)`;
+  } else if (consecutiveFlops >= consecutiveFlopWarningCount + 1) {
+    message += `\n(${consecutiveFlopWarningCount + 1} consecutive flops - you lose ${consecutiveFlopPenalty} points! Game score: ${gameScore})`;
   }
   
   return message;
@@ -94,4 +95,19 @@ export function validateDiceSelection(input: string, dice: DieValue[]): number[]
  */
 export function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+} 
+
+/**
+ * Utility to format a "No effect" log for effect systems (charms, materials, etc.)
+ * @param type - The effect type label (e.g., '🎭 CHARM EFFECTS', '🎲 MATERIAL EFFECTS')
+ * @param hadEffect - Whether any effect logs were added
+ * @param base - The base value before effects
+ * @param final - The final value after effects
+ * @returns string[] - ['<type>: No effect'] if no effect, otherwise []
+ */
+export function formatNoEffectLog(type: string, hadEffect: boolean, base: number, final: number): string[] {
+  if (!hadEffect && base === final) {
+    return [`${type}: No effect`];
+  }
+  return [];
 } 

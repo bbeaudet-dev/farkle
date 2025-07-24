@@ -11,10 +11,13 @@ export class FlopShieldCharm extends BaseCharm {
     return 0;
   }
 
-  onFlop(context: CharmFlopContext): boolean {
+  onFlop(context: CharmFlopContext): { prevented: boolean, log: string } | boolean {
     if (this.canUse()) {
       this.use();
-      return true;
+      return {
+        prevented: true,
+        log: '🛡️ Flop Shield activated! Flop prevented (' + this.uses + ' uses left)'
+      };
     }
     return false;
   }

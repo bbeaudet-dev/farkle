@@ -148,7 +148,7 @@ class ReactGameInterface implements IGameInterface {
   }
 
   async displayGoodbye(): Promise<void> {
-    this.outputCallback('Thanks for playing Farkle!');
+    this.outputCallback('Thanks for playing Rollio!');
   }
 
   async displayInvalidInput(): Promise<void> {

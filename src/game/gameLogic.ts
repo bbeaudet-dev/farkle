@@ -1,9 +1,9 @@
 import { FARKLE_CONFIG } from './config';
-import { Die, DieValue, ScoringCombination, Charm } from './core/types';
+import { Die, DieValue, ScoringCombination, Charm, GameState } from './core/types';
 import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from './scoring';
 import { rollDice } from './scoring';
-import { validateDiceSelection } from './utils';
-import { getRandomInt } from './utils';
+import { validateDiceSelection } from './utils/effectUtils';
+import { getRandomInt } from './utils/effectUtils';
 
 interface ScoringContext {
   charms: Charm[];
@@ -128,12 +128,16 @@ export function processRerollAction(
 export function processFlop(
   roundPoints: number,
   consecutiveFlopCount: number,
-  gameScore: number
+  gameState: GameState
 ): RoundActionResult {
   const newConsecutiveFlopCount = consecutiveFlopCount + 1;
   const forfeitedPoints = roundPoints;
-  const penalty = newConsecutiveFlopCount >= 3 ? FARKLE_CONFIG.penalties.threeFlopPenalty : 0;
-  
+  const consecutiveFlopLimit = gameState.consecutiveFlopLimit ?? 3;
+  const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+
+  const penaltyApplied = newConsecutiveFlopCount >= consecutiveFlopLimit && !gameState.charmPreventingFlop;
+  const penaltyMessage = penaltyApplied ? `You flopped! Round points forfeited: ${forfeitedPoints}. Penalty applied.` : `You flopped! Round points forfeited: ${forfeitedPoints}.`;
+
   return {
     roundActive: false,
     newHand: [],
@@ -141,7 +145,7 @@ export function processFlop(
     flop: true,
     banked: false,
     pointsScored: 0,
-    message: `No scoring combinations, you flopped! Round points forfeited: ${forfeitedPoints}`
+    message: penaltyApplied ? `${penaltyMessage} New game score: ${gameState.gameScore - consecutiveFlopPenalty}` : penaltyMessage
   };
 }
 
@@ -163,7 +167,7 @@ export function checkWinCondition(gameScore: number): boolean {
  * Updates game state after a round
  */
 export function updateGameStateAfterRound(
-  gameState: any,
+  gameState: GameState,
   roundState: any,
   roundActionResult: RoundActionResult
 ): void {
@@ -174,8 +178,11 @@ export function updateGameStateAfterRound(
     gameState.consecutiveFlops++;
     // Add forfeited points to total
     gameState.forfeitedPointsTotal += roundState.roundPoints;
-    if (gameState.consecutiveFlops >= 3) {
-      gameState.gameScore -= FARKLE_CONFIG.penalties.threeFlopPenalty;
+    const consecutiveFlopLimit = gameState.consecutiveFlopLimit ?? 3;
+    const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+
+    if (gameState.consecutiveFlops >= consecutiveFlopLimit && !gameState.charmPreventingFlop) {
+      gameState.gameScore -= consecutiveFlopPenalty;
       // Do NOT reset consecutiveFlops here; only reset on bank
     }
   }

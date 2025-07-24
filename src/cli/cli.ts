@@ -4,7 +4,7 @@ import { CLIInterface } from './cliInterface';
 import { GameEngine } from '../game/gameEngine';
 
 /**
- * CLI entry point for Farkle game
+ * CLI entry point for Rollio game
  */
 async function main(): Promise<void> {
   const debugMode = process.argv.includes('--debug');

@@ -1,9 +1,9 @@
 /**
- * Debug utilities for the Farkle game
+ * Debug utilities for the Rollio game
  */
 
 // Debug mode control
-let DEBUG_MODE = false;
+let DEBUG_MODE = true;
 
 export function setDebugMode(enabled: boolean) {
   DEBUG_MODE = enabled;

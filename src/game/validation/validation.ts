@@ -1,5 +1,5 @@
 /**
- * Validation utilities for the Farkle game
+ * Validation utilities for the Rollio game
  * Uses debug utilities for detailed validation output
  */
 

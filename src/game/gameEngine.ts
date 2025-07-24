@@ -17,10 +17,14 @@ import { CHARMS } from './content/charms';
 import { CONSUMABLES } from './content/consumables';
 import { MATERIALS } from './content/materials';
 import { ScoringCombination } from './core/types';
-import { setDebugMode } from './utils/debug';
+import { setDebugMode, getDebugMode, debugLog } from './utils/debug';
 import { CharmManager } from './core/charmSystem';
 import { registerCharms } from './content/charms/index';
 import { applyConsumableEffect } from './consumableEffects';
+import { DisplayFormatter } from './display';
+import { getHighestPointsPartitioning } from './scoring';
+import { applyMaterialEffects } from './materialSystem';
+import { formatCharmEffectLogs } from './core/charmSystem';
 
 /**
  * Game engine that orchestrates the game using pure logic and interface
@@ -43,40 +47,52 @@ export class GameEngine {
    */
   async run(): Promise<void> {
     await this.interface.displayWelcome();
-    
-    // Prompt for dice set selection
-    const diceSetNames = ALL_DICE_SETS.map(ds => typeof ds === 'function' ? 'Chaos' : ds.name);
-    const diceSetIdx = await (this.interface as any).askForDiceSetSelection(diceSetNames);
-    const selectedSet = ALL_DICE_SETS[diceSetIdx];
-    const diceSetConfig = typeof selectedSet === 'function' ? selectedSet() : selectedSet;
-    await this.interface.log(`Selected Dice Set: ${diceSetConfig.name}`);
-    
+
+    // Prompt for new game first
     const start = await this.interface.askForNewGame();
     if (start.trim().toLowerCase() !== 'y') {
       await this.interface.displayGoodbye();
       return;
     }
 
-    // Phase 1c: Charm and Material Selection
-    await this.interface.log('\n🎭 GAME SETUP - CHARM & MATERIAL & CONSUMABLE SELECTION');
-    
+    // Prompt for game rules using interface method
+    const { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty } = await this.interface.askForGameRules();
+
+    // Prompt for dice set selection
+    const diceSetNames = ALL_DICE_SETS.map(ds => typeof ds === 'function' ? 'Chaos' : ds.name);
+    const diceSetIdx = await (this.interface as any).askForDiceSetSelection(diceSetNames);
+    const selectedSet = ALL_DICE_SETS[diceSetIdx];
+    const diceSetConfig = typeof selectedSet === 'function' ? selectedSet() : selectedSet;
+    await this.interface.log(`Selected Dice Set: ${diceSetConfig.name}`);
+
+    // Material Assignment (before charms)
+    const availableMaterials = MATERIALS.map(material => `${material.name} - ${material.description}`);
+    const assignedMaterialIndices = await this.interface.askForMaterialAssignment(diceSetConfig.dice.length, availableMaterials);
+
     // Charm Selection
     const availableCharms = CHARMS.map(charm => `${charm.name} (${charm.rarity}) - ${charm.description}`);
     const selectedCharmIndices = await this.interface.askForCharmSelection(availableCharms, 3);
-    
-    // Material Assignment
-    const availableMaterials = MATERIALS.map(material => `${material.name} - ${material.description}`);
-    const assignedMaterialIndices = await this.interface.askForMaterialAssignment(diceSetConfig.dice.length, availableMaterials);
-    
+
     // Determine consumable slots (default 2)
     const consumableSlots = diceSetConfig.consumableSlots ?? 2;
     // Consumable Selection
     const availableConsumables = CONSUMABLES.map(consumable => `${consumable.name} (${consumable.rarity}) - ${consumable.description}`);
     const selectedConsumableIndices = await this.interface.askForConsumableSelection(availableConsumables, consumableSlots);
-    
+
     // Create game state with selected charms, materials, and consumables
     let gameState = createInitialGameState(diceSetConfig);
-    
+    gameState.winCondition = winCondition;
+    gameState.consecutiveFlopLimit = consecutiveFlopLimit;
+    gameState.consecutiveFlopPenalty = penaltyEnabled ? consecutiveFlopPenalty : 0;
+    gameState.flopPenaltyEnabled = penaltyEnabled;
+
+    // Assign materials to dice
+    gameState.diceSet = gameState.diceSet.map((die, index) => ({
+      ...die,
+      material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType,
+      abbreviation: MATERIALS[assignedMaterialIndices[index]].abbreviation
+    }));
+
     // Add selected charms to game state and charm manager
     gameState.charms = selectedCharmIndices.map(index => {
       const charm = CHARMS[index];
@@ -84,23 +100,17 @@ export class GameEngine {
         ...charm,
         active: true
       };
-      
-      // Add to charm manager for runtime processing
       this.charmManager.addCharm(runtimeCharm);
-      
       return runtimeCharm;
     });
-    
-    // Assign materials to dice
-    gameState.diceSet = gameState.diceSet.map((die, index) => ({
-      ...die,
-      material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType
-    }));
-    
+
     // Add selected consumables to game state
     gameState.consumables = selectedConsumableIndices.map((index: number) => ({ ...CONSUMABLES[index] }));
-    
-    await this.interface.log('\n✅ Game setup complete! Starting your adventure...');
+
+    // Set starting money (already set in createInitialGameState)
+
+    // Display setup summary
+    await this.interface.log(DisplayFormatter.formatGameSetupSummary(gameState));
 
     while (gameState.isActive) {
       await this.playRound(gameState, diceSetConfig.name);
@@ -127,6 +137,7 @@ export class GameEngine {
     // At the start of the round, copy the current dice set into the diceHand
     let roundState = createInitialRoundState(gameState.roundNumber);
     roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, scored: false }));
+    roundState.crystalsScoredThisRound = 0;
     await this.interface.displayRoundStart(gameState.roundNumber);
     
     let roundActive = true;
@@ -135,7 +146,10 @@ export class GameEngine {
     roundState.diceHand = roundState.diceHand.map(rollSingleDie);
     const rollNumber = roundState.rollHistory.length + 1;
     const flopOnInitial = await this.displayRollAndCheckFlop(roundState, gameState, this.interface, rollNumber);
-    if (flopOnInitial) return;
+    if (flopOnInitial) {
+      gameState.roundNumber++;
+      return;
+    }
 
     while (roundActive) {
       // Prompt player to select dice to score
@@ -164,31 +178,70 @@ export class GameEngine {
           const points = partitioning.reduce((sum, c) => sum + c.points, 0);
           await this.interface.log(`  ${i + 1}. ${partitioning.map(c => c.type).join(', ')} (${points} points)`);
         }
-        
+        const bestPartitioningIndex = getHighestPointsPartitioning(scoringResult.allPartitionings);
         const choice = await this.interface.askForPartitioningChoice(scoringResult.allPartitionings.length);
-        const choiceIndex = parseInt(choice.trim(), 10) - 1;
-        
+        let choiceIndex: number;
+        if (choice.trim() === '' || choice.trim() === '1') {
+          choiceIndex = bestPartitioningIndex;
+          await this.interface.log(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
+        } else {
+          choiceIndex = parseInt(choice.trim(), 10) - 1;
+        }
         if (isNaN(choiceIndex) || choiceIndex < 0 || choiceIndex >= scoringResult.allPartitionings.length) {
           await this.interface.log('Invalid choice. Please try again.');
           continue;
         }
-        
         selectedPartitioning = scoringResult.allPartitionings[choiceIndex];
       }
       
-      // Apply charm effects to scoring
-      const basePoints = selectedPartitioning.reduce((sum, c) => sum + c.points, 0);
-      const charmContext = {
-        gameState,
-        roundState,
-        basePoints,
-        combinations: selectedPartitioning,
-        selectedIndices
-      };
-      const finalPoints = this.charmManager.applyCharmEffects(charmContext);
+      // Apply charm effects to scoring and collect logs
+      const charmResults: Array<{ name: string, effect: number, uses: number | undefined, logs?: string[] }> = [];
+      let modifiedPoints = selectedPartitioning.reduce((sum, c) => sum + c.points, 0);
+      // Use a public getter for charms
+      const charms = this.charmManager.getAllCharms();
+      for (const charm of charms) {
+        if (charm.canUse()) {
+          const effect = charm.onScoring({
+            gameState,
+            roundState,
+            basePoints: modifiedPoints,
+            combinations: selectedPartitioning,
+            selectedIndices
+          });
+          // Collect logs if available
+          let logs: string[] | undefined = undefined;
+          if (typeof (charm as any).getLogs === 'function') {
+            logs = (charm as any).getLogs();
+          }
+          charmResults.push({ name: charm.name, effect, uses: charm.uses, logs });
+          modifiedPoints += effect;
+        } else {
+          charmResults.push({ name: charm.name, effect: 0, uses: charm.uses });
+        }
+      }
+      const charmLogs = formatCharmEffectLogs(selectedPartitioning.reduce((sum, c) => sum + c.points, 0), charmResults, modifiedPoints);
+      for (const log of charmLogs) {
+        await this.interface.log(log);
+      }
+      // Calculate number of crystal dice scored in this action
+      const scoredCrystals = selectedIndices.filter(idx => {
+        const die = roundState.diceHand[idx];
+        return die && die.material === 'crystal';
+      }).length;
+      // Log material effects (crystal effect will use the PREVIOUS value)
+      const materialResult = applyMaterialEffects(roundState.diceHand, selectedIndices, modifiedPoints, gameState, roundState);
+      let finalPoints = materialResult.score;
+      if (materialResult.materialLogs && materialResult.materialLogs.length > 0) {
+        for (const log of materialResult.materialLogs) {
+          await this.interface.log(log);
+        }
+      }
+      // After logging, update the counter for next time
+      roundState.crystalsScoredThisRound = (roundState.crystalsScoredThisRound || 0) + scoredCrystals;
       
       await this.interface.displayScoringResult(selectedIndices, roundState.diceHand, selectedPartitioning, finalPoints);
       roundState.roundPoints += finalPoints;
+      roundState.roundPoints = Math.ceil(roundState.roundPoints);
       
       // Remove scored dice from diceHand
       const scoringActionResult = processDiceScoring(roundState.diceHand, selectedIndices, { valid: true, points: finalPoints, combinations: selectedPartitioning });
@@ -212,7 +265,7 @@ export class GameEngine {
         await this.interface.displayRoundPoints(roundState.roundPoints);
       }
       
-      // HOT DICE: If all dice scored, display message, reset hand, and prompt for bank/reroll
+      // HOT DICE: If all dice scored, display message and prompt for bank/reroll
       if (scoringActionResult.hotDice) {
         roundState.hotDiceCount++;
         gameState.globalHotDiceCounter++;
@@ -286,6 +339,8 @@ export class GameEngine {
     // End of round
     gameState.roundState = roundState;
     gameState.roundNumber++;
+    // Reset crystalsScoredThisRound after a bank or flop
+    roundState.crystalsScoredThisRound = 0;
     // Track last forfeited points for Forfeit Recovery
     if (roundState.forfeitedPoints > 0) {
       gameState.lastForfeitedPoints = roundState.forfeitedPoints;
@@ -304,20 +359,37 @@ export class GameEngine {
   // Helper: Display a roll and check for flop. Returns true if flop (round should end), false otherwise.
   private async displayRollAndCheckFlop(roundState: any, gameState: any, interfaceObj: GameInterface, rollNumber: number): Promise<boolean | 'flopPrevented'> {
     await interfaceObj.displayRoll(rollNumber, roundState.diceHand);
-    if (isFlop(roundState.diceHand)) {
+    
+    const isFlopResult = isFlop(roundState.diceHand);
+    if (getDebugMode()) {
+      debugLog(`Flop check result: ${isFlopResult}`);
+      debugLog(`Active charms: ${this.charmManager.getActiveCharms().map(c => c.name).join(', ')}`);
+    }
+    
+    if (isFlopResult) {
       // Try to prevent flop with charms
-      const flopPrevented = this.charmManager.tryPreventFlop({ gameState, roundState });
-      if (flopPrevented) {
+      const flopResult = this.charmManager.tryPreventFlop({ gameState, roundState });
+      if (getDebugMode()) {
+        debugLog(`Flop prevented by charms: ${flopResult.prevented}`);
+        if (flopResult.log) debugLog(flopResult.log);
+      }
+      if (flopResult.prevented) {
+        // Use emoji and correct format
+        const usesLeft = gameState.charms?.find((c: any) => c.name === 'Flop Shield')?.uses ?? '∞';
+        const shieldMsg = flopResult.log || `🛡️ Flop Shield activated! Flop prevented (${usesLeft} uses left)`;
+        await interfaceObj.log(shieldMsg);
+        // Instead of ending the round, return 'flopPrevented' so the main loop can prompt bank/reroll
         return 'flopPrevented';
       }
-      // Update state first
-      updateGameStateAfterRound(gameState, roundState, processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore));
-      // Now display the message using updated state
+      // Increment consecutiveFlops before displaying the message
+      gameState.consecutiveFlops = (gameState.consecutiveFlops || 0) + 1;
+      updateGameStateAfterRound(gameState, roundState, processFlop(roundState.roundPoints, gameState.consecutiveFlops - 1, gameState.gameScore));
       await interfaceObj.displayFlopMessage(
         roundState.roundPoints,
         gameState.consecutiveFlops,
         gameState.gameScore,
-        FARKLE_CONFIG.penalties.threeFlopPenalty
+        (gameState.consecutiveFlopPenalty ?? FARKLE_CONFIG.penalties.consecutiveFlopPenalty),
+        (gameState.consecutiveFlopLimit ?? FARKLE_CONFIG.penalties.consecutiveFlopLimit)
       );
       return true; // Flop occurred
     }
@@ -337,8 +409,8 @@ export class GameEngine {
 
   // Example for askForDiceSelection
   async askForDiceSelectionWithConsumables(gameState: any, roundState: any, dice: Die[]): Promise<string> {
-    return (this.interface as any).ask(
-      'Select dice values to score: ',
+    return (this.interface as any).askForDiceSelection(
+      dice,
       gameState.consumables,
       async (idx: number) => await this.useConsumable(idx, gameState, roundState)
     );

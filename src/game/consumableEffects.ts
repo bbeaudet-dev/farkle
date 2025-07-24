@@ -7,7 +7,7 @@ export async function applyConsumableEffect(idx: number, gameState: any, roundSt
   switch (consumable.id) {
     case 'moneyDoubler':
       gameState.money *= 2;
-      await gameInterface.log('💰 Money Doubler used! Your money has been doubled.');
+      await gameInterface.log(`💰 Money Doubler used! You now have $${gameState.money}.`);
       break;
     case 'extraDie': {
       // Add a new default die to the dice set

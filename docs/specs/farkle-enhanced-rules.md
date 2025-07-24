@@ -415,7 +415,7 @@ As a general rule, all addition effects should take place before any multiplicat
 ### Phase 1a.2: Scoring Effects System Integration
 
 - The scoring system is now architected to support advanced effects (Mirror, Shortcut, etc.), but these effects are NOT yet active in the game logic.
-- All standard Farkle scoring logic (triplets, pairs, four/five/six of a kind, singles, etc.) is restored and should work as before.
+- All standard Rollio scoring logic (triplets, pairs, four/five/six of a kind, singles, etc.) is restored and should work as before.
 - This phase is for verifying the system works with other features before enabling advanced effects.
 
 ### Phase 1b: Dice Set Configuration
@@ -461,39 +461,26 @@ As a general rule, all addition effects should take place before any multiplicat
 4. Implement Consumable Generator (item phase)
 5. **Integration Test**: Test complex charm interactions and order of operations
 
-### Phase 4a: Consumable Framework
+### Phase 4: Consumable Framework and Implementation
 
 1. Implement consumable system framework
 2. Add consumable usage system (can be used at any prompt)
 3. Implement slot management (slots can only increase, never decrease)
-4. **Integration Test**: Verify consumables can be used and slots managed
-
-### Phase 4b: Consumables Implementation
-
-1. Implement Money Doubler
-2. Implement Extra Die
-3. Implement Material Enchanter
-4. Implement Charm Giver
-5. Implement Slot Expander
-6. Implement Chisel
-7. Implement Pottery Wheel
-8. **Integration Test**: Test each consumable and verify effects
+4. Implement all core consumables (see spec)
+5. Add buy/sell value structure for consumables by rarity (for future shop features)
+6. **Integration Test**: Verify consumables can be used and slots managed
 
 ### Phase 5a: Dice Material Framework
 
 1. Implement dice material system framework
 2. Add material tracking to dice state
-3. Implement material effect calculation system
+3. Implement material effect calculation system (Crystal, Wooden, Golden, Volcano, Mirror, Rainbow, etc.)
 4. **Integration Test**: Verify materials are tracked and effects calculated
 
 ### Phase 5b: Dice Materials Implementation
 
-1. Implement Crystal Dice (with hot dice reset logic)
-2. Implement Wooden Dice
-3. Implement Golden Dice
-4. Implement Volcano Dice
-5. Implement Rainbow Dice (see advanced rules)
-6. **Integration Test**: Test each material effect and verify order of operations
+1. Implement all material effects in scoring (see spec)
+2. Add integration tests for each material effect
 
 ### Phase 5c: Material-Dependent Features & Revisit
 
@@ -501,6 +488,12 @@ As a general rule, all addition effects should take place before any multiplicat
 2. Implement new material-based features (Rainbow, Weighted Dice, Rabbit's Foot, Lucky Coin, etc.)
 3. Refactor and polish all material-related effects for consistency
 4. **Integration Test**: Test all material-dependent features and their interactions
+
+### Future Phases
+
+- Shop/Inventory System: Allow buying/selling of charms and consumables using the buy/sell value structure
+- Advanced UI/UX Improvements: Further polish CLI and web displays, add theming, feedback, and stats
+- Advanced Features: Additional dice sets, special rounds/events, achievements, leaderboards, etc.
 
 ### Phase 6: Final Integration & Balance
 
@@ -523,4 +516,32 @@ As a general rule, all addition effects should take place before any multiplicat
 - All order of operations and item phase are clearly defined
 - Integration testing occurs throughout development, not just at the end
 
-This spec provides the foundation for implementing these Balatro-inspired features while maintaining the core Farkle gameplay. All details from previous specs and user requests are included and clarified.
+This spec provides the foundation for implementing these Balatro-inspired features while maintaining the core Rollio gameplay. All details from previous specs and user requests are included and clarified.
+
+### Flop System and Penalty Logic (Updated)
+
+- **consecutiveFlopLimit**: The number of consecutive flops after which the penalty is applied (e.g., 4 means penalty applies on the 4th and subsequent consecutive flops).
+- **Flop Saver/Charm**: Prevents a flop (no increase to flop counter, no penalty, no warning/penalty message) and decrements its uses. If no uses remain, the flop proceeds as normal.
+- **Flop Messages:**
+  - For flops before the limit: Standard flop message, plus a warning showing the current consecutive flop count (e.g., “You have 2 consecutive flops!”).
+  - On (consecutiveFlopLimit - 1)th flop: Special warning, e.g., “Flopping again will result in a -1000 point penalty.”
+  - On consecutiveFlopLimit and beyond: Flop message plus penalty, e.g., “You flopped and forfeited x points, and incurred a -1000 point penalty! Bank any number of points to reset your flop count.”
+- **Banking points**: Resets the consecutive flop count to 0.
+- **Penalty**: Applied every time the player flops at or above the limit, unless prevented by a charm.
+- **Game Score**: Displayed immediately after a penalty is applied.
+
+### Charm and Consumable Buy/Sell Value Structure
+
+- Each charm and consumable has a buyValue and sellValue based on its rarity.
+- Example mapping:
+  - Charms:
+    - Legendary: buy $10, sell $5
+    - Rare: buy $8, sell $4
+    - Uncommon: buy $6, sell $3
+    - Common: buy $4, sell $2
+  - Consumables:
+    - Legendary: buy $5, sell $3
+    - Rare: buy $4, sell $2
+    - Uncommon: buy $3, sell $1
+    - Common: buy $2, sell $1
+- These values are for future shop features; buying/selling is not yet implemented.

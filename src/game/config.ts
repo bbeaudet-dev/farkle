@@ -3,8 +3,8 @@ export const FARKLE_CONFIG = {
   // numFaces: 6, // Removed for dice set config
   winCondition: 10000,
   cli: {
-    defaultDelay: 75,
-    messageDelay: 150,
+    defaultDelay: 25,
+    messageDelay: 100,
     noDelay: 0,
   },
   display: {
@@ -13,7 +13,7 @@ export const FARKLE_CONFIG = {
     showGameScore: true,
   },
   penalties: {
-    threeFlopPenalty: 1000,
-    consecutiveFlopWarning: 2,
+    consecutiveFlopPenalty: 1000, // Points lost per flop after limit
+    consecutiveFlopLimit: 3, // Number of consecutive flops before penalty applies
   },
 }; 

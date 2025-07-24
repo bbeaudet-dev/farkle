@@ -1,6 +1,6 @@
 import { GameState, RoundState, DiceSetConfig, Die, CombinationCounters } from './types';
 import { BASIC_DICE_SET } from '../content/diceSets';
-import { getRandomInt } from '../utils';
+import { getRandomInt } from '../utils/effectUtils';
 import { validateDiceSetConfig } from '../validation/diceSetValidation';
 
 // Define all possible scoring combination types

@@ -1,6 +1,7 @@
 import { FARKLE_CONFIG } from './config';
 import { Die, DieValue, ScoringCombination, Charm } from './core/types';
 import { debugLog, getDebugMode } from './utils/debug';
+import { applyMaterialEffects } from './materialSystem';
 
 // Define scoring combination types for type safety
 export type ScoringCombinationType = 
@@ -100,6 +101,18 @@ export function getAllPartitionings(
   return findAllValidPartitionings(values, selectedIndices, diceHand);
 }
 
+export function getHighestPointsPartitioning(partitionings: ScoringCombination[][]): number {
+  let maxPoints = -Infinity;
+  let maxIndex = 0;
+  for (let i = 0; i < partitionings.length; i++) {
+    const points = partitionings[i].reduce((sum, c) => sum + c.points, 0);
+    if (points > maxPoints) {
+      maxPoints = points;
+      maxIndex = i;
+    }
+  }
+  return maxIndex;
+}
 
 // Helper function to find all valid partitionings
 function findAllValidPartitionings(
@@ -316,21 +329,33 @@ function findAllPossibleCombinations(
     }
     
     // Four pairs (requires 8 dice)
-    if (subsetSize === 8 && counts.filter((c) => c === 2).length === 4) {
-      combinations.push({
-        type: 'fourPairs',
-        dice: subsetIndices,
-        points: getCombinationPoints('fourPairs'),
-      });
+    if (subsetSize === 8) {
+      // Count how many pairs can be formed (allowing multiple pairs from same value)
+      let pairCount = 0;
+      for (let i = 0; i < counts.length; i++) {
+        pairCount += Math.floor(counts[i] / 2);
+      }
+      if (pairCount === 4) {
+        combinations.push({
+          type: 'fourPairs',
+          dice: subsetIndices,
+          points: getCombinationPoints('fourPairs'),
+        });
+      }
     }
-    
     // Three pairs (requires 6 dice)
-    if (subsetSize === 6 && counts.filter((c) => c === 2).length === 3) {
-      combinations.push({
-        type: 'threePairs',
-        dice: subsetIndices,
-        points: getCombinationPoints('threePairs'),
-      });
+    if (subsetSize === 6) {
+      let pairCount = 0;
+      for (let i = 0; i < counts.length; i++) {
+        pairCount += Math.floor(counts[i] / 2);
+      }
+      if (pairCount === 3) {
+        combinations.push({
+          type: 'threePairs',
+          dice: subsetIndices,
+          points: getCombinationPoints('threePairs'),
+        });
+      }
     }
     
     // Straight (any 6 consecutive numbers)

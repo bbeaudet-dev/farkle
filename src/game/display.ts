@@ -56,9 +56,9 @@ export class DisplayFormatter {
     
     const stats = formatGameStats({
       roundsPlayed: gameState.roundNumber - 1,
-      totalRolls: gameState.rollCount,
-      hotDiceCount: gameState.hotDiceTotal,
-      forfeitedPoints: gameState.forfeitedPointsTotal,
+      totalRolls: gameState.rollCount || 0,
+      hotDiceCount: gameState.globalHotDiceCounter || 0,
+      forfeitedPoints: gameState.forfeitedPointsTotal || 0,
       gameScore: gameState.gameScore,
     });
     
@@ -68,7 +68,10 @@ export class DisplayFormatter {
     return lines;
   }
 
-  static formatHotDice(): string {
+  static formatHotDice(count?: number): string {
+    if (count && count > 1) {
+      return `Hot dice! ${count}x`;
+    }
     return `Hot dice!`;
   }
 

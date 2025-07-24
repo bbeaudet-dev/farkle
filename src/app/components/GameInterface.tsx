@@ -105,7 +105,7 @@ class ReactGameInterface implements IGameInterface {
     // No-op for now
   }
   async displayGameEnd(gameState: GameState, isWin: boolean): Promise<void> {
-    this.outputCallback(`🎉 Game Over! Final score: ${gameState.score}`);
+    this.outputCallback(`🎉 Game Over! Final score: ${gameState.gameScore}`);
   }
 
   async displayBankedPoints(points: number): Promise<void> {
@@ -135,6 +135,10 @@ class ReactGameInterface implements IGameInterface {
 
   async askForNextRound(): Promise<string> {
     return this.inputCallback(`Continue to next round? (y/n): `);
+  }
+
+  async askForPartitioningChoice(numPartitionings: number): Promise<string> {
+    return this.inputCallback(`Choose a partitioning (1-${numPartitionings}): `);
   }
 
   async displayWelcome(): Promise<void> {
@@ -212,7 +216,8 @@ export const GameInterface: React.FC = () => {
     };
 
     const gameInterface = new ReactGameInterface(appendToOutput, handleInput, updateGameStateCallback);
-    gameEngineRef.current = new GameEngine(gameInterface);
+    const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
+    gameEngineRef.current = new GameEngine(gameInterface, debugMode);
     
     setGameState(prev => ({ ...prev, isActive: true }));
     

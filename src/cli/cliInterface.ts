@@ -37,15 +37,19 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForNextRound(): Promise<string> {
-    return this.ask(DisplayFormatter.formatNextRoundPrompt());
+    return this.ask('Play another round? (y/n): ');
+  }
+
+  async askForPartitioningChoice(numPartitionings: number): Promise<string> {
+    return this.ask(`Choose a partitioning (1-${numPartitionings}): `);
   }
 
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
-    let prompt = 'Select a dice set:\n';
+    let prompt = 'Available Dice Sets:\n';
     diceSetNames.forEach((name, i) => {
       prompt += `  ${i + 1}. ${name}\n`;
     });
-    prompt += 'Enter the number of your choice: ';
+    prompt += 'Select a dice set: ';
     while (true) {
       const input = await this.ask(prompt);
       const idx = parseInt(input.trim(), 10) - 1;
@@ -94,8 +98,8 @@ export class CLIInterface implements GameInterface {
     }
   }
 
-  async displayHotDice(): Promise<void> {
-    await this.log(DisplayFormatter.formatHotDice(), FARKLE_CONFIG.cli.messageDelay);
+  async displayHotDice(count?: number): Promise<void> {
+    await this.log(DisplayFormatter.formatHotDice(count), FARKLE_CONFIG.cli.messageDelay);
   }
 
   async displayBankedPoints(points: number): Promise<void> {

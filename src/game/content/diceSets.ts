@@ -67,8 +67,8 @@ export const LUXURY_SET: DiceSetConfig = {
     dice: [
         { id: "d1", sides: 6, allowedValues: [1,2,3,4,5,6], material: "crystal" },
         { id: "d2", sides: 6, allowedValues: [1,2,3,4,5,6], material: "crystal" },
-        { id: "d3", sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: "crystal" },
-        { id: "d3", sides: 6, allowedValues: [1,2,3,4,5,6], material: "crystal" }
+        { id: "d3", sides: 6, allowedValues: [1,2,3,4,5,6], material: "crystal" },
+        { id: "d4", sides: 6, allowedValues: [1,2,3,4,5,6], material: "crystal" }
     ],
     startingMoney: 15,
     charmSlots: 3,

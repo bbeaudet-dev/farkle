@@ -20,7 +20,7 @@ export interface DiceSetConfig {
 }
 
 // SCORING TYPES
-import { ScoringCombinationType } from '../content/scoringCombinations';
+import { ScoringCombinationType } from '../scoring';
 export type CombinationCounters = Record<ScoringCombinationType, number>;
 
 export interface ScoringCombination {
@@ -76,7 +76,7 @@ export interface RoundState {
 }
 
 export interface GameState {
-  score: number;
+  gameScore: number;
   roundNumber: number;
   rollCount: number;
   diceSet: Die[];
@@ -90,7 +90,8 @@ export interface GameState {
   combinationCounters: CombinationCounters;
   isActive: boolean;
   endReason?: GameEndReason;
+  forfeitedPointsTotal: number; // Track total forfeited points across all rounds
 }
 
 // ENDGAME TYPES
-export type GameEndReason = 'win' | 'quit'; 
+export type GameEndReason = 'win' | 'quit';

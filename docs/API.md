@@ -76,8 +76,6 @@ The main configuration object that controls all game parameters:
 
 ```typescript
 export const FARKLE_CONFIG = {
-  numDice: 6, // Number of dice in game
-  numFaces: 6, // Number of faces per die
   winCondition: 10000, // Points needed to win
 
   cli: {
@@ -97,18 +95,8 @@ export const FARKLE_CONFIG = {
     consecutiveFlopWarning: 2, // Warning after N flops
   },
 
-  scoring: {
-    singleOne: 100, // Points for single 1
-    singleFive: 50, // Points for single 5
-    threeOfAKind: [1000, 200, 300, 400, 500, 600], // Points by face value
-    straight: 2000, // Points for straight
-    threePairs: 1250, // Points for three pairs
-    twoTriplets: 2500, // Points for two triplets
-    fourOfAKindMultiplier: 2, // Multiplier for 4 of a kind
-    fiveOfAKindMultiplier: 3, // Multiplier for 5 of a kind
-    sixOfAKindMultiplier: 4, // Multiplier for 6 of a kind
-    sixOnes: 5000, // Special points for six 1s
-  },
+  // Scoring is now handled dynamically in scoring.ts
+  // See getCombinationPoints() function for current scoring rules
 };
 ```
 
@@ -244,39 +232,47 @@ async function logWithDelay(
 
 ### Adding New Scoring Rules
 
-1. **Update Configuration**:
+1. **Update Scoring Types**:
 
    ```typescript
-   // In config.ts
-   scoring: {
-     // ... existing rules
-     newRule: 500, // Add new scoring value
-   }
+   // In scoring.ts
+   export type ScoringCombinationType = "existingType" | "newRule";
    ```
 
-2. **Update Types**:
+2. **Add Base Points** (if not face-value dependent):
 
    ```typescript
-   // In types.ts
-   enum ScoringCombinationType {
-     // ... existing types
-     NewRule = "new_rule",
-   }
+   // In scoring.ts
+   const BASE_POINTS = {
+     // ... existing rules
+     newRule: 500, // Add new scoring value
+   } as const;
    ```
 
 3. **Update Scoring Logic**:
+
    ```typescript
    // In scoring.ts
-   function getScoringCombinations(dice: number[]): ScoringCombination[] {
+   function getScoringCombinations(diceHand: Die[], selectedIndices: number[], context: ScoringContext): ScoringCombination[] {
      // ... existing logic
      // Add detection for new rule
      if (/* new rule condition */) {
        combinations.push({
-         type: ScoringCombinationType.NewRule,
-         dice: /* dice involved */,
-         points: FARKLE_CONFIG.scoring.newRule,
+         type: 'newRule',
+         dice: selectedIndices,
+         points: getCombinationPoints('newRule'),
        });
      }
+   }
+   ```
+
+4. **Update Detection Logic**:
+   ```typescript
+   // In scoring.ts
+   export function hasAnyScoringCombination(diceHand: Die[]): boolean {
+     // ... existing logic
+     // Add detection for new rule
+     if (/* new rule condition */) return true;
    }
    ```
 

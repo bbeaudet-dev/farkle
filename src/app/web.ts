@@ -10,8 +10,9 @@ import { GameEngine } from '../game/gameEngine';
 async function main(): Promise<void> {
   console.log('Starting Farkle Web Interface...');
   
+  const debugMode = process.argv.includes('--debug');
   const webInterface = new WebInterface();
-  const gameEngine = new GameEngine(webInterface);
+  const gameEngine = new GameEngine(webInterface, debugMode);
   
   try {
     await gameEngine.run();

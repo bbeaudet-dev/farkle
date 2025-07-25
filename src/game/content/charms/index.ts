@@ -9,6 +9,9 @@ import { ConsumableGeneratorCharm } from './ConsumableGeneratorCharm';
 import { OddCollectorCharm } from './OddCollectorCharm';
 import { EvenPerfectionCharm } from './EvenPerfectionCharm';
 import { MoneyMagnetCharm } from './MoneyMagnetCharm';
+import { SizeMattersCharm } from './SizeMattersCharm';
+import { RabbitsFootCharm } from './RabbitsFootCharm';
+import { WeightedDiceCharm } from './WeightedDiceCharm';
 
 /**
  * Register all charm implementations with the registry
@@ -26,4 +29,7 @@ export function registerCharms(): void {
   registry.register(OddCollectorCharm, 'oddCollector');
   registry.register(EvenPerfectionCharm, 'evenPerfection');
   registry.register(MoneyMagnetCharm, 'moneyMagnet');
+  registry.register(SizeMattersCharm, 'sizeMatters');
+  registry.register(RabbitsFootCharm, 'rabbitsFoot');
+  registry.register(WeightedDiceCharm, 'weightedDice');
 } 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameEngine } from '../../game/gameEngine';
+import { GameEngine } from '../../game/engine/GameEngine';
 import { GameInterface as IGameInterface } from '../../game/interfaces';
 import {
   GameStatus,
@@ -9,7 +9,7 @@ import {
   GameButton
 } from './ui';
 import { GameState, Die, ScoringCombination } from '../../game/core/types';
-import { GAME_NAME_EMOJI } from '../../game/nameConfig';
+import { GAME_META } from '../../game/nameConfig';
 
 // React implementation of the GameInterface
 class ReactGameInterface implements IGameInterface {
@@ -142,6 +142,26 @@ class ReactGameInterface implements IGameInterface {
     return this.inputCallback(`Choose a partitioning (1-${numPartitionings}): `);
   }
 
+  async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
+    return { winCondition: 10000, penaltyEnabled: true, consecutiveFlopLimit: 3, consecutiveFlopPenalty: 1000 };
+  }
+
+  async askForCharmSelection(availableCharms: string[], numToSelect: number): Promise<number[]> {
+    return Array.from({ length: numToSelect }, (_, i) => i);
+  }
+
+  async askForConsumableSelection(availableConsumables: string[], numToSelect: number): Promise<number[]> {
+    return Array.from({ length: numToSelect }, (_, i) => i);
+  }
+
+  async askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]> {
+    return Array.from({ length: diceCount }, () => 0);
+  }
+
+  async askForDieSelection(dice: Die[], prompt: string): Promise<number> {
+    return 0; // Default to first die
+  }
+
   async displayWelcome(): Promise<void> {
     // Welcome message is already shown in initial state
     this.hasShownWelcome = true;
@@ -171,7 +191,7 @@ class ReactGameInterface implements IGameInterface {
 }
 
 export const GameInterface: React.FC = () => {
-  const [gameOutput, setGameOutput] = useState(`${GAME_NAME_EMOJI}\n\nClick \"Start New Game\" to begin.`);
+  const [gameOutput, setGameOutput] = useState(`${GAME_META.GAME_NAME_EMOJI}\n\nClick \"Start New Game\" to begin.`);
   const [inputValue, setInputValue] = useState('');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -248,7 +268,7 @@ export const GameInterface: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-4xl text-center mb-8 text-green-500">{GAME_NAME_EMOJI}</h1>
+      <h1 className="text-4xl text-center mb-8 text-green-500">{GAME_META.GAME_NAME_EMOJI}</h1>
       
       <GameStatus
         gameScore={gameState.gameScore}

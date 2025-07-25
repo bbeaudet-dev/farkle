@@ -1,4 +1,5 @@
 import { CHARMS } from './content/charms';
+import { getNextDieSize, getPreviousDieSize, getDieSizeDescription, DIE_SIZE_SEQUENCE } from './utils/dieSizeUtils';
 
 export async function applyConsumableEffect(idx: number, gameState: any, roundState: any, gameInterface: any, charmManager: any): Promise<void> {
   const consumable = gameState.consumables[idx];
@@ -22,10 +23,41 @@ export async function applyConsumableEffect(idx: number, gameState: any, roundSt
       await gameInterface.log('🎲 Extra Die added! You will have an extra die next round.');
       break;
     }
-    case 'materialEnchanter':
-      // TODO (Phase 5): Implement material change logic once material system is complete
-      await gameInterface.log('🔮 Material Enchanter effect not yet implemented. (Requires material system)');
+    case 'materialEnchanter': {
+      // Find all plastic dice
+      const plasticDice = gameState.diceSet
+        .map((die: any, idx: number) => ({ die, idx }))
+        .filter(({ die }: { die: any }) => die.material === 'plastic');
+      if (plasticDice.length === 0) {
+        await gameInterface.log('🔮 Material Enchanter: No plastic dice available to enchant!');
+        shouldRemove = false;
+        break;
+      }
+      
+      // Check for Weighted Dice charm
+      let baseProbability = 0.5; // 50% chance
+      if (charmManager && typeof charmManager.hasCharm === 'function' && charmManager.hasCharm('weightedDice')) {
+        baseProbability = Math.min(baseProbability * 2, 1.0); // 100% chance with Weighted Dice
+      }
+      
+      // Check if enchantment succeeds
+      if (Math.random() >= baseProbability) {
+        await gameInterface.log('🔮 Material Enchanter: The enchantment failed!');
+        shouldRemove = false;
+        break;
+      }
+      
+      // Pick a random plastic die
+      const chosen = plasticDice[Math.floor(Math.random() * plasticDice.length)];
+      // Pick a random non-plastic material
+      const MATERIALS = require('./content/materials').MATERIALS;
+      const nonPlasticMaterials = MATERIALS.filter((m: any) => m.id !== 'plastic');
+      const newMaterial = nonPlasticMaterials[Math.floor(Math.random() * nonPlasticMaterials.length)];
+      chosen.die.material = newMaterial.id;
+      chosen.die.abbreviation = newMaterial.abbreviation;
+      await gameInterface.log(`🔮 Material Enchanter: Die ${chosen.idx + 1} is now ${newMaterial.name}!`);
       break;
+    }
     case 'charmGiver': {
       const maxCharms = gameState.charmSlots;
       if (gameState.charms.length >= maxCharms) {
@@ -52,20 +84,101 @@ export async function applyConsumableEffect(idx: number, gameState: any, roundSt
       gameState.charmSlots = (gameState.charmSlots || 3) + 1;
       await gameInterface.log('🧳 Slot Expander used! You now have an extra charm slot.');
       break;
-    case 'chisel':
-      // TODO (Phase 5): Implement downgrade die logic once material system is complete
-      await gameInterface.log('🪓 Chisel effect not yet implemented. (Requires material system)');
+    case 'chisel': {
+      // Let user select a die to reduce
+      const selectedDieIndex = await gameInterface.askForDieSelection(
+        gameState.diceSet,
+        `🪓 Chisel: Select a die to reduce (Die sequence: ${DIE_SIZE_SEQUENCE.join(', ')}):`
+      );
+      const selectedDie = gameState.diceSet[selectedDieIndex];
+      const newSize = getPreviousDieSize(selectedDie.sides);
+      
+      if (newSize === null) {
+        await gameInterface.log(`🪓 Chisel: Cannot reduce die ${selectedDieIndex + 1} - it's already at minimum size (${selectedDie.sides}-sided).`);
+        shouldRemove = false;
+        break;
+      }
+      
+      const oldSize = selectedDie.sides;
+      selectedDie.sides = newSize;
+      selectedDie.allowedValues = [1, 2, 3, 4, 5, 6]; // Keep same values for simplicity
+      
+      await gameInterface.log(`🪓 Chisel: Die ${selectedDieIndex + 1} ${getDieSizeDescription(oldSize, newSize)}!`);
       break;
-    case 'potteryWheel':
-      // TODO (Phase 5): Implement upgrade die logic once material system is complete
-      await gameInterface.log('🧱 Pottery Wheel effect not yet implemented. (Requires material system)');
+    }
+    case 'potteryWheel': {
+      // Let user select a die to enlarge
+      const selectedDieIndex = await gameInterface.askForDieSelection(
+        gameState.diceSet,
+        `🧱 Pottery Wheel: Select a die to enlarge (Die sequence: ${DIE_SIZE_SEQUENCE.join(', ')}):`
+      );
+      const selectedDie = gameState.diceSet[selectedDieIndex];
+      const newSize = getNextDieSize(selectedDie.sides);
+      
+      if (newSize === null) {
+        await gameInterface.log(`🧱 Pottery Wheel: Cannot enlarge die ${selectedDieIndex + 1} - it's already at maximum size (${selectedDie.sides}-sided).`);
+        shouldRemove = false;
+        break;
+      }
+      
+      const oldSize = selectedDie.sides;
+      selectedDie.sides = newSize;
+      selectedDie.allowedValues = [1, 2, 3, 4, 5, 6]; // Keep same values for simplicity
+      
+      await gameInterface.log(`🧱 Pottery Wheel: Die ${selectedDieIndex + 1} ${getDieSizeDescription(oldSize, newSize)}!`);
       break;
-    case 'forfeitRecovery':
+    }
+    case 'forfeitRecovery': {
       const lastForfeit = gameState.lastForfeitedPoints || 0;
       const recovered = Math.floor(lastForfeit * 0.5);
-      gameState.roundState.roundPoints += recovered;
-      await gameInterface.log(`🩹 Forfeit Recovery used! Recovered ${recovered} points.`);
+      if (recovered > 0) {
+        gameState.gameScore += recovered;
+        await gameInterface.log(`🩹 Forfeit Recovery used! Recovered ${recovered} points. New game score: ${gameState.gameScore}.`);
+      } else {
+        await gameInterface.log('🩹 Forfeit Recovery used, but there were no forfeited points to recover.');
+        shouldRemove = false;
+      }
       break;
+    }
+    case 'luckyToken': {
+      // Check for Weighted Dice charm
+      let weighted = false;
+      if (charmManager && typeof charmManager.hasCharm === 'function') {
+        weighted = charmManager.hasCharm('weightedDice');
+      }
+      // Three possible effects
+      const effects = ['doublePoints', 'extraReroll', 'instantBank'];
+      let probabilities = [1/3, 1/3, 1/3];
+      if (weighted) {
+        // Double each probability, cap at 1.0
+        probabilities = probabilities.map(p => Math.min(p * 2, 1.0));
+      }
+      // Normalize if any probability > 1.0 (shouldn't happen with 3 effects)
+      const total = probabilities.reduce((a, b) => a + b, 0);
+      probabilities = probabilities.map(p => p / total);
+      // Pick effect
+      let rand = Math.random();
+      let acc = 0;
+      let chosenEffect = effects[0];
+      for (let i = 0; i < effects.length; i++) {
+        acc += probabilities[i];
+        if (rand < acc) {
+          chosenEffect = effects[i];
+          break;
+        }
+      }
+      if (chosenEffect === 'doublePoints') {
+        roundState.roundPoints *= 2;
+        await gameInterface.log('🍀 Lucky Token: Your round points have been doubled!');
+      } else if (chosenEffect === 'extraReroll') {
+        roundState.extraRerolls = (roundState.extraRerolls || 0) + 1;
+        await gameInterface.log('🍀 Lucky Token: You gained an extra reroll this round!');
+      } else if (chosenEffect === 'instantBank') {
+        roundState.instantBank = true;
+        await gameInterface.log('🍀 Lucky Token: Your points will be instantly banked!');
+      }
+      break;
+    }
     default:
       await gameInterface.log('Unknown consumable effect.');
   }

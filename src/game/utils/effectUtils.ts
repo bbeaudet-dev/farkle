@@ -1,4 +1,4 @@
-import { FARKLE_CONFIG } from '../config';
+import { ROLLIO_CONFIG } from '../config';
 import { DieValue } from '../core/types';
 
 /**

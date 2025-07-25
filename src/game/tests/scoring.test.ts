@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getScoringCombinations, hasAnyScoringCombination, countDice } from '../scoring';
-import { validateDiceSelection } from '../utils';
-import { validateDiceSelectionAndScore } from '../gameLogic';
+import { getScoringCombinations, hasAnyScoringCombination, countDice } from '../logic/scoring';
+import { validateDiceSelection } from '../utils/effectUtils';
+import { validateDiceSelectionAndScore } from '../logic/gameLogic';
 import { Die } from '../core/types';
 
 // Helper function to create test dice

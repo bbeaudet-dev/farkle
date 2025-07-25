@@ -60,6 +60,14 @@ export class WebInterface implements GameInterface {
     return Array.from({ length: diceCount }, () => 0);
   }
 
+  async askForDieSelection(dice: Die[], prompt: string): Promise<number> {
+    console.log(`[INPUT] ${prompt}`);
+    console.log('Available dice:', dice.map((die, i) => `Die ${i + 1} (${die.sides}-sided, ${die.material})`));
+    // In a real implementation, this would show a selection UI
+    // For now, return the first die
+    return 0;
+  }
+
   // Display methods
   async log(message: string, delayBefore: number = 0, delayAfter: number = 0): Promise<void> {
     if (delayBefore > 0) await this.sleep(delayBefore);

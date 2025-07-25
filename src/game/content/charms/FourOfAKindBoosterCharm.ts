@@ -2,18 +2,19 @@ import { BaseCharm, CharmScoringContext } from '../../core/charmSystem';
 
 export class FourOfAKindBoosterCharm extends BaseCharm {
   onScoring(context: CharmScoringContext): number {
-    // Double the points for any four-of-a-kind or higher
-    let bonus = 0;
-    for (const combo of context.combinations) {
-      if (
-        combo.type === 'fourOfAKind' ||
-        combo.type === 'fiveOfAKind' ||
-        combo.type === 'sixOfAKind' ||
-        combo.type === 'sevenOfAKind'
-      ) {
-        bonus += combo.points; // Add the same amount again (double)
+    // Find all dice values in the selected dice
+    const valueCounts: Record<number, number> = {};
+    for (const idx of context.selectedIndices) {
+      const die = context.roundState.diceHand[idx];
+      if (die && die.rolledValue !== undefined) {
+        valueCounts[die.rolledValue] = (valueCounts[die.rolledValue] || 0) + 1;
       }
     }
-    return bonus;
+    // If any value appears 4 or more times, double the total points for this roll
+    const hasFourOrMore = Object.values(valueCounts).some(count => count >= 4);
+    if (hasFourOrMore) {
+      return context.basePoints; // Add the same amount again (double)
+    }
+    return 0;
   }
 } 

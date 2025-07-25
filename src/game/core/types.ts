@@ -28,7 +28,7 @@ export interface DiceSetConfig {
 }
 
 // SCORING TYPES
-import { ScoringCombinationType } from '../scoring';
+import { ScoringCombinationType } from '../logic/scoring';
 export type CombinationCounters = Record<ScoringCombinationType, number>;
 
 export interface ScoringCombination {

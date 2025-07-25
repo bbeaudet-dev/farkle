@@ -1,9 +1,9 @@
-import { FARKLE_CONFIG } from './config';
-import { Die, DieValue, ScoringCombination, Charm, GameState } from './core/types';
-import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from './scoring';
-import { rollDice } from './scoring';
-import { validateDiceSelection } from './utils/effectUtils';
-import { getRandomInt } from './utils/effectUtils';
+import { ROLLIO_CONFIG } from '../config';
+import { Die, DieValue, ScoringCombination, Charm, GameState } from '../core/types';
+import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from '../logic/scoring';
+import { rollDice } from '../logic/scoring';
+import { validateDiceSelection } from '../utils/effectUtils';
+import { getRandomInt } from '../utils/effectUtils';
 
 interface ScoringContext {
   charms: Charm[];
@@ -133,7 +133,7 @@ export function processFlop(
   const newConsecutiveFlopCount = consecutiveFlopCount + 1;
   const forfeitedPoints = roundPoints;
   const consecutiveFlopLimit = gameState.consecutiveFlopLimit ?? 3;
-  const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+  const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
 
   const penaltyApplied = newConsecutiveFlopCount >= consecutiveFlopLimit && !gameState.charmPreventingFlop;
   const penaltyMessage = penaltyApplied ? `You flopped! Round points forfeited: ${forfeitedPoints}. Penalty applied.` : `You flopped! Round points forfeited: ${forfeitedPoints}.`;
@@ -160,7 +160,7 @@ export function calculateDiceToReroll(selectedIndices: number[], diceLength: num
  * Checks if game has reached win condition
  */
 export function checkWinCondition(gameScore: number): boolean {
-  return gameScore >= FARKLE_CONFIG.winCondition;
+  return gameScore >= ROLLIO_CONFIG.winCondition;
 }
 
 /**
@@ -178,8 +178,10 @@ export function updateGameStateAfterRound(
     gameState.consecutiveFlops++;
     // Add forfeited points to total
     gameState.forfeitedPointsTotal += roundState.roundPoints;
+    // Set forfeitedPoints for Forfeit Recovery
+    roundState.forfeitedPoints = roundState.roundPoints;
     const consecutiveFlopLimit = gameState.consecutiveFlopLimit ?? 3;
-    const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+    const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
 
     if (gameState.consecutiveFlops >= consecutiveFlopLimit && !gameState.charmPreventingFlop) {
       gameState.gameScore -= consecutiveFlopPenalty;

@@ -1,5 +1,5 @@
 import readline from 'readline';
-import { FARKLE_CONFIG } from '../game/config';
+import { ROLLIO_CONFIG } from '../game/config';
 import { DieValue, ScoringCombination, GameState, Die } from '../game/core/types';
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
@@ -17,8 +17,20 @@ export class CLIInterface implements GameInterface {
     });
   }
 
+  // Menu at startup
+  async showMainMenu(): Promise<'default' | 'custom'> {
+    await this.log('\n(s) Start New Game');
+    await this.log('(c) Custom Game');
+    while (true) {
+      const input = (await this.ask('Select an option: ', 's')).trim().toLowerCase();
+      if (input === 's') return 'default';
+      if (input === 'c') return 'custom';
+      await this.log('Invalid input. Please enter "s" or "c".');
+    }
+  }
+
   // Input methods
-  async ask(question: string, defaultValue?: string, options?: { consumables?: any[], useCallback?: (idx: number) => Promise<void> }): Promise<string> {
+  async ask(question: string, defaultValue?: string, options?: { consumables?: any[], useCallback?: (idx: number) => Promise<void>, allowInventory?: boolean }): Promise<string> {
     while (true) {
       const inputRaw = await new Promise<string>((resolve) => {
         this.rl.question(question, resolve);
@@ -27,8 +39,17 @@ export class CLIInterface implements GameInterface {
       if (input.trim() === '' && defaultValue !== undefined) {
         return String(defaultValue);
       }
-      if (options && input.trim().toLowerCase() === 'use' && options.consumables && options.useCallback) {
-        await this.promptAndUseConsumable(options.consumables, options.useCallback);
+      if (options && input.trim().toLowerCase() === 'i') {
+        const consumablesArr = options.consumables ?? [];
+        if (options.allowInventory) {
+          if (options.useCallback) {
+            await this.promptAndUseConsumable(consumablesArr, options.useCallback);
+          } else {
+            await this.log('No inventory action available at this prompt.');
+          }
+        } else {
+          await this.log('Inventory cannot be used at this prompt.');
+        }
         continue;
       }
       return input;
@@ -55,8 +76,8 @@ export class CLIInterface implements GameInterface {
 
   async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>): Promise<string> {
     while (true) {
-      const input = await this.ask(DisplayFormatter.formatDiceSelectionPrompt(), undefined, { consumables, useCallback });
-      if (input.trim().toLowerCase() === 'use' && consumables && useCallback) {
+      const input = await this.ask(DisplayFormatter.formatDiceSelectionPrompt(), undefined, { consumables, useCallback, allowInventory: true });
+      if (input.trim().toLowerCase() === 'i' && consumables && useCallback) {
         await this.promptAndUseConsumable(consumables, useCallback);
         continue;
       }
@@ -65,23 +86,27 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
-    return this.ask(DisplayFormatter.formatBankOrRerollPrompt(diceToReroll));
-  }
-
-  async askForNewGame(): Promise<string> {
-    return this.ask(DisplayFormatter.formatNewGamePrompt(), 'y');
+    // Do not allow inventory use at this prompt
+    while (true) {
+      const input = await this.ask(DisplayFormatter.formatBankOrRerollPrompt(diceToReroll), undefined, { allowInventory: false });
+      if (input.trim().toLowerCase() === 'i') {
+        await this.log('Inventory cannot be used at this prompt.');
+        continue;
+      }
+      return input;
+    }
   }
 
   async askForNextRound(gameState?: any, roundState?: any, useCallback?: (idx: number) => Promise<void>): Promise<string> {
     while (true) {
-      const input = await this.ask('Play another round? (y/n): ', gameState?.consumables, { consumables: gameState?.consumables, useCallback });
-      if (input.trim().toLowerCase() === 'use') {
+      const input = await this.ask('Play another round? (y/n): ', gameState?.consumables, { consumables: gameState?.consumables, useCallback, allowInventory: true });
+      if (input.trim().toLowerCase() === 'i') {
         continue;
       }
       if (input.trim().toLowerCase() === 'y' || input.trim().toLowerCase() === 'n') {
         return input;
       }
-      await this.log('Invalid input. Please enter y, n, or use a consumable.');
+      await this.log('Invalid input. Please enter y, n, or i for inventory.');
     }
   }
 
@@ -98,20 +123,37 @@ export class CLIInterface implements GameInterface {
     });
     
     const assignedIndices: number[] = [];
+    
     for (let i = 0; i < diceCount; i++) {
-      while (true) {
-        const input = await this.ask(`Assign material to die ${i + 1}: `, '1');
-        const idx = parseInt(input.trim(), 10) - 1;
-        if (!isNaN(idx) && idx >= 0 && idx < availableMaterials.length) {
-          assignedIndices.push(idx);
-          await this.log(`Die ${i + 1}: ${availableMaterials[idx]}`);
-          break;
-        }
-        await this.log('Invalid selection. Please enter a valid number.');
+      const choice = await this.ask(`Choose material for die ${i + 1} (1-${availableMaterials.length}): `, '1');
+      const idx = parseInt(choice.trim(), 10) - 1;
+      if (idx >= 0 && idx < availableMaterials.length) {
+        assignedIndices.push(idx);
+      } else {
+        assignedIndices.push(0); // Default to first material
       }
     }
     
     return assignedIndices;
+  }
+
+  async askForDieSelection(dice: Die[], prompt: string): Promise<number> {
+    await this.log(`\n${prompt}`);
+    await this.log('Available dice:');
+    
+    dice.forEach((die, i) => {
+      const materialName = die.material.charAt(0).toUpperCase() + die.material.slice(1);
+      console.log(`  ${i + 1}. Die ${i + 1} (${die.sides}-sided, ${materialName})`);
+    });
+    
+    while (true) {
+      const choice = await this.ask(`Select a die (1-${dice.length}): `, '1');
+      const idx = parseInt(choice.trim(), 10) - 1;
+      if (idx >= 0 && idx < dice.length) {
+        return idx;
+      }
+      await this.log(`Invalid selection. Please choose 1-${dice.length}.`);
+    }
   }
 
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
@@ -183,26 +225,26 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
-    const FARKLE_CONFIG = require('../game/config').FARKLE_CONFIG;
-    const winConditionInput = await this.ask('Set win condition (default 10000): ', FARKLE_CONFIG.winCondition.toString());
-    const winCondition = winConditionInput.trim() === '' ? FARKLE_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || FARKLE_CONFIG.winCondition;
+    const ROLLIO_CONFIG = require('../game/config').ROLLIO_CONFIG;
+    const winConditionInput = await this.ask('Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
+    const winCondition = winConditionInput.trim() === '' ? ROLLIO_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || ROLLIO_CONFIG.winCondition;
 
     const penaltyEnabledInput = await this.ask('Enable flop penalty? (y/n, default y): ', 'y');
     const penaltyEnabled = penaltyEnabledInput.trim() === '' ? true : penaltyEnabledInput.trim().toLowerCase() === 'y';
 
-    let consecutiveFlopLimit = FARKLE_CONFIG.penalties.consecutiveFlopLimit;
-    let consecutiveFlopPenalty = FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+    let consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
+    let consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
     if (penaltyEnabled) {
-      const flopLimitInput = await this.ask(`Set consecutive flop limit before penalty (default ${FARKLE_CONFIG.penalties.consecutiveFlopLimit}): `, FARKLE_CONFIG.penalties.consecutiveFlopLimit.toString());
-      consecutiveFlopLimit = flopLimitInput.trim() === '' ? FARKLE_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || FARKLE_CONFIG.penalties.consecutiveFlopLimit;
-      const flopPenaltyInput = await this.ask(`Set penalty amount (default ${FARKLE_CONFIG.penalties.consecutiveFlopPenalty}): `, FARKLE_CONFIG.penalties.consecutiveFlopPenalty.toString());
-      consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? FARKLE_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || FARKLE_CONFIG.penalties.consecutiveFlopPenalty;
+      const flopLimitInput = await this.ask(`Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
+      consecutiveFlopLimit = flopLimitInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
+      const flopPenaltyInput = await this.ask(`Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
+      consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
     }
     return { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty };
   }
 
   // Display methods
-  async log(message: string, delayBefore: number = FARKLE_CONFIG.cli.defaultDelay, delayAfter: number = FARKLE_CONFIG.cli.defaultDelay): Promise<void> {
+  async log(message: string, delayBefore: number = ROLLIO_CONFIG.cli.defaultDelay, delayAfter: number = ROLLIO_CONFIG.cli.defaultDelay): Promise<void> {
     if (delayBefore > 0) await this.sleep(delayBefore);
     console.log(message);
     if (delayAfter > 0) await this.sleep(delayAfter);
@@ -217,46 +259,46 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayRoundPoints(points: number): Promise<void> {
-    if (FARKLE_CONFIG.display.showRoundPoints) {
+    if (ROLLIO_CONFIG.display.showRoundPoints) {
       await this.log(DisplayFormatter.formatRoundPoints(points));
     }
   }
 
   async displayGameScore(score: number): Promise<void> {
-    if (FARKLE_CONFIG.display.showGameScore) {
+    if (ROLLIO_CONFIG.display.showGameScore) {
       await this.log(DisplayFormatter.formatGameScore(score));
     }
   }
 
   async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
-    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), FARKLE_CONFIG.cli.messageDelay);
+    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {
     const lines = DisplayFormatter.formatGameEnd(gameState, isWin);
     for (const line of lines) {
-      await this.log(line, FARKLE_CONFIG.cli.messageDelay);
+      await this.log(line, ROLLIO_CONFIG.cli.messageDelay);
     }
   }
 
   async displayHotDice(count?: number): Promise<void> {
-    await this.log(DisplayFormatter.formatHotDice(count), FARKLE_CONFIG.cli.messageDelay);
+    await this.log(DisplayFormatter.formatHotDice(count), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayBankedPoints(points: number): Promise<void> {
-    await this.log(DisplayFormatter.formatBankedPoints(points), FARKLE_CONFIG.cli.messageDelay);
+    await this.log(DisplayFormatter.formatBankedPoints(points), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayWelcome(): Promise<void> {
-    await this.log(DisplayFormatter.formatWelcome());
+    await this.log('=== Welcome to Rollio! ===');
   }
 
   async displayRoundStart(roundNumber: number): Promise<void> {
-    await this.log(DisplayFormatter.formatRoundStart(roundNumber), FARKLE_CONFIG.cli.noDelay);
+    await this.log(DisplayFormatter.formatRoundStart(roundNumber), ROLLIO_CONFIG.cli.noDelay);
   }
 
   async displayWinCondition(): Promise<void> {
-    await this.log(DisplayFormatter.formatWinCondition(), FARKLE_CONFIG.cli.messageDelay);
+    await this.log(DisplayFormatter.formatWinCondition(), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayGoodbye(): Promise<void> {

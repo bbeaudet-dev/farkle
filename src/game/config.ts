@@ -1,4 +1,4 @@
-export const FARKLE_CONFIG = {
+export const ROLLIO_CONFIG = {
   // numDice: 6, // Removed for dice set config
   // numFaces: 6, // Removed for dice set config
   winCondition: 10000,

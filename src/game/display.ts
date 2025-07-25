@@ -1,4 +1,4 @@
-import { FARKLE_CONFIG } from './config';
+import { ROLLIO_CONFIG } from './config';
 import { Die, ScoringCombination } from './core/types';
 import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils/effectUtils';
 import { MATERIALS } from './content/materials';
@@ -131,5 +131,27 @@ export class DisplayFormatter {
     });
     lines.push('===========================\n');
     return lines.join('\n');
+  }
+
+  /**
+   * CLI-specific: Format material effect logs with base/final points
+   */
+  static formatMaterialEffectLogs(base: number, final: number, logs: string[]): string[] {
+    const result: string[] = [];
+    result.push(`🎲 MATERIAL EFFECTS: Base points: ${base}`);
+    if (logs.length > 0) result.push(...logs);
+    result.push(`🎲 MATERIAL EFFECTS: Final points: ${final}`);
+    return result;
+  }
+
+  /**
+   * CLI-specific: Format charm effect logs with base/final points
+   */
+  static formatCharmEffectLogs(base: number, final: number, logs: string[]): string[] {
+    const result: string[] = [];
+    result.push(`🎭 CHARM EFFECTS: Base points: ${base}`);
+    if (logs.length > 0) result.push(...logs);
+    result.push(`🎭 CHARM EFFECTS: Final points: ${final} (${final - base} bonus)`);
+    return result;
   }
 } 

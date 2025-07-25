@@ -4,7 +4,7 @@
  */
 
 import { setDebugMode, debugLog, debugTime, debugTimeEnd, debugValidate, debugInspect } from '../utils/debug';
-import { getScoringCombinations, getAllPartitionings } from '../scoring';
+import { getScoringCombinations, getAllPartitionings } from '../logic/scoring';
 import { Die } from '../core/types';
 
 export interface ValidationResult {

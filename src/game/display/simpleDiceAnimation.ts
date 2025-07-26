@@ -32,8 +32,15 @@ export class SimpleDiceAnimation {
     brightYellow: '\x1b[93m',
     brightRed: '\x1b[91m',
     brightMagenta: '\x1b[95m',
-    orange: '\x1b[38;5;208m', // Better orange for wooden
-    brown: '\x1b[38;5;130m', // Better brown using 256-color
+    orange: '\x1b[38;5;208m',
+    brown: '\x1b[38;5;130m',
+    purple: '\x1b[38;5;99m',
+    gold: '\x1b[38;5;220m',
+    orangeRed: '\x1b[38;2;255;69;0m',
+    royalBlue: '\x1b[38;2;65;105;225m',
+    limeGreen: '\x1b[38;2;50;205;50m',
+    hotPink: '\x1b[38;2;255;105;180m',
+    deepPurple: '\x1b[38;2;75;0;130m',
     reset: '\x1b[0m'
   };
 
@@ -103,7 +110,8 @@ export class SimpleDiceAnimation {
             this.animationInterval = undefined;
           }
           
-          // Animation complete - resolve immediately
+          // Animation complete - add line break and resolve
+          process.stdout.write('\n'); // Add line break after dice
           if (this.resolveAnimation) {
             this.resolveAnimation();
           }
@@ -119,8 +127,8 @@ export class SimpleDiceAnimation {
   }
 
   private clearAnimationLines(): void {
-    // Clear the last few lines to make room for animation
-    process.stdout.write('\n\n\n\n\n\n\n\n\n\n\n\n');
+    // Clear just enough lines to make room for 5 dice rows
+    process.stdout.write('\n\n\n\n\n');
   }
 
   private cleanup(): void {
@@ -135,27 +143,25 @@ export class SimpleDiceAnimation {
    */
   private getDieColorForRow(die: Die, material: any, row: number): string {
     if (material?.color === 'rainbow') {
-      // ROYGBIV colors for rainbow die
-      const rainbowColors = ['red', 'yellow', 'green', 'blue', 'magenta'];
+      // Custom rainbow colors for rainbow die
+      const rainbowColors = ['orangeRed', 'yellow', 'limeGreen', 'royalBlue', 'deepPurple', 'purple', 'hotPink'];
       return rainbowColors[row % rainbowColors.length];
     }
     
     // Map material colors to our color names
     switch (material?.color) {
-      case 'brightMagenta':
-        return 'brightMagenta';
-      case 'brightRed':
-        return 'brightRed';
-      case 'blue':
-        return 'blue';
-      case 'orange':
-        return 'orange'; // Use orange for wooden
-      case 'brown':
-        return 'orange'; // Use orange for wooden (better than yellow)
+      case 'purple':
+        return 'purple';
+      case 'gold':
+        return 'gold';
+      case 'orangeRed':
+        return 'orangeRed';
+      case 'royalBlue':
+        return 'royalBlue';
+      case 'yellow':
+        return 'yellow';
       case 'white':
         return 'white';
-      case 'yellow':
-        return 'brightYellow'; // Map yellow to brightYellow for golden
       default:
         return 'white';
     }

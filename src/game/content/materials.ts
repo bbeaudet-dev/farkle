@@ -13,14 +13,14 @@ export const MATERIALS: DiceMaterial[] = [
     name: 'Crystal',
     description: '1.5x roll score per crystal die already scored this round',
     abbreviation: 'cr',
-    color: 'brightMagenta'
+    color: 'purple'
   },
   {
     id: 'wooden',
     name: 'Wooden',
     description: '1.25x roll score per wooden die in the set',
     abbreviation: 'wd',
-    color: 'orange'
+    color: 'gold'
   },
   {
     id: 'golden',
@@ -34,14 +34,14 @@ export const MATERIALS: DiceMaterial[] = [
     name: 'Volcano',
     description: 'Provides bonus multipliers based on hot dice counter',
     abbreviation: 'vl',
-    color: 'brightRed'
+    color: 'orangeRed'
   },
   {
     id: 'mirror',
     name: 'Mirror',
     description: 'Acts as a Wild die that can be any value when scored',
     abbreviation: 'mr',
-    color: 'blue'
+    color: 'royalBlue'
   },
   // For future use
   {

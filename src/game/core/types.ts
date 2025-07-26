@@ -6,6 +6,7 @@ export interface DiceMaterial {
   name: string;
   description: string;
   abbreviation?: string;
+  color: string;
 }
 
 export type DiceMaterialType = 'plastic' | 'crystal' | 'wooden' | 'golden' | 'volcano' | 'mirror';

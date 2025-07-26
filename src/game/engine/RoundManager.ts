@@ -10,6 +10,7 @@ import { CLIDisplayFormatter } from '../display/cliDisplay';
 import { ROLLIO_CONFIG } from '../config';
 import { RollManager } from './RollManager';
 import { Die } from '../core/types';
+import { SimpleDiceAnimation } from '../display/simpleDiceAnimation';
 
 /*
  * =============================
@@ -19,11 +20,15 @@ import { Die } from '../core/types';
  * Used by GameEngine to play each round.
  */
 export class RoundManager {
+  private diceAnimation: SimpleDiceAnimation;
+
   /*
    * Constructor
    * (No special setup required)
    */
-  constructor() {}
+  constructor() {
+    this.diceAnimation = new SimpleDiceAnimation();
+  }
 
   /*
    * playRound
@@ -48,8 +53,12 @@ export class RoundManager {
     let roundActive = true;
 
     /* === Initial Roll and Flop Check === */
+    // Roll the dice first to get final values
     roundState.diceHand = roundState.diceHand.map((die: Die) => ({ ...die, rolledValue: rollManager.rollDice([die])[0] }));
+    
     const rollNumber = roundState.rollHistory.length + 1;
+    // Animate dice roll with final values
+    await this.diceAnimation.animateDiceRoll(roundState.diceHand, rollNumber);
     const flopOnInitial = await this.displayRollAndCheckFlop(roundState, gameState, gameInterface, rollNumber, charmManager);
     if (flopOnInitial) {
       gameState.roundNumber++;
@@ -132,7 +141,13 @@ export class RoundManager {
         roundState.hotDiceCount++;
         gameState.globalHotDiceCounter++;
         await gameInterface.displayHotDice(roundState.hotDiceCount);
+        
+        // Hot dice! Reroll all dice in the set
         roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, rolledValue: rollManager.rollDice([die])[0] }));
+        
+        // Animate the hot dice reroll
+        const newRollNumber = roundState.rollHistory.length + 1;
+        await this.diceAnimation.animateDiceRoll(roundState.diceHand, newRollNumber);
       }
 
       /* === Bank or Reroll Prompt === */
@@ -315,9 +330,13 @@ export class RoundManager {
       return 'banked';
     } else {
       // Reroll the current hand (all dice if hot dice, remaining dice otherwise)
+      // Roll first to get final values
       roundState.diceHand = roundState.diceHand.map((die: Die) => ({ ...die, rolledValue: rollManager.rollDice([die])[0] }));
-      // Reroll, display and flop check
+      
+      // Animate reroll with final values
       const newRollNumber = roundState.rollHistory.length + 1;
+      await this.diceAnimation.animateDiceRoll(roundState.diceHand, newRollNumber);
+      // Reroll, display and flop check
       const flopResult = await this.displayRollAndCheckFlop(roundState, gameState, gameInterface, newRollNumber, charmManager);
       if (flopResult === true) return 'end';
       if (flopResult === 'flopPrevented') {
@@ -334,7 +353,6 @@ export class RoundManager {
    * Helper: Display a roll and check for flop. Returns true if flop (round should end), false otherwise.
    */
   private async displayRollAndCheckFlop(roundState: any, gameState: any, gameInterface: GameInterface, rollNumber: number, charmManager: CharmManager): Promise<boolean | 'flopPrevented'> {
-    await gameInterface.displayRoll(rollNumber, roundState.diceHand);
     const isFlopResult = isFlop(roundState.diceHand);
     if (isFlopResult) {
       // Try to prevent flop with charms

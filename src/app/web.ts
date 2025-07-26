@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import { WebInterface } from './webInterface';
-import { GameEngine } from '../game/gameEngine';
+import { GameEngine } from '../game/engine/GameEngine';
 
 /**
  * Web entry point for Rollio game

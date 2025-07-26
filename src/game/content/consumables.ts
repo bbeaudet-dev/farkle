@@ -54,5 +54,12 @@ export const CONSUMABLES = [
     description: 'Recover 50% of last round\'s forfeited points and add to current round score.',
     uses: 1,
     rarity: 'uncommon'
+  },
+  {
+    id: 'luckyToken',
+    name: 'Lucky Token',
+    description: 'Probability-based effects: double points, extra reroll, or instant bank.',
+    uses: 1,
+    rarity: 'rare'
   }
 ]; 

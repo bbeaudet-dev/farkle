@@ -1,4 +1,4 @@
-import { FARKLE_CONFIG } from './config';
+import { ROLLIO_CONFIG } from './config';
 import { Die, ScoringCombination } from './core/types';
 import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils/effectUtils';
 import { MATERIALS } from './content/materials';
@@ -101,11 +101,11 @@ export class DisplayFormatter {
   }
 
   static formatBankOrRerollPrompt(diceToReroll: number): string {
-    return `Bank points (b) or reroll ${diceToReroll} dice (r)? `;
+    return `(b) Bank points or (r) reroll ${diceToReroll} dice: `;
   }
 
   static formatDiceSelectionPrompt(): string {
-    return 'Select dice values to score: ';
+    return '\nSelect dice values to score: ';
   }
 
   static formatNewGamePrompt(): string {
@@ -116,20 +116,5 @@ export class DisplayFormatter {
     return '\nStart next round? (y/n): ';
   }
 
-  static formatGameSetupSummary(gameState: any): string {
-    const lines: string[] = [];
-    lines.push('\n=== GAME SETUP COMPLETE ===');
-    lines.push(`Money: $${gameState.money}`);
-    lines.push(`Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c: any) => c.name).join(', ') : 'None'}`);
-    lines.push(`Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c: any) => c.name).join(', ') : 'None'}`);
-    lines.push(`Dice Set: ${gameState.diceSetConfig?.name || (gameState.diceSet.length + ' dice')}`);
-    lines.push('Dice:');
-    const materialMap = Object.fromEntries(MATERIALS.map(m => [m.id, m.abbreviation]));
-    gameState.diceSet.forEach((die: any, i: number) => {
-      const abbrev = materialMap[die.material] || '--';
-      lines.push(`  Die ${i + 1}: ${abbrev} (${die.sides} sides)`);
-    });
-    lines.push('===========================\n');
-    return lines.join('\n');
-  }
+
 } 

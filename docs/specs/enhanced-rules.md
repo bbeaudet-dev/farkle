@@ -503,6 +503,15 @@ As a general rule, all addition effects should take place before any multiplicat
 4. Balance and tune values
 5. **Final Integration Test**: Full game playthrough with all features
 
+---
+
+### Phase 7: Advanced Systems & Meta-Progression
+
+1. **Shop/Inventory System**: Implement a full-featured shop and inventory system, allowing players to buy and sell charms, consumables, dice upgrades, and material swaps using the buy/sell value structure. Integrate shop visits between levels and after certain events.
+2. **Advanced UI/UX Improvements**: Further polish CLI and web displays, add theming, feedback, stats, and playful dialogue. Implement visual and color theming, mascot art, and advanced user experience features.
+3. **User Choice Interface for Partitionings**: Present all valid scoring partitionings to the user for selection, rather than auto-selecting the highest. Allow the user to choose their preferred scoring option, with support for highlighting the highest-scoring and limiting the display to top options if needed.
+4. **Meta-Progression System**: Design and implement a meta-progression system, such as permanent upgrades, unlocks, or persistent rewards that carry over between runs, to enhance long-term replayability.
+
 ## Game Start (Testing Mode)
 
 - At game start, player chooses 3 charms from the available pool
@@ -545,3 +554,22 @@ This spec provides the foundation for implementing these Balatro-inspired featur
     - Uncommon: buy $3, sell $1
     - Common: buy $2, sell $1
 - These values are for future shop features; buying/selling is not yet implemented.
+
+---
+
+## Current Implementation TODOs (Phase 5c/6)
+
+Priority order (highest to lowest):
+
+1. **Chisel/Pottery Wheel and die size/face logic, upgrade/downgrade**
+2. **Size Matters charm**
+3. **Consumable Generator charm** (generate a consumable at the start of each new round)
+4. **Forfeit Recovery**
+5. **Material Enchanter**
+6. **Rabbit's Foot charm**
+7. **Weighted Dice**
+8. **Lucky Token** (renamed from Lucky Coin; probability-based effects: double points, extra reroll, instant bank)
+9. **Four of a Kind Booster**
+10. **Mirror dice material**
+
+(See project TODO list for details and progress tracking.)

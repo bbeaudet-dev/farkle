@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import { CLIInterface } from './cliInterface';
-import { GameEngine } from '../game/gameEngine';
+import { GameEngine } from '../game/engine/GameEngine';
 
 /**
  * CLI entry point for Rollio game

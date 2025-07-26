@@ -1,6 +1,6 @@
-import { FARKLE_CONFIG } from './config';
-import { Die, DieValue, ScoringCombination, Charm } from './core/types';
-import { debugLog, getDebugMode } from './utils/debug';
+import { ROLLIO_CONFIG } from '../config';
+import { Die, DieValue, ScoringCombination, Charm } from '../core/types';
+import { debugLog, getDebugMode } from '../utils/debug';
 import { applyMaterialEffects } from './materialSystem';
 
 // Define scoring combination types for type safety
@@ -292,20 +292,20 @@ function findAllPossibleCombinations(
         combo.dice.includes(dieIndex) && combo.type !== 'singleOne' && combo.type !== 'singleFive'
       );
       
-      if (!usedInLargerCombo) {
-        if (value === 1) {
-                  combinations.push({
-          type: 'singleOne',
-          dice: subsetIndices,
-          points: getCombinationPoints('singleOne'),
-        });
-      } else if (value === 5) {
-        combinations.push({
-          type: 'singleFive',
-          dice: subsetIndices,
-          points: getCombinationPoints('singleFive'),
-        });
-      }
+        if (!usedInLargerCombo) {
+          if (value === 1) {
+                    combinations.push({
+            type: 'singleOne',
+            dice: subsetIndices,
+            points: getCombinationPoints('singleOne'),
+          });
+        } else if (value === 5) {
+          combinations.push({
+            type: 'singleFive',
+            dice: subsetIndices,
+            points: getCombinationPoints('singleFive'),
+          });
+        }
       }
     }
     

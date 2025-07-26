@@ -72,12 +72,12 @@ type DieValue = 1 | 2 | 3 | 4 | 5 | 6;
 
 ## Configuration API
 
-### FARKLE_CONFIG
+### ROLLIO_CONFIG
 
 The main configuration object that controls all game parameters:
 
 ```typescript
-export const FARKLE_CONFIG = {
+export const ROLLIO_CONFIG = {
   winCondition: 10000, // Points needed to win
 
   cli: {
@@ -225,8 +225,8 @@ function sleep(ms: number): Promise<void>;
 // Log message with configurable delays
 async function logWithDelay(
   message: string,
-  delayBefore: number = FARKLE_CONFIG.cli.defaultDelay,
-  delayAfter: number = FARKLE_CONFIG.cli.defaultDelay
+  delayBefore: number = ROLLIO_CONFIG.cli.defaultDelay,
+  delayAfter: number = ROLLIO_CONFIG.cli.defaultDelay
 ): Promise<void>;
 ```
 
@@ -281,7 +281,7 @@ async function logWithDelay(
 ### Adding New Game Features
 
 1. **Update State Types**: Add new properties to `GameState`, `RoundState`, or `RollState`
-2. **Update Configuration**: Add new config options to `FARKLE_CONFIG`
+2. **Update Configuration**: Add new config options to `ROLLIO_CONFIG`
 3. **Update Game Logic**: Modify functions in `cli.ts` to handle new features
 4. **Update Display**: Add new formatting functions in `utils.ts` if needed
 

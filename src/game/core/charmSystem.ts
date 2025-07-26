@@ -1,5 +1,4 @@
 import { Charm, CharmRarity } from './types';
-import { formatNoEffectLog } from '../utils/effectUtils';
 
 /**
  * Base class for all charms
@@ -36,6 +35,11 @@ export abstract class BaseCharm implements Charm {
    */
   onBank?(context: CharmBankContext): number | void;
 
+  /**
+   * Called at the start of each round (optional)
+   */
+  onRoundStart?(context: CharmRoundStartContext): void;
+
   canUse(): boolean {
     if (!this.active) return false;
     if (this.uses !== undefined && this.uses <= 0) return false;
@@ -66,6 +70,11 @@ export interface CharmBankContext {
   gameState: any;
   roundState: any;
   bankedPoints: number;
+}
+
+export interface CharmRoundStartContext {
+  gameState: any;
+  roundState: any;
 }
 
 export class CharmRegistry {
@@ -180,24 +189,14 @@ export class CharmManager {
     });
     return modified;
   }
+
+  callAllOnRoundStart(context: CharmRoundStartContext): void {
+    for (const charm of this.getActiveCharms()) {
+      if (typeof charm.onRoundStart === 'function') {
+        charm.onRoundStart(context);
+      }
+    }
+  }
 }
 
-// Add a helper to format charm effect logs for display
-export function formatCharmEffectLogs(basePoints: number, charmResults: Array<{ name: string, effect: number, uses: number | undefined, logs?: string[] }>, finalPoints: number): string[] {
-  const logs: string[] = [];
-  logs.push(`🎭 CHARM EFFECTS: Base points: ${basePoints}`);
-  let hadEffect = false;
-  for (const { name, effect, uses, logs: charmLogs } of charmResults) {
-    let usesStr = uses === 0 ? '0 uses left' : (uses == null ? '∞ uses left' : `${uses} uses left`);
-    logs.push(`  ${name}: +${effect} points (${usesStr})`);
-    if (charmLogs && charmLogs.length > 0) {
-      logs.push(...charmLogs.map(l => `    ${l}`));
-    }
-    if (effect !== 0) hadEffect = true;
-  }
-  logs.push(`🎭 CHARM EFFECTS: Final points: ${finalPoints} (${finalPoints - basePoints} bonus)`);
-  // Use the shared utility for no effect
-  const noEffectLog = formatNoEffectLog('🎭 CHARM EFFECTS', hadEffect, basePoints, finalPoints);
-  if (noEffectLog.length > 0) return noEffectLog;
-  return logs;
-} 
+ 

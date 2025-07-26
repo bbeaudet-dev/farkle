@@ -6,6 +6,7 @@ import { CharmManager } from '../core/charmSystem';
 import { registerCharms } from '../content/charms/index';
 import { applyConsumableEffect } from '../consumableEffects';
 import { DisplayFormatter } from '../display';
+import { CLIDisplayFormatter } from '../display/cliDisplay';
 import { SetupManager } from './SetupManager';
 import { RoundManager } from './RoundManager';
 import { RollManager } from './RollManager';
@@ -47,7 +48,7 @@ export class GameEngine {
     await this.interface.displayWelcome();
 
     // Show main menu
-    let gameMode: 'default' | 'custom' = 'default';
+    let gameMode: 'new' | 'cheat' | 'tutorial' = 'new';
     if (typeof (this.interface as any).showMainMenu === 'function') {
       gameMode = await (this.interface as any).showMainMenu();
     }
@@ -56,13 +57,16 @@ export class GameEngine {
     let diceSetConfig: any;
 
     // Use SetupManager for game setup
-    if (gameMode === 'default') {
+    if (gameMode === 'new') {
+      ({ gameState, diceSetConfig } = await this.setupManager.setupDefaultGame(this.interface));
+    } else if (gameMode === 'tutorial') {
+      // For now, tutorial just runs the default game
       ({ gameState, diceSetConfig } = await this.setupManager.setupDefaultGame(this.interface));
     } else {
       ({ gameState, diceSetConfig } = await this.setupManager.setupCustomGame(this.interface, this.charmManager));
     }
 
-    await this.interface.log(DisplayFormatter.formatGameSetupSummary(gameState));
+    await this.interface.log(CLIDisplayFormatter.formatGameSetupSummary(gameState));
 
     // Main game loop
     while (gameState.isActive) {

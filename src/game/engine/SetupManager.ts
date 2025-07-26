@@ -87,17 +87,21 @@ export class SetupManager {
       abbreviation: MATERIALS[assignedMaterialIndices[index]].abbreviation
     }));
     // Add selected charms to game state and charm manager
-    gameState.charms = selectedCharmIndices.map(index => {
-      const charm = CHARMS[index];
-      const runtimeCharm = {
-        ...charm,
-        active: true
-      };
-      charmManager.addCharm(runtimeCharm);
-      return runtimeCharm;
-    });
+    gameState.charms = selectedCharmIndices
+      .filter(index => index < CHARMS.length) // Filter out "Empty" selections
+      .map(index => {
+        const charm = CHARMS[index];
+        const runtimeCharm = {
+          ...charm,
+          active: true
+        };
+        charmManager.addCharm(runtimeCharm);
+        return runtimeCharm;
+      });
     // Add selected consumables to game state
-    gameState.consumables = selectedConsumableIndices.map((index: number) => ({ ...CONSUMABLES[index] }));
+    gameState.consumables = selectedConsumableIndices
+      .filter(index => index < CONSUMABLES.length) // Filter out "Empty" selections
+      .map((index: number) => ({ ...CONSUMABLES[index] }));
     return { gameState, diceSetConfig };
   }
 } 

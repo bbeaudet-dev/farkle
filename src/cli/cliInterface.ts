@@ -3,6 +3,7 @@ import { ROLLIO_CONFIG } from '../game/config';
 import { DieValue, ScoringCombination, GameState, Die } from '../game/core/types';
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
+import { CLIDisplayFormatter } from '../game/display/cliDisplay';
 
 /**
  * CLI implementation of the game interface
@@ -18,14 +19,16 @@ export class CLIInterface implements GameInterface {
   }
 
   // Menu at startup
-  async showMainMenu(): Promise<'default' | 'custom'> {
+  async showMainMenu(): Promise<'new' | 'tutorial' | 'cheat'> {
     await this.log('\n(s) Start New Game');
-    await this.log('(c) Custom Game');
+    await this.log('(t) Tutorial');
+    await this.log('(c) Cheat Mode');
     while (true) {
-      const input = (await this.ask('Select an option: ', 's')).trim().toLowerCase();
-      if (input === 's') return 'default';
-      if (input === 'c') return 'custom';
-      await this.log('Invalid input. Please enter "s" or "c".');
+      const input = (await this.ask('\nSelect an option: ', 's')).trim().toLowerCase();
+      if (input === 's') return 'new';
+      if (input === 't') return 'tutorial';
+      if (input === 'c') return 'cheat';
+      await this.log('Invalid input. Enter "s" or ENTER to start, "t" for tutorial, or "c" for cheat mode.');
     }
   }
 
@@ -88,7 +91,7 @@ export class CLIInterface implements GameInterface {
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
     // Do not allow inventory use at this prompt
     while (true) {
-      const input = await this.ask(DisplayFormatter.formatBankOrRerollPrompt(diceToReroll), undefined, { allowInventory: false });
+      const input = await this.ask('', undefined, { allowInventory: false });
       if (input.trim().toLowerCase() === 'i') {
         await this.log('Inventory cannot be used at this prompt.');
         continue;
@@ -174,10 +177,11 @@ export class CLIInterface implements GameInterface {
 
   async askForCharmSelection(availableCharms: string[], numToSelect: number): Promise<number[]> {
     await this.log('\n🎭 CHARM SELECTION');
-    await this.log(`Choose ${numToSelect} charms from the available pool:`);
+    await this.log(`Choose ${numToSelect} charms from the available pool (or select "Empty" to skip):`);
     availableCharms.forEach((charm, i) => {
       console.log(`  ${i + 1}. ${charm}`);
     });
+    console.log(`  ${availableCharms.length + 1}. Empty (no charm)`);
     const selectedIndices: number[] = [];
     for (let i = 0; i < numToSelect; i++) {
       while (true) {
@@ -191,6 +195,10 @@ export class CLIInterface implements GameInterface {
           selectedIndices.push(idx);
           await this.log(`Selected: ${availableCharms[idx]}`);
           break;
+        } else if (idx === availableCharms.length) {
+          // Empty option selected
+          await this.log('Selected: Empty (no charm)');
+          break;
         }
         await this.log('Invalid selection. Please enter a valid number.');
       }
@@ -200,10 +208,11 @@ export class CLIInterface implements GameInterface {
 
   async askForConsumableSelection(availableConsumables: string[], numToSelect: number): Promise<number[]> {
     await this.log('\n🧪 CONSUMABLE SELECTION');
-    await this.log(`Choose ${numToSelect} consumables from the available pool:`);
+    await this.log(`Choose ${numToSelect} consumables from the available pool (or select "Empty" to skip):`);
     availableConsumables.forEach((consumable, i) => {
       console.log(`  ${i + 1}. ${consumable}`);
     });
+    console.log(`  ${availableConsumables.length + 1}. Empty (no consumable)`);
     const selectedIndices: number[] = [];
     for (let i = 0; i < numToSelect; i++) {
       while (true) {
@@ -217,6 +226,10 @@ export class CLIInterface implements GameInterface {
           selectedIndices.push(idx);
           await this.log(`Selected: ${availableConsumables[idx]}`);
           break;
+        } else if (idx === availableConsumables.length) {
+          // Empty option selected
+          await this.log('Selected: Empty (no consumable)');
+          break;
         }
         await this.log('Invalid selection. Please enter a valid number.');
       }
@@ -226,7 +239,7 @@ export class CLIInterface implements GameInterface {
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
     const ROLLIO_CONFIG = require('../game/config').ROLLIO_CONFIG;
-    const winConditionInput = await this.ask('Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
+    const winConditionInput = await this.ask('  Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
     const winCondition = winConditionInput.trim() === '' ? ROLLIO_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || ROLLIO_CONFIG.winCondition;
 
     const penaltyEnabledInput = await this.ask('Enable flop penalty? (y/n, default y): ', 'y');
@@ -282,7 +295,7 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayHotDice(count?: number): Promise<void> {
-    await this.log(DisplayFormatter.formatHotDice(count), ROLLIO_CONFIG.cli.messageDelay);
+    await this.log(CLIDisplayFormatter.formatHotDice(count), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayBankedPoints(points: number): Promise<void> {

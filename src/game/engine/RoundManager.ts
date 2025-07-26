@@ -4,8 +4,9 @@ import { createInitialRoundState } from '../core/gameState';
 import { validateDiceSelectionAndScore, processDiceScoring, processBankAction, processFlop, updateGameStateAfterRound, isFlop } from '../logic/gameLogic';
 import { applyMaterialEffects } from '../logic/materialSystem';
 import { getHighestPointsPartitioning } from '../logic/scoring';
-import { formatCharmEffectLogs } from '../core/charmSystem';
+
 import { DisplayFormatter } from '../display';
+import { CLIDisplayFormatter } from '../display/cliDisplay';
 import { ROLLIO_CONFIG } from '../config';
 import { RollManager } from './RollManager';
 import { Die } from '../core/types';
@@ -68,11 +69,37 @@ export class RoundManager {
       if (!selectedPartitioning) continue;
 
       /* === Charm and Material Effects === */
-      const { finalPoints, scoredCrystals } = await this.applyCharmAndMaterialEffects(
+      const { finalPoints, scoredCrystals, charmLogs, materialLogs, baseMaterialPoints, finalMaterialPoints } = await this.applyCharmAndMaterialEffects(
         charmManager, gameInterface, selectedPartitioning, roundState, gameState, selectedIndices
       );
       roundState.crystalsScoredThisRound = (roundState.crystalsScoredThisRound || 0) + scoredCrystals;
-      await gameInterface.displayScoringResult(selectedIndices, roundState.diceHand, selectedPartitioning, finalPoints);
+      
+      // Display combination summary first
+      const partitioningInfo = selectedPartitioning.length > 1 ? 
+        `Selected partitioning: ${selectedPartitioning.map((c: any) => c.type).join(', ')}` : undefined;
+      await gameInterface.log(CLIDisplayFormatter.formatCombinationSummary(selectedIndices, roundState.diceHand, selectedPartitioning, partitioningInfo));
+      
+      // Display material effects first, then charm effects
+      if (materialLogs && materialLogs.length > 0) {
+        const materialEffectLines = CLIDisplayFormatter.formatMaterialEffectLogs(
+          baseMaterialPoints, 
+          finalMaterialPoints, 
+          materialLogs
+        );
+        for (const line of materialEffectLines) {
+          await gameInterface.log(line);
+        }
+      }
+      
+      // Only show charm logs if there are active charms with effects
+      const activeCharms = charmManager.getAllCharms().filter(charm => charm.canUse());
+      if (charmLogs && charmLogs.length > 0 && activeCharms.length > 0) {
+        for (const log of charmLogs) {
+          await gameInterface.log(log);
+        }
+      }
+      
+      // Update round points
       roundState.roundPoints += finalPoints;
       roundState.roundPoints = Math.ceil(roundState.roundPoints);
 
@@ -90,10 +117,15 @@ export class RoundManager {
         isFlop: false,
       });
 
-      /* === Show Round Points (if not first roll) === */
-      const hadPointsBeforeThisRoll = roundState.roundPoints > finalPoints;
-      if (hadPointsBeforeThisRoll) {
-        await gameInterface.displayRoundPoints(roundState.roundPoints);
+      /* === Display Round Summary === */
+      const roundSummaryLines = CLIDisplayFormatter.formatRoundSummary(
+        Math.ceil(finalPoints),
+        roundState.roundPoints,
+        roundState.hotDiceCount,
+        roundState.diceHand.length
+      );
+      for (const line of roundSummaryLines) {
+        await gameInterface.log(line);
       }
 
       /* === Hot Dice Handling === */
@@ -150,7 +182,6 @@ export class RoundManager {
   private async choosePartitioning(gameInterface: GameInterface, scoringResult: any) {
     if (scoringResult.allPartitionings.length === 0) return null;
     if (scoringResult.allPartitionings.length === 1) {
-      await gameInterface.log(`Auto-selected partitioning: ${scoringResult.allPartitionings[0].map((c: any) => c.type).join(', ')}`);
       return scoringResult.allPartitionings[0];
     }
     await gameInterface.log(`Found ${scoringResult.allPartitionings.length} valid partitionings:`);
@@ -211,7 +242,7 @@ export class RoundManager {
       }
     }
     const baseCharmPoints = selectedPartitioning.reduce((sum: number, c: any) => sum + c.points, 0);
-    const charmLogs = formatCharmEffectLogs(baseCharmPoints, charmResults, modifiedPoints);
+    const charmLogs = CLIDisplayFormatter.formatCharmEffectLogsFromResults(baseCharmPoints, charmResults, modifiedPoints);
     // Instead of logging here, return the logs and base/final points for the interface to format
     // Calculate number of crystal dice scored in this action
     const scoredCrystals = selectedIndices.filter((idx: number) => {
@@ -248,9 +279,8 @@ export class RoundManager {
     rollManager: RollManager,
     useConsumable: (idx: number, gameState: any, roundState: any) => Promise<void>
   ): Promise<'banked' | 'reroll' | 'end'> {
-    const diceToReroll = roundState.diceHand.length;
     const action = await (gameInterface as any).askForBankOrReroll(
-      diceToReroll,
+      roundState.diceHand.length,
       gameState.consumables,
       async (idx: number) => await useConsumable(idx, gameState, roundState)
     );

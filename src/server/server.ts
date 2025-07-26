@@ -1,7 +1,5 @@
 import express from 'express';
 import path from 'path';
-import { WebInterface } from '../app/webInterface';
-import { GameEngine } from '../game/gameEngine';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

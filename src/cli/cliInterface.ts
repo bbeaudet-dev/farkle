@@ -279,15 +279,15 @@ export class CLIInterface implements GameInterface {
     const winConditionInput = await this.ask('  Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
     const winCondition = winConditionInput.trim() === '' ? ROLLIO_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || ROLLIO_CONFIG.winCondition;
 
-    const penaltyEnabledInput = await this.ask('Enable flop penalty? (y/n, default y): ', 'y');
+    const penaltyEnabledInput = await this.ask('  Enable flop penalty? (y/n, default y): ', 'y');
     const penaltyEnabled = penaltyEnabledInput.trim() === '' ? true : penaltyEnabledInput.trim().toLowerCase() === 'y';
 
     let consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
     let consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
     if (penaltyEnabled) {
-      const flopLimitInput = await this.ask(`Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
+      const flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
       consecutiveFlopLimit = flopLimitInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-      const flopPenaltyInput = await this.ask(`Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
+      const flopPenaltyInput = await this.ask(`  Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
       consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
     }
     return { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty };

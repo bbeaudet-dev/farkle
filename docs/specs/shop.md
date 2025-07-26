@@ -17,3 +17,26 @@ This spec will define the shop system for Rollio, including buying and selling o
 - Implement shop discount logic (e.g., 25% off all shop costs if player owns a specific charm)
 - Implement price adjustment effects (e.g., charms that increase value of owned charms each round)
 - Add support for special shop events or limited-time offers
+
+## Combination Discovery System (Future Enhancement)
+
+### Balatro-Style Discovery
+
+- Players cannot see certain advanced combinations until they have played them
+- Hidden combinations: `sevenOfAKind`, `godStraight`, `fourPairs`, `tripleTriplets`
+- Always visible combinations: `singleFive`, `singleOne`, `threeOfAKind`, `fourOfAKind`, `fiveOfAKind`, `sixOfAKind`, `twoTriplets`, `straight`, `threePairs`
+
+### Implementation Notes
+
+- Add discovery tracking to game state
+- Update combinations display command to show discovery status
+- Sort combinations by points (lowest to highest)
+- Show progress indicator (e.g., "8/13 combinations discovered")
+- Use ✅ for discovered, ❓ for undiscovered combinations
+- Display "???" for undiscovered combination names and points
+
+### Technical Requirements
+
+- Helper methods: `getAllPossibleCombinationTypes()`, `isCombinationDiscovered()`, `getDiscoveredCombinationsCount()`
+- Integration with existing `combinationCounters` in game state
+- Update `formatCombinationsDisplay()` in `CLIDisplayFormatter`

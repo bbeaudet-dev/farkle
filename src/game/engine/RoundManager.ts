@@ -65,8 +65,9 @@ export class RoundManager {
       }
 
       /* === Partitioning Selection === */
-      const selectedPartitioning = await this.choosePartitioning(gameInterface, scoringResult);
-      if (!selectedPartitioning) continue;
+      const partitioningResult = await this.choosePartitioning(gameInterface, scoringResult);
+      if (!partitioningResult) continue;
+      const { partitioning: selectedPartitioning, partitioningInfo } = partitioningResult;
 
       /* === Charm and Material Effects === */
       const { finalPoints, scoredCrystals, charmLogs, materialLogs, baseMaterialPoints, finalMaterialPoints } = await this.applyCharmAndMaterialEffects(
@@ -74,10 +75,8 @@ export class RoundManager {
       );
       roundState.crystalsScoredThisRound = (roundState.crystalsScoredThisRound || 0) + scoredCrystals;
       
-      // Display combination summary first
-      const partitioningInfo = selectedPartitioning.length > 1 ? 
-        `Selected partitioning: ${selectedPartitioning.map((c: any) => c.type).join(', ')}` : undefined;
-      await gameInterface.log(CLIDisplayFormatter.formatCombinationSummary(selectedIndices, roundState.diceHand, selectedPartitioning, partitioningInfo));
+      // Display combination summary with partitioning info
+      await gameInterface.log(CLIDisplayFormatter.formatCombinationSummary(selectedIndices, roundState.diceHand, selectedPartitioning, undefined, partitioningInfo));
       
       // Display material effects first, then charm effects
       if (materialLogs && materialLogs.length > 0) {
@@ -117,14 +116,14 @@ export class RoundManager {
         isFlop: false,
       });
 
-      /* === Display Round Summary === */
-      const roundSummaryLines = CLIDisplayFormatter.formatRoundSummary(
+      /* === Display Roll Summary === */
+      const rollSummaryLines = CLIDisplayFormatter.formatRollSummary(
         Math.ceil(finalPoints),
         roundState.roundPoints,
         roundState.hotDiceCount,
         roundState.diceHand.length
       );
-      for (const line of roundSummaryLines) {
+      for (const line of rollSummaryLines) {
         await gameInterface.log(line);
       }
 
@@ -169,7 +168,8 @@ export class RoundManager {
     const input = await (gameInterface as any).askForDiceSelection(
       roundState.diceHand,
       gameState.consumables,
-      async (idx: number) => await useConsumable(idx, gameState, roundState)
+      async (idx: number) => await useConsumable(idx, gameState, roundState),
+      gameState
     );
     return validateDiceSelectionAndScore(input, roundState.diceHand, { charms: gameState.charms });
   }
@@ -179,23 +179,30 @@ export class RoundManager {
    * ------------------
    * Handles multiple valid scoring partitionings and prompts the user to choose.
    */
-  private async choosePartitioning(gameInterface: GameInterface, scoringResult: any) {
+  private async choosePartitioning(gameInterface: GameInterface, scoringResult: any): Promise<{ partitioning: any, partitioningInfo: string[] } | null> {
     if (scoringResult.allPartitionings.length === 0) return null;
     if (scoringResult.allPartitionings.length === 1) {
-      return scoringResult.allPartitionings[0];
+      return { 
+        partitioning: scoringResult.allPartitionings[0], 
+        partitioningInfo: [] 
+      };
     }
-    await gameInterface.log(`Found ${scoringResult.allPartitionings.length} valid partitionings:`);
+    
+    // Build partitioning info lines
+    const partitioningInfo: string[] = [];
+    partitioningInfo.push(`Found ${scoringResult.allPartitionings.length} valid partitionings:`);
     for (let i = 0; i < scoringResult.allPartitionings.length; i++) {
       const partitioning = scoringResult.allPartitionings[i];
       const points = partitioning.reduce((sum: number, c: any) => sum + c.points, 0);
-      await gameInterface.log(`  ${i + 1}. ${partitioning.map((c: any) => c.type).join(', ')} (${points} points)`);
+      partitioningInfo.push(`  ${i + 1}. ${partitioning.map((c: any) => c.type).join(', ')} (${points} points)`);
     }
+    
     const bestPartitioningIndex = getHighestPointsPartitioning(scoringResult.allPartitionings);
     const choice = await gameInterface.askForPartitioningChoice(scoringResult.allPartitionings.length);
     let choiceIndex: number;
     if (choice.trim() === '' || choice.trim() === '1') {
       choiceIndex = bestPartitioningIndex;
-      await gameInterface.log(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
+      partitioningInfo.push(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
     } else {
       choiceIndex = parseInt(choice.trim(), 10) - 1;
     }
@@ -203,7 +210,10 @@ export class RoundManager {
       await gameInterface.log('Invalid choice. Please try again.');
       return null;
     }
-    return scoringResult.allPartitionings[choiceIndex];
+    return { 
+      partitioning: scoringResult.allPartitionings[choiceIndex], 
+      partitioningInfo 
+    };
   }
 
   /*
@@ -288,7 +298,18 @@ export class RoundManager {
       // Apply charm bank effects
       const bankedPoints = charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
       const bankResult = processBankAction(bankedPoints, gameState.gameScore);
-      await gameInterface.displayBankedPoints(bankedPoints);
+      
+      // Display end-of-round summary
+      const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
+        0, // forfeited points
+        bankedPoints, // points added
+        0, // consecutive flops
+        gameState.roundNumber
+      );
+      for (const line of endOfRoundLines) {
+        await gameInterface.log(line);
+      }
+      
       updateGameStateAfterRound(gameState, roundState, bankResult);
       await gameInterface.displayGameScore(gameState.gameScore);
       return 'banked';
@@ -324,7 +345,26 @@ export class RoundManager {
         await gameInterface.log(shieldMsg);
         return 'flopPrevented';
       }
-      updateGameStateAfterRound(gameState, roundState, processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore));
+      
+      // Display combinations header with flop message
+      await gameInterface.log(`🎯 COMBINATIONS: No valid scoring combinations found, you flopped!`);
+      
+      // Process flop and update game state
+      const flopResult2 = processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore);
+      updateGameStateAfterRound(gameState, roundState, flopResult2);
+      
+      // Display end-of-round summary
+      const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
+        roundState.roundPoints, // forfeited points
+        0, // points added (always 0 for flop)
+        gameState.consecutiveFlops,
+        gameState.roundNumber
+      );
+      for (const line of endOfRoundLines) {
+        await gameInterface.log(line);
+      }
+      
+      // Display additional flop info
       await gameInterface.displayFlopMessage(
         roundState.roundPoints,
         gameState.consecutiveFlops,

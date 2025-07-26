@@ -50,8 +50,8 @@ export const CONSUMABLES = [
   },
   {
     id: 'forfeitRecovery',
-    name: 'Forfeit Recovery',
-    description: 'Recover 50% of last round\'s forfeited points and add to current round score.',
+    name: 'Flop Recovery',
+    description: 'Recover 1.25x the last round\'s forfeited points and add to current round score.',
     uses: 1,
     rarity: 'uncommon'
   },

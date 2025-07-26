@@ -42,7 +42,7 @@ export class DisplayFormatter {
   }
 
   static formatGameScore(score: number): string {
-    return `Game score: ${Math.ceil(score)}`;
+    return `  Game score: ${Math.ceil(score)}`;
   }
 
   static formatFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): string {
@@ -89,7 +89,7 @@ export class DisplayFormatter {
   }
 
   static formatRoundStart(roundNumber: number): string {
-    return `\n--- Round ${roundNumber} ---`;
+    return `\n--- Round ${roundNumber} ---\nCommands: (i) Inventory, (c) Combinations, (d) Dice Set, (l) Level`;
   }
 
   static formatWinCondition(): string {
@@ -105,15 +105,15 @@ export class DisplayFormatter {
   }
 
   static formatDiceSelectionPrompt(): string {
-    return '\nSelect dice values to score: ';
+    return 'Select dice values to score: ';
   }
 
   static formatNewGamePrompt(): string {
     return '\nStart New Game? (y/n): ';
   }
 
-  static formatNextRoundPrompt(): string {
-    return '\nStart next round? (y/n): ';
+  static formatNextRoundPrompt(roundNumber: number): string {
+    return `\nStart Round ${roundNumber}? (y/n): `;
   }
 
 

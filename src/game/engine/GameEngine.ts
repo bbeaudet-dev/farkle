@@ -10,6 +10,7 @@ import { CLIDisplayFormatter } from '../display/cliDisplay';
 import { SetupManager } from './SetupManager';
 import { RoundManager } from './RoundManager';
 import { RollManager } from './RollManager';
+import { TutorialSystem } from '../tutorial/tutorialSystem';
 
 /*
  * =============================
@@ -60,8 +61,10 @@ export class GameEngine {
     if (gameMode === 'new') {
       ({ gameState, diceSetConfig } = await this.setupManager.setupDefaultGame(this.interface));
     } else if (gameMode === 'tutorial') {
-      // For now, tutorial just runs the default game
-      ({ gameState, diceSetConfig } = await this.setupManager.setupDefaultGame(this.interface));
+      // Show tutorial system
+      const tutorialSystem = new TutorialSystem(this.interface);
+      await tutorialSystem.showTutorialMenu();
+      return; // Exit after tutorial
     } else {
       ({ gameState, diceSetConfig } = await this.setupManager.setupCustomGame(this.interface, this.charmManager));
     }

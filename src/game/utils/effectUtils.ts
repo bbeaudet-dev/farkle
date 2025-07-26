@@ -26,7 +26,7 @@ export function formatFlopMessage(
   consecutiveFlopPenalty: number,
   consecutiveFlopWarningCount: number
 ): string {
-  let message = `No valid scoring combinations found, you flopped! Round points forfeited: ${forfeitedPoints}`;
+  let message = `No valid scoring combinations found, you flopped!`;
   
   if (consecutiveFlops === consecutiveFlopWarningCount) {
     message += `\n(${consecutiveFlopWarningCount} consecutive flops - one more and you lose ${consecutiveFlopPenalty} points!)`;

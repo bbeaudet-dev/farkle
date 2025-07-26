@@ -27,7 +27,7 @@ export class WebInterface implements GameInterface {
     return prompt(question) || '';
   }
 
-  async askForDiceSelection(dice: Die[]): Promise<string> {
+  async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>, gameState?: any): Promise<string> {
     return window.prompt('Select dice values to score:') || '';
   }
 
@@ -39,8 +39,9 @@ export class WebInterface implements GameInterface {
     return this.ask(DisplayFormatter.formatNewGamePrompt());
   }
 
-  async askForNextRound(): Promise<string> {
-    return window.prompt('Play another round? (y/n):') || '';
+  async askForNextRound(gameState?: any): Promise<string> {
+    const nextRoundNumber = (gameState?.roundNumber || 1) + 1;
+    return window.prompt(`Start Round ${nextRoundNumber}? (y/n):`) || '';
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {

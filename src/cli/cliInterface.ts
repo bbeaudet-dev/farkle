@@ -77,13 +77,49 @@ export class CLIInterface implements GameInterface {
     }
   }
 
-  async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>): Promise<string> {
+  async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>, gameState?: any): Promise<string> {
     while (true) {
       const input = await this.ask(DisplayFormatter.formatDiceSelectionPrompt(), undefined, { consumables, useCallback, allowInventory: true });
-      if (input.trim().toLowerCase() === 'i' && consumables && useCallback) {
+      const trimmedInput = input.trim().toLowerCase();
+      
+      if (trimmedInput === 'i' && consumables && useCallback) {
         await this.promptAndUseConsumable(consumables, useCallback);
         continue;
       }
+      
+      // Handle new commands
+      if (trimmedInput === 'i' && gameState) {
+        const inventoryLines = CLIDisplayFormatter.formatInventory(gameState);
+        for (const line of inventoryLines) {
+          await this.log(line);
+        }
+        continue;
+      }
+      
+      if (trimmedInput === 'c' && gameState) {
+        const combinationsLines = CLIDisplayFormatter.formatCombinationsDisplay(dice, gameState);
+        for (const line of combinationsLines) {
+          await this.log(line);
+        }
+        continue;
+      }
+      
+      if (trimmedInput === 'd' && gameState) {
+        const diceSetLines = CLIDisplayFormatter.formatDiceSetDisplay(gameState);
+        for (const line of diceSetLines) {
+          await this.log(line);
+        }
+        continue;
+      }
+      
+      if (trimmedInput === 'l' && gameState) {
+        const levelLines = CLIDisplayFormatter.formatLevelDisplay(gameState);
+        for (const line of levelLines) {
+          await this.log(line);
+        }
+        continue;
+      }
+      
       return input;
     }
   }

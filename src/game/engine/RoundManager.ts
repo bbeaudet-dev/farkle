@@ -169,7 +169,8 @@ export class RoundManager {
     const input = await (gameInterface as any).askForDiceSelection(
       roundState.diceHand,
       gameState.consumables,
-      async (idx: number) => await useConsumable(idx, gameState, roundState)
+      async (idx: number) => await useConsumable(idx, gameState, roundState),
+      gameState
     );
     return validateDiceSelectionAndScore(input, roundState.diceHand, { charms: gameState.charms });
   }

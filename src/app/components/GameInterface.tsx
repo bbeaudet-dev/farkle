@@ -121,7 +121,7 @@ class ReactGameInterface implements IGameInterface {
     this.outputCallback(`🎉 Congratulations! You won!`);
   }
 
-  async askForDiceSelection(dice: Die[]): Promise<string> {
+  async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>, gameState?: any): Promise<string> {
     // Example: just prompt for values
     return window.prompt('Select dice values to score:') || '';
   }

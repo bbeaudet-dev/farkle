@@ -89,7 +89,7 @@ export class DisplayFormatter {
   }
 
   static formatRoundStart(roundNumber: number): string {
-    return `\n--- Round ${roundNumber} ---`;
+    return `\n--- Round ${roundNumber} ---\nCommands: (i) Inventory, (c) Combinations, (d) Dice Set, (l) Level`;
   }
 
   static formatWinCondition(): string {

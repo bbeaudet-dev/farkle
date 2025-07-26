@@ -107,12 +107,6 @@ export class CLIDisplayFormatter {
     lines.push(`Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c: any) => c.name).join(', ') : 'None'}`);
     lines.push(`Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c: any) => c.name).join(', ') : 'None'}`);
     lines.push(`Dice Set: ${gameState.diceSetConfig?.name || (gameState.diceSet.length + ' dice')}`);
-    lines.push('Dice:');
-    const materialMap = Object.fromEntries(MATERIALS.map(m => [m.id, m.abbreviation]));
-    gameState.diceSet.forEach((die: any, i: number) => {
-      const abbrev = materialMap[die.material] || '--';
-      lines.push(`  Die ${i + 1}: ${abbrev} (${die.sides} sides)`);
-    });
     lines.push('===========================\n');
     return lines.join('\n');
   }
@@ -130,5 +124,137 @@ export class CLIDisplayFormatter {
    */
   static formatBankOrRerollPrompt(diceToReroll: number): string {
     return `Bank points (b) or reroll ${diceToReroll} dice (r)? `;
+  }
+
+  /**
+   * CLI-specific: Format command legend
+   */
+  static formatCommandLegend(): string {
+    return `Commands: (i) Inventory, (c) Combinations, (d) Dice Set, (l) Level`;
+  }
+
+  /**
+   * CLI-specific: Format inventory display
+   */
+  static formatInventory(gameState: any): string[] {
+    const lines: string[] = [];
+    lines.push(`🎒 INVENTORY`);
+    lines.push(`  Money: $${gameState.money}`);
+    lines.push(`  Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c: any) => `${c.name}${c.uses !== undefined ? ` (${c.uses} uses)` : ''}`).join(', ') : 'None'}`);
+    lines.push(`  Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c: any) => `${c.name} (${c.uses} uses)`).join(', ') : 'None'}`);
+    return lines;
+  }
+
+  /**
+   * CLI-specific: Format combinations display
+   */
+  static formatCombinationsDisplay(dice: Die[], gameState: any): string[] {
+    const lines: string[] = [];
+    lines.push(`🎯 COMBINATIONS ANALYSIS`);
+    
+    // Get all possible combinations for current dice
+    const diceValues = dice.map(die => die.rolledValue!);
+    const combinations = this.getAllPossibleCombinations(diceValues);
+    
+    if (combinations.length > 0) {
+      // Group by combination type
+      const grouped: Record<string, { values: number[]; indices: number[]; points: number }> = {};
+      combinations.forEach(c => {
+        if (!grouped[c.type]) grouped[c.type] = { values: [], indices: [], points: 0 };
+        grouped[c.type].values.push(...c.dice.map(i => diceValues[i]));
+        grouped[c.type].indices.push(...c.dice.map(i => i + 1));
+        grouped[c.type].points = Math.max(grouped[c.type].points, c.points);
+      });
+      
+      Object.entries(grouped).forEach(([type, { values, indices, points }]) => {
+        lines.push(`  ${type}: ${values.join(', ')} (${indices.join(', ')}) = ${points} points`);
+      });
+    } else {
+      lines.push(`  No valid combinations found`);
+    }
+    
+    // Show combination counters from game state
+    if (gameState.combinationCounters) {
+      lines.push(`  Combination History:`);
+      Object.entries(gameState.combinationCounters).forEach(([type, count]) => {
+        if ((count as number) > 0) {
+          lines.push(`    ${type}: ${count} scored`);
+        }
+      });
+    }
+    
+    return lines;
+  }
+
+  /**
+   * CLI-specific: Format dice set display
+   */
+  static formatDiceSetDisplay(gameState: any): string[] {
+    const lines: string[] = [];
+    lines.push(`🎲 DICE SET`);
+    lines.push(`  Set: ${gameState.diceSetConfig?.name || (gameState.diceSet.length + ' dice')}`);
+    lines.push(`  Dice:`);
+    const materialMap = Object.fromEntries(MATERIALS.map(m => [m.id, m.abbreviation]));
+    gameState.diceSet.forEach((die: any, i: number) => {
+      const abbrev = materialMap[die.material] || '--';
+      lines.push(`    Die ${i + 1}: ${abbrev} (${die.sides} sides)`);
+    });
+    return lines;
+  }
+
+  /**
+   * CLI-specific: Format level display (placeholder)
+   */
+  static formatLevelDisplay(gameState: any): string[] {
+    const lines: string[] = [];
+    lines.push(`📈 LEVEL INFO`);
+    lines.push(`  Current Level: 1 (placeholder)`);
+    lines.push(`  Points Needed: 1000 (placeholder)`);
+    lines.push(`  Rounds Left: 10 (placeholder)`);
+    lines.push(`  Boss: None (placeholder)`);
+    return lines;
+  }
+
+  /**
+   * Helper: Get all possible combinations for given dice values
+   */
+  private static getAllPossibleCombinations(diceValues: number[]): ScoringCombination[] {
+    // This is a simplified version - in practice, you'd want to use the actual scoring logic
+    const combinations: ScoringCombination[] = [];
+    
+    // Check for straights
+    const sorted = [...diceValues].sort((a, b) => a - b);
+    if (sorted.length >= 3) {
+      // Check for 3+ consecutive numbers
+      for (let i = 0; i <= sorted.length - 3; i++) {
+        if (sorted[i + 1] === sorted[i] + 1 && sorted[i + 2] === sorted[i] + 2) {
+          const indices = [i, i + 1, i + 2];
+          combinations.push({
+            type: 'Straight',
+            dice: indices,
+            points: 100
+          });
+        }
+      }
+    }
+    
+    // Check for of-a-kinds
+    const counts: Record<number, number[]> = {};
+    diceValues.forEach((value, index) => {
+      if (!counts[value]) counts[value] = [];
+      counts[value].push(index);
+    });
+    
+    Object.entries(counts).forEach(([value, indices]) => {
+      if (indices.length >= 3) {
+        combinations.push({
+          type: `${indices.length} of a Kind`,
+          dice: indices,
+          points: indices.length * 50
+        });
+      }
+    });
+    
+    return combinations;
   }
 } 

@@ -27,7 +27,7 @@ export class WebInterface implements GameInterface {
     return prompt(question) || '';
   }
 
-  async askForDiceSelection(dice: Die[]): Promise<string> {
+  async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>, gameState?: any): Promise<string> {
     return window.prompt('Select dice values to score:') || '';
   }
 

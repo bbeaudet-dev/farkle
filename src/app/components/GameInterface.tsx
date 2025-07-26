@@ -134,8 +134,9 @@ class ReactGameInterface implements IGameInterface {
     return this.inputCallback(`Start New Game? (y/n): `);
   }
 
-  async askForNextRound(): Promise<string> {
-    return this.inputCallback(`Continue to next round? (y/n): `);
+  async askForNextRound(gameState?: any): Promise<string> {
+    const nextRoundNumber = (gameState?.roundNumber || 1) + 1;
+    return this.inputCallback(`Start Round ${nextRoundNumber}? (y/n): `);
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {

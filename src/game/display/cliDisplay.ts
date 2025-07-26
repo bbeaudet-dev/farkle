@@ -37,7 +37,7 @@ export class CLIDisplayFormatter {
   /**
    * CLI-specific: Format combination summary
    */
-  static formatCombinationSummary(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], partitioningInfo?: string): string {
+  static formatCombinationSummary(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], partitioningInfo?: string, partitioningInfoLines?: string[]): string {
     const diceValues = dice.map(die => die.rolledValue!);
     const result = [`🎯 COMBINATIONS: Highest points: ${combinations.reduce((max, c) => Math.max(max, c.points), 0)}`];
     
@@ -53,8 +53,10 @@ export class CLIDisplayFormatter {
         return `${type} ${values.join(', ')} (${indices.join(', ')})`;
       }).join('; '));
       
-      // Add partitioning info if provided or if multiple combinations
-      if (partitioningInfo) {
+      // Add partitioning info lines if provided
+      if (partitioningInfoLines && partitioningInfoLines.length > 0) {
+        result.push(...partitioningInfoLines.map(line => `  ${line}`));
+      } else if (partitioningInfo) {
         result.push(`  ${partitioningInfo}`);
       } else if (combinations.length > 1) {
         result.push(`  Selected partitioning: ${combinations.map(c => c.type).join(', ')}`);
@@ -69,27 +71,27 @@ export class CLIDisplayFormatter {
    */
   static formatRollSummary(rollPoints: number, roundPoints: number, hotDiceCount: number, diceToReroll: number): string[] {
     const lines: string[] = [];
-    lines.push(`📊 ROLL SUMMARY`);
+    lines.push(`🎲 ROLL SUMMARY`);
     lines.push(`  Roll points: +${rollPoints}`);
     lines.push(`  Round points: ${roundPoints}`);
     if (hotDiceCount > 0) {
       lines.push(`  Hot dice multiplier: x${hotDiceCount + 1}`);
     }
-    lines.push(`Bank points (b) or reroll ${diceToReroll} dice (r)? `);
+    lines.push(`Bank points (b) or reroll ${diceToReroll} dice (r): `);
     return lines;
   }
 
   /**
    * CLI-specific: Format round summary at end of round (after flop/bank)
    */
-  static formatEndOfRoundSummary(forfeitedPoints: number, pointsAdded: number, consecutiveFlops: number): string[] {
+  static formatEndOfRoundSummary(forfeitedPoints: number, pointsAdded: number, consecutiveFlops: number, roundNumber?: number): string[] {
     const lines: string[] = [];
-    lines.push(`📊 ROUND SUMMARY`);
+    lines.push(`📊 ROUND ${roundNumber} SUMMARY`);
     if (forfeitedPoints > 0) {
       lines.push(`  Points forfeited: -${forfeitedPoints}`);
     }
     if (pointsAdded > 0) {
-      lines.push(`  Points added: +${pointsAdded}`);
+      lines.push(`  Points banked: +${pointsAdded}`);
     }
     if (consecutiveFlops > 0) {
       lines.push(`  Consecutive flops: ${consecutiveFlops}`);
@@ -123,14 +125,14 @@ export class CLIDisplayFormatter {
    * CLI-specific: Format bank or reroll prompt
    */
   static formatBankOrRerollPrompt(diceToReroll: number): string {
-    return `Bank points (b) or reroll ${diceToReroll} dice (r)? `;
+    return `Bank points (b) or reroll ${diceToReroll} dice (r): `;
   }
 
   /**
    * CLI-specific: Format command legend
    */
   static formatCommandLegend(): string {
-    return `Commands: (i) Inventory, (c) Combinations, (d) Dice Set, (l) Level`;
+    return `\nCommands: (i) Inventory, (c) Combinations, (d) Dice Set, (l) Level`;
   }
 
   /**
@@ -199,6 +201,7 @@ export class CLIDisplayFormatter {
       const abbrev = materialMap[die.material] || '--';
       lines.push(`    Die ${i + 1}: ${abbrev} (${die.sides} sides)`);
     });
+    lines.push('');
     return lines;
   }
 

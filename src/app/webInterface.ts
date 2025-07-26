@@ -39,8 +39,9 @@ export class WebInterface implements GameInterface {
     return this.ask(DisplayFormatter.formatNewGamePrompt());
   }
 
-  async askForNextRound(): Promise<string> {
-    return window.prompt('Play another round? (y/n):') || '';
+  async askForNextRound(gameState?: any): Promise<string> {
+    const nextRoundNumber = (gameState?.roundNumber || 1) + 1;
+    return window.prompt(`Start Round ${nextRoundNumber}? (y/n):`) || '';
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {

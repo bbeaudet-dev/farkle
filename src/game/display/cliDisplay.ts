@@ -65,17 +65,35 @@ export class CLIDisplayFormatter {
   }
 
   /**
-   * CLI-specific: Format round summary with points, hot dice, and bank/reroll prompt
+   * CLI-specific: Format roll summary with points, hot dice, and bank/reroll prompt
    */
-  static formatRoundSummary(rollPoints: number, roundPoints: number, hotDiceCount: number, diceToReroll: number): string[] {
+  static formatRollSummary(rollPoints: number, roundPoints: number, hotDiceCount: number, diceToReroll: number): string[] {
     const lines: string[] = [];
-    lines.push(`📊 ROUND SUMMARY`);
+    lines.push(`📊 ROLL SUMMARY`);
     lines.push(`  Roll points: +${rollPoints}`);
     lines.push(`  Round points: ${roundPoints}`);
     if (hotDiceCount > 0) {
       lines.push(`  Hot dice multiplier: x${hotDiceCount + 1}`);
     }
     lines.push(`Bank points (b) or reroll ${diceToReroll} dice (r)? `);
+    return lines;
+  }
+
+  /**
+   * CLI-specific: Format round summary at end of round (after flop/bank)
+   */
+  static formatEndOfRoundSummary(forfeitedPoints: number, pointsAdded: number, consecutiveFlops: number): string[] {
+    const lines: string[] = [];
+    lines.push(`📊 ROUND SUMMARY`);
+    if (forfeitedPoints > 0) {
+      lines.push(`  Points forfeited: -${forfeitedPoints}`);
+    }
+    if (pointsAdded > 0) {
+      lines.push(`  Points added: +${pointsAdded}`);
+    }
+    if (consecutiveFlops > 0) {
+      lines.push(`  Consecutive flops: ${consecutiveFlops}`);
+    }
     return lines;
   }
 

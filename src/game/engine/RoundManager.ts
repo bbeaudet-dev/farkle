@@ -117,14 +117,14 @@ export class RoundManager {
         isFlop: false,
       });
 
-      /* === Display Round Summary === */
-      const roundSummaryLines = CLIDisplayFormatter.formatRoundSummary(
+      /* === Display Roll Summary === */
+      const rollSummaryLines = CLIDisplayFormatter.formatRollSummary(
         Math.ceil(finalPoints),
         roundState.roundPoints,
         roundState.hotDiceCount,
         roundState.diceHand.length
       );
-      for (const line of roundSummaryLines) {
+      for (const line of rollSummaryLines) {
         await gameInterface.log(line);
       }
 
@@ -289,6 +289,17 @@ export class RoundManager {
       const bankedPoints = charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
       const bankResult = processBankAction(bankedPoints, gameState.gameScore);
       await gameInterface.displayBankedPoints(bankedPoints);
+      
+      // Display end-of-round summary
+      const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
+        0, // forfeited points
+        bankedPoints, // points added
+        0 // consecutive flops
+      );
+      for (const line of endOfRoundLines) {
+        await gameInterface.log(line);
+      }
+      
       updateGameStateAfterRound(gameState, roundState, bankResult);
       await gameInterface.displayGameScore(gameState.gameScore);
       return 'banked';
@@ -324,7 +335,25 @@ export class RoundManager {
         await gameInterface.log(shieldMsg);
         return 'flopPrevented';
       }
-      updateGameStateAfterRound(gameState, roundState, processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore));
+      
+      // Display combinations header with flop message
+      await gameInterface.log(`🎯 COMBINATIONS: No valid scoring combinations found, you flopped!`);
+      
+      // Process flop and update game state
+      const flopResult2 = processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore);
+      updateGameStateAfterRound(gameState, roundState, flopResult2);
+      
+      // Display end-of-round summary
+      const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
+        roundState.roundPoints, // forfeited points
+        0, // points added (always 0 for flop)
+        gameState.consecutiveFlops
+      );
+      for (const line of endOfRoundLines) {
+        await gameInterface.log(line);
+      }
+      
+      // Display additional flop info
       await gameInterface.displayFlopMessage(
         roundState.roundPoints,
         gameState.consecutiveFlops,

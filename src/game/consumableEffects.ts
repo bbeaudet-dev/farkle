@@ -130,12 +130,12 @@ export async function applyConsumableEffect(idx: number, gameState: any, roundSt
     }
     case 'forfeitRecovery': {
       const lastForfeit = gameState.lastForfeitedPoints || 0;
-      const recovered = Math.floor(lastForfeit * 0.5);
+      const recovered = Math.floor(lastForfeit * 1.25);
       if (recovered > 0) {
-        gameState.gameScore += recovered;
-        await gameInterface.log(`🩹 Forfeit Recovery used! Recovered ${recovered} points. New game score: ${gameState.gameScore}.`);
+        roundState.roundPoints += recovered;
+        await gameInterface.log(`🩹 Flop Recovery used! Recovered ${recovered} points and added to round score.`);
       } else {
-        await gameInterface.log('🩹 Forfeit Recovery used, but there were no forfeited points to recover.');
+        await gameInterface.log('🩹 Flop Recovery used, but there were no forfeited points to recover.');
         shouldRemove = false;
       }
       break;

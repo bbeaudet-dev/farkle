@@ -160,18 +160,23 @@ export class CharmManager {
    * Returns { prevented: boolean, log: string | null }
    */
   tryPreventFlop(context: CharmFlopContext): { prevented: boolean, log: string | null } {
+    let prevented = false;
+    let log = null;
+    
     for (const charm of this.getActiveCharms()) {
       if (charm.onFlop && charm.canUse()) {
         const result = charm.onFlop(context);
         if (result && typeof result === 'object' && result.prevented) {
-          return { prevented: true, log: result.log || null };
+          prevented = true;
+          log = result.log || null;
         } else if (result === true) {
           // For backward compatibility
-          return { prevented: true, log: null };
+          prevented = true;
         }
       }
     }
-    return { prevented: false, log: null };
+    
+    return { prevented, log };
   }
 
   /**

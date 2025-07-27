@@ -34,7 +34,7 @@ export const MATERIALS: DiceMaterial[] = [
     name: 'Volcano',
     description: 'Provides bonus multipliers based on hot dice counter',
     abbreviation: 'vl',
-    color: 'orangeRed'
+    color: 'fireRed'
   },
   {
     id: 'mirror',
@@ -50,5 +50,6 @@ export const MATERIALS: DiceMaterial[] = [
     description: 'Lucky die with possible special effects',
     abbreviation: 'rb',
     color: 'rainbow' // Special case for multi-color
-  }
+  },
+
 ]; 

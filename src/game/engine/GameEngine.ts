@@ -73,6 +73,15 @@ export class GameEngine {
 
     // Main game loop
     while (gameState.isActive) {
+      // Ask user to start the round
+      const next = await (this.interface as any).askForNextRound(gameState, null, async (idx: number) => await this.useConsumable(idx, gameState, null));
+      if (next.trim().toLowerCase() !== 'y') {
+        gameState.isActive = false;
+        gameState.endReason = 'quit';
+        await this.interface.displayGameEnd(gameState, false);
+        break;
+      }
+      
       await this.roundManager.playRound(
         gameState,
         diceSetConfig.name,
@@ -85,13 +94,6 @@ export class GameEngine {
         gameState.isActive = false;
         gameState.endReason = 'win';
         await this.interface.displayGameEnd(gameState, true);
-      } else {
-        const next = await (this.interface as any).askForNextRound(gameState, null, async (idx: number) => await this.useConsumable(idx, gameState, null));
-        if (next.trim().toLowerCase() !== 'y') {
-          gameState.isActive = false;
-          gameState.endReason = 'quit';
-          await this.interface.displayGameEnd(gameState, false);
-        }
       }
     }
   }

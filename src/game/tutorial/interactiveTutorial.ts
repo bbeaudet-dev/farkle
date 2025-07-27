@@ -73,10 +73,8 @@ export class InteractiveTutorial {
     await this.gameInterface.log('');
 
     // Roll the dice
-    state.roundState.diceHand = state.gameState.diceSet.map(die => ({
-      ...die,
-      rolledValue: state.rollManager.rollDice([die])[0]
-    }));
+    state.roundState.diceHand = state.gameState.diceSet.map(die => ({ ...die }));
+    state.rollManager.rollDice(state.roundState.diceHand);
 
     await this.gameInterface.displayRoll(1, state.roundState.diceHand);
     await this.gameInterface.log('');

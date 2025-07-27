@@ -79,6 +79,9 @@ export class CLIInterface implements GameInterface {
 
   async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>, gameState?: any): Promise<string> {
     while (true) {
+      // Add a line above the prompt
+      await this.log('');
+      
       const input = await this.ask(DisplayFormatter.formatDiceSelectionPrompt(), undefined, { consumables, useCallback, allowInventory: true });
       const trimmedInput = input.trim().toLowerCase();
       
@@ -127,7 +130,7 @@ export class CLIInterface implements GameInterface {
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
     // Do not allow inventory use at this prompt
     while (true) {
-      const input = await this.ask('', undefined, { allowInventory: false });
+      const input = await this.ask(DisplayFormatter.formatBankOrRerollPrompt(diceToReroll), undefined, { allowInventory: false });
       if (input.trim().toLowerCase() === 'i') {
         await this.log('Inventory cannot be used at this prompt.');
         continue;
@@ -138,7 +141,7 @@ export class CLIInterface implements GameInterface {
 
   async askForNextRound(gameState?: any, roundState?: any, useCallback?: (idx: number) => Promise<void>): Promise<string> {
     while (true) {
-      const nextRoundNumber = (gameState?.roundNumber || 1) + 1;
+      const nextRoundNumber = (gameState?.roundNumber || 0) + 1;
       const input = await this.ask(DisplayFormatter.formatNextRoundPrompt(nextRoundNumber), gameState?.consumables, { consumables: gameState?.consumables, useCallback, allowInventory: true });
       if (input.trim().toLowerCase() === 'i') {
         continue;
@@ -151,7 +154,17 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {
-    return this.ask(`Choose a partitioning (1-${numPartitionings}): `, '1');
+    // Use a direct readline call to avoid command processing
+    return new Promise<string>((resolve) => {
+      this.rl.question(`Choose partitioning (1-${numPartitionings}): `, (input) => {
+        const trimmed = input.trim();
+        if (trimmed === '') {
+          resolve('1'); // Default to first option
+        } else {
+          resolve(trimmed);
+        }
+      });
+    });
   }
 
   async askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]> {
@@ -197,11 +210,62 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
-    let prompt = '\nAvailable Dice Sets:\n';
-    diceSetNames.forEach((name, i) => {
-      prompt += `  ${i + 1}. ${name}\n`;
+    // Import the dice sets to get their setType
+    const { ALL_DICE_SETS } = await import('../game/content/diceSets');
+    
+    let prompt = '\n🎲 DICE SET SELECTION\n\n';
+    
+    // Group dice sets by type
+    const beginnerSets: { name: string; index: number }[] = [];
+    const advancedSets: { name: string; index: number }[] = [];
+    const mayhemSets: { name: string; index: number }[] = [];
+    
+    ALL_DICE_SETS.forEach((set, i) => {
+      const name = typeof set === 'function' ? 'Chaos' : set.name;
+      const setType = typeof set === 'function' ? 'mayhem' : set.setType;
+      
+      switch (setType) {
+        case 'beginner':
+          beginnerSets.push({ name, index: i });
+          break;
+        case 'advanced':
+          advancedSets.push({ name, index: i });
+          break;
+        case 'mayhem':
+          mayhemSets.push({ name, index: i });
+          break;
+      }
     });
+    
+    // Display Beginner Sets
+    if (beginnerSets.length > 0) {
+      prompt += '📚 BEGINNER SETS:\n';
+      beginnerSets.forEach(({ name, index }) => {
+        prompt += `  ${index + 1}. ${name}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    // Display Advanced Sets
+    if (advancedSets.length > 0) {
+      prompt += '⚡ ADVANCED SETS:\n';
+      advancedSets.forEach(({ name, index }) => {
+        prompt += `  ${index + 1}. ${name}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    // Display Mayhem Sets
+    if (mayhemSets.length > 0) {
+      prompt += '🔥 MAYHEM SETS:\n';
+      mayhemSets.forEach(({ name, index }) => {
+        prompt += `  ${index + 1}. ${name}\n`;
+      });
+      prompt += '\n';
+    }
+    
     prompt += 'Select a dice set: ';
+    
     while (true) {
       const input = await this.ask(prompt, '1');
       const idx = parseInt(input.trim(), 10) - 1;
@@ -321,7 +385,8 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
-    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), ROLLIO_CONFIG.cli.messageDelay);
+    const { formatFlopMessage } = require('../game/utils/effectUtils');
+    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {

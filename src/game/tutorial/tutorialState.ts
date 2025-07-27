@@ -46,7 +46,8 @@ export class TutorialStateManager {
         ],
         startingMoney: 0,
         charmSlots: 0,
-        consumableSlots: 0
+        consumableSlots: 0,
+        setType: 'beginner'
       },
       consecutiveFlops: 0,
       hotDiceCounter: 0,

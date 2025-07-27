@@ -37,8 +37,6 @@ export class SetupManager {
     await gameInterface.log(`Selected Dice Set: ${diceSetConfig.name}`);
     // No custom materials, no charms, no consumables, no custom rules
     let gameState = createInitialGameState(diceSetConfig);
-    // Assign all dice to plastic by default
-    gameState.diceSet = gameState.diceSet.map((die: any) => ({ ...die, material: 'plastic', abbreviation: 'pl' }));
     gameState.charms = [];
     gameState.consumables = [];
     gameState.winCondition = ROLLIO_CONFIG.winCondition;

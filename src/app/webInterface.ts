@@ -95,7 +95,8 @@ export class WebInterface implements GameInterface {
   }
 
   async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
-    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount));
+    const { formatFlopMessage } = require('../game/utils/effectUtils');
+    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount));
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {

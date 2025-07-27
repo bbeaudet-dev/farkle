@@ -61,7 +61,7 @@ export class SimpleDiceAnimation {
       this.resolveAnimation = resolve;
       this.isAnimating = true;
       let frame = 0;
-      const totalFrames = 21; // rainbow colors complete full cycle (21 = 7 colors × 3 cycles)
+      const totalFrames = 14; // reduced by 25% from 21 frames for faster animation
 
       // Clear previous animation lines and move cursor up
       this.clearAnimationLines();

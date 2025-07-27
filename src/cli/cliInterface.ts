@@ -4,6 +4,7 @@ import { DieValue, ScoringCombination, GameState, Die } from '../game/core/types
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
 import { CLIDisplayFormatter } from '../game/display/cliDisplay';
+import { SimpleDiceAnimation } from '../game/display/simpleDiceAnimation';
 
 /**
  * CLI implementation of the game interface
@@ -16,6 +17,33 @@ export class CLIInterface implements GameInterface {
       input: process.stdin,
       output: process.stdout,
     });
+  }
+
+  /**
+   * Display startup dice animation with rainbow dice
+   */
+  async displayStartupAnimation(): Promise<void> {
+    // Create six rainbow dice for the startup animation
+    const rainbowDice: Die[] = [
+      { id: 'startup-1', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-2', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-3', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-4', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-5', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-6', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+    ];
+
+    // Generate random final values for each die
+    rainbowDice.forEach((die) => {
+      die.rolledValue = (Math.floor(Math.random() * 6) + 1) as DieValue;
+    });
+
+    // Create animation instance and run the animation
+    const animation = new SimpleDiceAnimation();
+    await animation.animateDiceRoll(rainbowDice);
+    
+    // Clean up animation
+    animation.cleanup();
   }
 
   // Menu at startup
@@ -130,7 +158,7 @@ export class CLIInterface implements GameInterface {
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
     // Do not allow inventory use at this prompt
     while (true) {
-      const input = await this.ask(DisplayFormatter.formatBankOrRerollPrompt(diceToReroll), undefined, { allowInventory: false });
+      const input = await this.ask(CLIDisplayFormatter.formatBankOrRerollPrompt(diceToReroll), undefined, { allowInventory: false });
       if (input.trim().toLowerCase() === 'i') {
         await this.log('Inventory cannot be used at this prompt.');
         continue;

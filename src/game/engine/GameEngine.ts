@@ -46,6 +46,11 @@ export class GameEngine {
    * Main game loop. Handles menu, setup, and round orchestration.
    */
   async run(): Promise<void> {
+    // Display startup dice animation if available
+    if (typeof (this.interface as any).displayStartupAnimation === 'function') {
+      await (this.interface as any).displayStartupAnimation();
+    }
+    
     await this.interface.displayWelcome();
 
     // Show main menu

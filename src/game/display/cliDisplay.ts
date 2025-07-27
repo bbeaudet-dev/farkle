@@ -77,7 +77,6 @@ export class CLIDisplayFormatter {
     if (hotDiceCount > 0) {
       lines.push(`  Hot dice multiplier: x${hotDiceCount + 1}`);
     }
-    lines.push(`Bank points (b) or reroll ${diceToReroll} dice (r): `);
     return lines;
   }
 
@@ -125,7 +124,7 @@ export class CLIDisplayFormatter {
    * CLI-specific: Format bank or reroll prompt
    */
   static formatBankOrRerollPrompt(diceToReroll: number): string {
-    return `Bank points (b) or reroll ${diceToReroll} dice (r): `;
+    return `(b) Bank points or (r) reroll ${diceToReroll} dice: `;
   }
 
   /**

@@ -5,6 +5,8 @@ import { DisplayInterface, InputInterface, GameInterface } from '../game/interfa
 import { DisplayFormatter } from '../game/display';
 import { CLIDisplayFormatter } from '../game/display/cliDisplay';
 import { SimpleDiceAnimation } from '../game/display/simpleDiceAnimation';
+import { CommandHandler } from '../game/engine/CommandHandler';
+import { ConfigManager } from '../game/engine/ConfigManager';
 
 /**
  * CLI implementation of the game interface
@@ -118,34 +120,10 @@ export class CLIInterface implements GameInterface {
         continue;
       }
       
-      // Handle new commands
-      if (trimmedInput === 'i' && gameState) {
-        const inventoryLines = CLIDisplayFormatter.formatInventory(gameState);
-        for (const line of inventoryLines) {
-          await this.log(line);
-        }
-        continue;
-      }
-      
-      if (trimmedInput === 'c' && gameState) {
-        const combinationsLines = CLIDisplayFormatter.formatCombinationsDisplay(dice, gameState);
-        for (const line of combinationsLines) {
-          await this.log(line);
-        }
-        continue;
-      }
-      
-      if (trimmedInput === 'd' && gameState) {
-        const diceSetLines = CLIDisplayFormatter.formatDiceSetDisplay(gameState);
-        for (const line of diceSetLines) {
-          await this.log(line);
-        }
-        continue;
-      }
-      
-      if (trimmedInput === 'l' && gameState) {
-        const levelLines = CLIDisplayFormatter.formatLevelDisplay(gameState);
-        for (const line of levelLines) {
+      // Check if input is a game command
+      const commandResult = await CommandHandler.processCommand(input, gameState, dice);
+      if (commandResult.handled) {
+        for (const line of commandResult.responseLines) {
           await this.log(line);
         }
         continue;
@@ -367,22 +345,26 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
-    const ROLLIO_CONFIG = require('../game/config').ROLLIO_CONFIG;
+    // Get user inputs (interface concern)
     const winConditionInput = await this.ask('  Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
-    const winCondition = winConditionInput.trim() === '' ? ROLLIO_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || ROLLIO_CONFIG.winCondition;
-
     const penaltyEnabledInput = await this.ask('  Enable flop penalty? (y/n, default y): ', 'y');
-    const penaltyEnabled = penaltyEnabledInput.trim() === '' ? true : penaltyEnabledInput.trim().toLowerCase() === 'y';
-
-    let consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-    let consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
-    if (penaltyEnabled) {
-      const flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
-      consecutiveFlopLimit = flopLimitInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-      const flopPenaltyInput = await this.ask(`  Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
-      consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
+    
+    let flopLimitInput: string | undefined;
+    let flopPenaltyInput: string | undefined;
+    
+    // Only ask for penalty details if enabled
+    if (penaltyEnabledInput.trim() === '' || penaltyEnabledInput.trim().toLowerCase() === 'y') {
+      flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
+      flopPenaltyInput = await this.ask(`  Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
     }
-    return { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty };
+    
+    // Delegate parsing and validation to ConfigManager (game logic concern)
+    return ConfigManager.parseGameRules({
+      winConditionInput,
+      penaltyEnabledInput,
+      flopLimitInput,
+      flopPenaltyInput
+    });
   }
 
   // Display methods
@@ -412,9 +394,9 @@ export class CLIInterface implements GameInterface {
     }
   }
 
-  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
+  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopLimit: number): Promise<void> {
     const { formatFlopMessage } = require('../game/utils/effectUtils');
-    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), ROLLIO_CONFIG.cli.messageDelay);
+    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopLimit), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {
@@ -433,7 +415,7 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayWelcome(): Promise<void> {
-    await this.log('=== Welcome to Rollio! ===');
+    await this.log('\n=== Welcome to Rollio! ===');
   }
 
   async displayRoundStart(roundNumber: number): Promise<void> {

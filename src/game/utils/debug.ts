@@ -31,18 +31,18 @@ const DEFAULT_CONFIG: DebugConfig = {
   debug: false,
   verbose: false,
   logActions: {
-    gameFlow: true,
-    scoring: true,
-    diceRolls: true,
-    charmActivation: true,
-    consumableUsage: true,
-    materialEffects: true,
-    roundTransitions: true,
-    stateChanges: true
+    gameFlow: false,
+    scoring: false,
+    diceRolls: false,
+    charmActivation: false,
+    consumableUsage: false,
+    materialEffects: false,
+    roundTransitions: false,
+    stateChanges: false
   },
   performance: {
     enableTiming: false,
-    logSlowOperations: true,
+    logSlowOperations: false,
     slowThresholdMs: 10
   }
 };

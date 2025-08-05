@@ -100,12 +100,6 @@ export function processDiceScoring(
   // Hot dice if all dice scored
   const hotDice = newHand.length === 0;
   
-  if (hotDice) {
-    debugAction('gameFlow', 'HOT DICE! All dice scored', { remainingDice: 0 });
-  } else {
-    debugAction('gameFlow', `Dice remaining after scoring`, { remainingDice: newHand.length });
-  }
-  
   return { newHand, hotDice };
 }
 

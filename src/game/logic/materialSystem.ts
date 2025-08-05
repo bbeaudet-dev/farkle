@@ -188,8 +188,7 @@ const materialEffects: Record<string, MaterialEffectFn> = {
     const mirrorDice = selectedDice.filter(die => (die.material as string) === 'mirror');
     
     if (mirrorDice.length > 0) {
-      materialLogs.push(`Mirror: ${mirrorDice.length} mirror dice (hardcoded as 3s)`);
-      // Mirror dice are hardcoded as 3s for now
+      materialLogs.push(`Mirror: ${mirrorDice.length} mirror dice (WIP)`);
     }
     
     return { score, materialLogs };

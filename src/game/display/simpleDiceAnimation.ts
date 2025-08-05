@@ -61,7 +61,7 @@ export class SimpleDiceAnimation {
       this.resolveAnimation = resolve;
       this.isAnimating = true;
       let frame = 0;
-      const totalFrames = 14; // reduced by 25% from 21 frames for faster animation
+      const totalFrames = 14; // reduced from 21 frames for faster animation
 
       // Clear previous animation lines and move cursor up
       this.clearAnimationLines();
@@ -96,9 +96,9 @@ export class SimpleDiceAnimation {
 
 
         // Clear and redraw the dice area
-        process.stdout.write('\x1b[6A'); // Move cursor up 6 lines (5 dice + 1 blank line)
+        process.stdout.write('\x1b[5A'); // Move cursor up 5 lines (5 dice rows only)
         process.stdout.write('\x1b[0J'); // Clear from cursor to end of screen
-        process.stdout.write(content + '\n'); // Add blank line after dice
+        process.stdout.write(content);
 
         // End animation
         if (frame >= totalFrames) {

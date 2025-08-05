@@ -11,7 +11,7 @@ export class CLIDisplayFormatter {
    */
   static formatMaterialEffectLogs(base: number, final: number, logs: string[]): string[] {
     const result: string[] = [];
-    result.push(`🎲 MATERIAL SUMMARY`);
+    result.push(`🎨 MATERIAL SUMMARY`);
     if (logs.length > 0) result.push(...logs.map(log => `  ${log}`));
     result.push(`  Starting ${base} → Final ${final} points`);
     return result;
@@ -74,20 +74,20 @@ export class CLIDisplayFormatter {
     lines.push(`🎲 ROLL SUMMARY`);
     lines.push(`  Roll points: +${rollPoints}`);
     lines.push(`  Round points: ${roundPoints}`);
-    if (hotDiceCount > 0) {
-      lines.push(`  Hot dice multiplier: x${hotDiceCount + 1}`);
-    }
     return lines;
   }
 
   /**
    * CLI-specific: Format round summary at end of round (after flop/bank)
    */
-  static formatEndOfRoundSummary(forfeitedPoints: number, pointsAdded: number, consecutiveFlops: number, roundNumber?: number): string[] {
+  static formatEndOfRoundSummary(forfeitedPoints: number, pointsAdded: number, consecutiveFlops: number, roundNumber?: number, flopPenalty?: number): string[] {
     const lines: string[] = [];
     lines.push(`📊 ROUND ${roundNumber} SUMMARY`);
     if (forfeitedPoints > 0) {
       lines.push(`  Points forfeited: -${forfeitedPoints}`);
+    }
+    if (flopPenalty && flopPenalty > 0) {
+      lines.push(`  Flop penalty: -${flopPenalty}`);
     }
     if (pointsAdded > 0) {
       lines.push(`  Points banked: +${pointsAdded}`);
@@ -117,7 +117,7 @@ export class CLIDisplayFormatter {
    */
   static formatHotDice(count?: number): string {
     const fireEmojis = '🔥'.repeat(count || 1);
-    return `\n${fireEmojis} HOT DICE! ${fireEmojis}`;
+    return `  ${fireEmojis} HOT DICE! ${fireEmojis}`;
   }
 
   /**

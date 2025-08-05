@@ -16,7 +16,7 @@ export class FlopShieldCharm extends BaseCharm {
       this.use();
       return {
         prevented: true,
-        log: '🛡️ Flop Shield activated! Flop prevented (' + this.uses + ' uses left)'
+        log: '\n🛡️ Flop Shield activated! Flop prevented (' + this.uses + ' uses left)'
       };
     }
     return false;

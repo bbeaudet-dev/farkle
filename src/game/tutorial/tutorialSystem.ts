@@ -91,7 +91,7 @@ export class TutorialSystem {
     await this.gameInterface.log('');
     await this.gameInterface.log('🔥 HOT DICE:');
     await this.gameInterface.log('• Score all dice to trigger "Hot Dice"');
-    await this.gameInterface.log('• Hot dice let you reroll ALL dice with a multiplier');
+    await this.gameInterface.log('• Hot dice let you reroll ALL dice');
     await this.gameInterface.log('');
     await this.gameInterface.log('💰 BANKING:');
     await this.gameInterface.log('• Bank points to add them to your game score');
@@ -174,7 +174,7 @@ export class TutorialSystem {
     await this.gameInterface.log('🎲 DICE SYSTEM:');
     await this.gameInterface.log('• Configurable dice sets with different materials');
     await this.gameInterface.log('• Material properties affect scoring and effects');
-    await this.gameInterface.log('• Hot dice detection and multiplier system');
+    await this.gameInterface.log('• Hot dice detection and counter system');
     await this.gameInterface.log('');
     await this.gameInterface.log('🔄 GAME FLOW:');
     await this.gameInterface.log('• Round-based progression with state management');

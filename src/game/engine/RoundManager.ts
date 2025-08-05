@@ -204,7 +204,7 @@ export class RoundManager {
       };
     }
     
-    // Build and display partitioning info lines
+    // Build partitioning info lines
     const partitioningInfo: string[] = [];
     partitioningInfo.push(`Found ${scoringResult.allPartitionings.length} valid partitionings:`);
     for (let i = 0; i < scoringResult.allPartitionings.length; i++) {
@@ -221,9 +221,10 @@ export class RoundManager {
     const bestPartitioningIndex = getHighestPointsPartitioning(scoringResult.allPartitionings);
     const choice = await gameInterface.askForPartitioningChoice(scoringResult.allPartitionings.length);
     let choiceIndex: number;
+    let resultInfo: string[] = [];
     if (choice.trim() === '' || choice.trim() === '1') {
       choiceIndex = bestPartitioningIndex;
-      partitioningInfo.push(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
+      resultInfo.push(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
     } else {
       choiceIndex = parseInt(choice.trim(), 10) - 1;
     }
@@ -233,7 +234,7 @@ export class RoundManager {
     }
     return { 
       partitioning: scoringResult.allPartitionings[choiceIndex], 
-      partitioningInfo 
+      partitioningInfo: resultInfo 
     };
   }
 
@@ -325,7 +326,8 @@ export class RoundManager {
         0, // forfeited points
         bankedPoints, // points added
         0, // consecutive flops
-        gameState.roundNumber
+        gameState.roundNumber,
+        0 // no flop penalty for banking
       );
       for (const line of endOfRoundLines) {
         await gameInterface.log(line);
@@ -392,11 +394,15 @@ export class RoundManager {
       updateGameStateAfterRound(gameState, roundState, flopResult2);
       
       // Display end-of-round summary
+      const flopPenalty = (gameState.consecutiveFlops >= (gameState.consecutiveFlopLimit ?? 3) && !gameState.charmPreventingFlop) 
+        ? (gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty) 
+        : 0;
       const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
         roundState.roundPoints, // forfeited points
         0, // points added (always 0 for flop)
         gameState.consecutiveFlops,
-        gameState.roundNumber
+        gameState.roundNumber,
+        flopPenalty
       );
       for (const line of endOfRoundLines) {
         await gameInterface.log(line);

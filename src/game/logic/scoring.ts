@@ -1,6 +1,6 @@
 import { ROLLIO_CONFIG } from '../config';
 import { Die, DieValue, ScoringCombination, Charm } from '../core/types';
-import { debugLog, getDebugMode } from '../utils/debug';
+import { debugLog, getDebugMode, debugAction, debugVerbose } from '../utils/debug';
 import { applyMaterialEffects } from './materialSystem';
 
 // Define scoring combination types for type safety

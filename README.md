@@ -4,6 +4,48 @@
 
 A modular Rollio dice game with multiple interfaces: CLI, Web, and React App.
 
+## 🐛 Debug Mode
+
+The game includes a comprehensive debug mode for tracking every action and game state change:
+
+### Quick Start
+
+```bash
+# Enable debug mode by editing debug.config.json
+{
+  "debug": true,
+  "verbose": false
+}
+
+# Then run the game
+npm run cli
+```
+
+### Debug Features
+
+- **Action Logging**: Every game action (dice rolls, scoring, charm activation, etc.)
+- **State Changes**: Track all game state modifications
+- **Material Effects**: See dice material bonuses in real-time
+- **Performance Timing**: Monitor slow operations
+- **Configurable Categories**: Enable/disable specific log types
+
+### Debug Configuration
+
+Edit `debug.config.json` to control:
+
+- `debug`: Master toggle for all debug logging
+- `verbose`: Extra detailed internal operations
+- `logActions`: Category-specific toggles for different action types
+- `performance`: Timing and performance monitoring
+
+Example output:
+
+```
+[ACTION 14:32:15] Validating dice selection: 1,2,3
+[ACTION 14:32:15] Scoring result: valid {"points":300,"combinations":[{"type":"threeOfAKind","points":300}]}
+[ACTION 14:32:15] Crystal effect activated {"scoreChange":150,"newScore":450}
+```
+
 ## 📁 Project Structure
 
 ```

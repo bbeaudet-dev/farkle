@@ -1,4 +1,5 @@
 import { Die } from '../core/types';
+import { debugAction, debugVerbose } from '../utils/debug';
 
 /*
  * =============================
@@ -211,6 +212,12 @@ export function applyMaterialEffects(
   roundState: any,
   charmManager?: any
 ): { score: number, materialLogs: string[] } {
+  debugAction('materialEffects', 'Applying material effects', {
+    baseScore,
+    selectedDice: selectedIndices.length,
+    materials: selectedIndices.map(i => diceHand[i].material)
+  });
+  
   let score = baseScore;
   let allLogs: string[] = [];
   
@@ -222,21 +229,32 @@ export function applyMaterialEffects(
     materialGroups[die.material].push(idx);
   });
   
+  debugVerbose(`Material groups:`, materialGroups);
+  
   // Track if any effect logs were added
   let hadEffect = false;
   
   // Apply each material effect
   for (const material in materialGroups) {
     if (materialEffects[material]) {
+      debugVerbose(`Applying ${material} material effect`);
       const { score: newScore, materialLogs } = materialEffects[material](
         diceHand, selectedIndices, score, gameState, roundState, charmManager
       );
       if (materialLogs.length > 0) {
         allLogs.push(...materialLogs);
         hadEffect = true;
+        debugAction('materialEffects', `${material} effect activated`, { 
+          scoreChange: newScore - score,
+          newScore
+        });
       }
       score = newScore;
     }
+  }
+  
+  if (!hadEffect) {
+    debugVerbose('No material effects applied');
   }
   
   return { score, materialLogs: allLogs };

@@ -4,6 +4,7 @@ import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings }
 import { rollDice } from '../logic/scoring';
 import { validateDiceSelection } from '../utils/effectUtils';
 import { getRandomInt } from '../utils/effectUtils';
+import { debugAction, debugVerbose } from '../utils/debug';
 
 interface ScoringContext {
   charms: Charm[];
@@ -43,12 +44,25 @@ export interface RoundActionResult {
  * Validates dice selection and returns scoring result
  */
 export function validateDiceSelectionAndScore(input: string, diceHand: Die[], context: ScoringContext): { selectedIndices: number[], scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[], allPartitionings: ScoringCombination[][] } } {
+  debugAction('scoring', `Validating dice selection: ${input}`, { 
+    diceValues: diceHand.map(d => d.rolledValue),
+    charmsActive: context.charms.length
+  });
+  
   const selectedIndices = validateDiceSelection(input, diceHand.map(die => die.rolledValue) as DieValue[]);
+  debugVerbose(`Selected dice indices: [${selectedIndices.join(', ')}]`);
+  
   const combos = getScoringCombinations(diceHand, selectedIndices, context);
   const allPartitionings = getAllPartitionings(diceHand, selectedIndices, context);
   const totalComboDice = combos.reduce((sum, c) => sum + c.dice.length, 0);
   const valid = combos.length > 0 && totalComboDice === selectedIndices.length;
   const points = combos.reduce((sum, c) => sum + c.points, 0);
+  
+  debugAction('scoring', `Scoring result: ${valid ? 'valid' : 'invalid'}`, {
+    points,
+    combinations: combos.map(c => ({ type: c.type, points: c.points })),
+    partitioningOptions: allPartitionings.length
+  });
   
   return {
     selectedIndices,
@@ -60,7 +74,11 @@ export function validateDiceSelectionAndScore(input: string, diceHand: Die[], co
  * Checks if a roll is a flop (no scoring combinations)
  */
 export function isFlop(diceHand: Die[]): boolean {
-  return !hasAnyScoringCombination(diceHand);
+  const result = !hasAnyScoringCombination(diceHand);
+  debugAction('diceRolls', `Flop check: ${result ? 'FLOP' : 'scoring available'}`, {
+    diceValues: diceHand.map(d => d.rolledValue)
+  });
+  return result;
 }
 
 /**
@@ -71,10 +89,17 @@ export function processDiceScoring(
   selectedIndices: number[], 
   scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[] }
 ): { newHand: Die[], hotDice: boolean } {
+  debugAction('scoring', 'Processing dice scoring', {
+    originalDice: diceHand.length,
+    scoredDice: selectedIndices.length,
+    points: scoringResult.points
+  });
+  
   // Remove scored dice from diceHand
   const newHand = diceHand.filter((_, i) => !selectedIndices.includes(i));
   // Hot dice if all dice scored
   const hotDice = newHand.length === 0;
+  
   return { newHand, hotDice };
 }
 

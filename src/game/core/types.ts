@@ -9,7 +9,7 @@ export interface DiceMaterial {
   color: string;
 }
 
-export type DiceMaterialType = 'plastic' | 'crystal' | 'wooden' | 'golden' | 'volcano' | 'mirror';
+export type DiceMaterialType = 'plastic' | 'crystal' | 'wooden' | 'golden' | 'volcano' | 'mirror' | 'rainbow';
 
 export interface Die {
   id: string;
@@ -20,12 +20,15 @@ export interface Die {
   rolledValue?: number; // Set at runtime
 }
 
+export type DiceSetType = 'beginner' | 'advanced' | 'mayhem';
+
 export interface DiceSetConfig {
   name: string;
   dice: Omit<Die, 'scored' | 'rolledValue'>[]; // Die config without runtime state
   startingMoney: number;
   charmSlots: number;
   consumableSlots: number;
+  setType: DiceSetType;
 }
 
 // SCORING TYPES

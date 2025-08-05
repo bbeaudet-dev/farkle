@@ -5,9 +5,9 @@ import {
   BASIC_DICE_SET, 
   HIGH_ROLLER_SET, 
   LOW_BALLER_SET, 
-  HOARDER_SET, 
+  COLLECTOR_SET, 
   LUXURY_SET, 
-  CHAOS_SET,
+  RANDOM_SET,
   ALL_DICE_SETS 
 } from '../content/diceSets';
 
@@ -92,11 +92,11 @@ describe('Game State', () => {
       });
     });
 
-    it('should work with Hoarder dice set (more than 6 dice)', () => {
-      const gameState = createInitialGameState(HOARDER_SET);
+    it('should work with Collector dice set (more than 6 dice)', () => {
+      const gameState = createInitialGameState(COLLECTOR_SET);
       
       expect(gameState.diceSet).toHaveLength(8);
-      expect(gameState.diceSetConfig.name).toBe('Hoarder');
+      expect(gameState.diceSetConfig.name).toBe('Collector Set');
       expect(gameState.diceSetConfig.startingMoney).toBe(5);
       expect(gameState.diceSetConfig.charmSlots).toBe(2);
       expect(gameState.diceSetConfig.consumableSlots).toBe(1);
@@ -117,12 +117,12 @@ describe('Game State', () => {
       });
     });
 
-    it('should work with Chaos dice set (random configuration)', () => {
-      const chaosConfig = CHAOS_SET();
-      const gameState = createInitialGameState(chaosConfig);
+    it('should work with Random dice set (random configuration)', () => {
+      const randomConfig = RANDOM_SET();
+      const gameState = createInitialGameState(randomConfig);
       
-      expect(gameState.diceSet).toHaveLength(chaosConfig.dice.length);
-      expect(gameState.diceSetConfig.name).toBe('Chaos');
+      expect(gameState.diceSet).toHaveLength(randomConfig.dice.length);
+      expect(gameState.diceSetConfig.name).toBe('Random Set');
       expect(gameState.diceSetConfig.startingMoney).toBeGreaterThanOrEqual(1);
       expect(gameState.diceSetConfig.startingMoney).toBeLessThanOrEqual(20);
       expect(gameState.diceSetConfig.charmSlots).toBeGreaterThanOrEqual(1);
@@ -132,7 +132,7 @@ describe('Game State', () => {
     });
 
     it('should work with all predefined dice sets', () => {
-      // Test all static dice sets (excluding CHAOS_SET which is a function)
+      // Test all static dice sets (excluding RANDOM_SET which is a function)
       const staticDiceSets = ALL_DICE_SETS.filter(ds => typeof ds === 'object') as DiceSetConfig[];
       
       staticDiceSets.forEach(diceSet => {

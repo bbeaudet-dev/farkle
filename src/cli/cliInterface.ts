@@ -4,6 +4,9 @@ import { DieValue, ScoringCombination, GameState, Die } from '../game/core/types
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
 import { DisplayFormatter } from '../game/display';
 import { CLIDisplayFormatter } from '../game/display/cliDisplay';
+import { SimpleDiceAnimation } from '../game/display/simpleDiceAnimation';
+import { CommandHandler } from '../game/engine/CommandHandler';
+import { ConfigManager } from '../game/engine/ConfigManager';
 
 /**
  * CLI implementation of the game interface
@@ -16,6 +19,33 @@ export class CLIInterface implements GameInterface {
       input: process.stdin,
       output: process.stdout,
     });
+  }
+
+  /**
+   * Display startup dice animation with rainbow dice
+   */
+  async displayStartupAnimation(): Promise<void> {
+    // Create six rainbow dice for the startup animation
+    const rainbowDice: Die[] = [
+      { id: 'startup-1', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-2', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-3', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-4', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-5', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+      { id: 'startup-6', sides: 6, material: 'rainbow', allowedValues: [1, 2, 3, 4, 5, 6], rolledValue: 1 },
+    ];
+
+    // Generate random final values for each die
+    rainbowDice.forEach((die) => {
+      die.rolledValue = (Math.floor(Math.random() * 6) + 1) as DieValue;
+    });
+
+    // Create animation instance and run the animation
+    const animation = new SimpleDiceAnimation();
+    await animation.animateDiceRoll(rainbowDice);
+    
+    // Clean up animation
+    animation.cleanup();
   }
 
   // Menu at startup
@@ -79,6 +109,9 @@ export class CLIInterface implements GameInterface {
 
   async askForDiceSelection(dice: Die[], consumables?: any[], useCallback?: (idx: number) => Promise<void>, gameState?: any): Promise<string> {
     while (true) {
+      // Add a line above the prompt
+      await this.log('');
+      
       const input = await this.ask(DisplayFormatter.formatDiceSelectionPrompt(), undefined, { consumables, useCallback, allowInventory: true });
       const trimmedInput = input.trim().toLowerCase();
       
@@ -87,34 +120,10 @@ export class CLIInterface implements GameInterface {
         continue;
       }
       
-      // Handle new commands
-      if (trimmedInput === 'i' && gameState) {
-        const inventoryLines = CLIDisplayFormatter.formatInventory(gameState);
-        for (const line of inventoryLines) {
-          await this.log(line);
-        }
-        continue;
-      }
-      
-      if (trimmedInput === 'c' && gameState) {
-        const combinationsLines = CLIDisplayFormatter.formatCombinationsDisplay(dice, gameState);
-        for (const line of combinationsLines) {
-          await this.log(line);
-        }
-        continue;
-      }
-      
-      if (trimmedInput === 'd' && gameState) {
-        const diceSetLines = CLIDisplayFormatter.formatDiceSetDisplay(gameState);
-        for (const line of diceSetLines) {
-          await this.log(line);
-        }
-        continue;
-      }
-      
-      if (trimmedInput === 'l' && gameState) {
-        const levelLines = CLIDisplayFormatter.formatLevelDisplay(gameState);
-        for (const line of levelLines) {
+      // Check if input is a game command
+      const commandResult = await CommandHandler.processCommand(input, gameState, dice);
+      if (commandResult.handled) {
+        for (const line of commandResult.responseLines) {
           await this.log(line);
         }
         continue;
@@ -127,7 +136,7 @@ export class CLIInterface implements GameInterface {
   async askForBankOrReroll(diceToReroll: number): Promise<string> {
     // Do not allow inventory use at this prompt
     while (true) {
-      const input = await this.ask('', undefined, { allowInventory: false });
+      const input = await this.ask(CLIDisplayFormatter.formatBankOrRerollPrompt(diceToReroll), undefined, { allowInventory: false });
       if (input.trim().toLowerCase() === 'i') {
         await this.log('Inventory cannot be used at this prompt.');
         continue;
@@ -138,7 +147,7 @@ export class CLIInterface implements GameInterface {
 
   async askForNextRound(gameState?: any, roundState?: any, useCallback?: (idx: number) => Promise<void>): Promise<string> {
     while (true) {
-      const nextRoundNumber = (gameState?.roundNumber || 1) + 1;
+      const nextRoundNumber = (gameState?.roundNumber || 0) + 1;
       const input = await this.ask(DisplayFormatter.formatNextRoundPrompt(nextRoundNumber), gameState?.consumables, { consumables: gameState?.consumables, useCallback, allowInventory: true });
       if (input.trim().toLowerCase() === 'i') {
         continue;
@@ -151,7 +160,17 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForPartitioningChoice(numPartitionings: number): Promise<string> {
-    return this.ask(`Choose a partitioning (1-${numPartitionings}): `, '1');
+    // Use a direct readline call to avoid command processing
+    return new Promise<string>((resolve) => {
+      this.rl.question(`Choose partitioning (1-${numPartitionings}): `, (input) => {
+        const trimmed = input.trim();
+        if (trimmed === '') {
+          resolve('1'); // Default to first option
+        } else {
+          resolve(trimmed);
+        }
+      });
+    });
   }
 
   async askForMaterialAssignment(diceCount: number, availableMaterials: string[]): Promise<number[]> {
@@ -197,11 +216,62 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForDiceSetSelection(diceSetNames: string[]): Promise<number> {
-    let prompt = '\nAvailable Dice Sets:\n';
-    diceSetNames.forEach((name, i) => {
-      prompt += `  ${i + 1}. ${name}\n`;
+    // Import the dice sets to get their setType
+    const { ALL_DICE_SETS } = await import('../game/content/diceSets');
+    
+    let prompt = '\n🎲 DICE SET SELECTION\n\n';
+    
+    // Group dice sets by type
+    const beginnerSets: { name: string; index: number }[] = [];
+    const advancedSets: { name: string; index: number }[] = [];
+    const mayhemSets: { name: string; index: number }[] = [];
+    
+    ALL_DICE_SETS.forEach((set, i) => {
+      const name = typeof set === 'function' ? 'Chaos' : set.name;
+      const setType = typeof set === 'function' ? 'mayhem' : set.setType;
+      
+      switch (setType) {
+        case 'beginner':
+          beginnerSets.push({ name, index: i });
+          break;
+        case 'advanced':
+          advancedSets.push({ name, index: i });
+          break;
+        case 'mayhem':
+          mayhemSets.push({ name, index: i });
+          break;
+      }
     });
+    
+    // Display Beginner Sets
+    if (beginnerSets.length > 0) {
+      prompt += '📚 BEGINNER SETS:\n';
+      beginnerSets.forEach(({ name, index }) => {
+        prompt += `  ${index + 1}. ${name}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    // Display Advanced Sets
+    if (advancedSets.length > 0) {
+      prompt += '⚡ ADVANCED SETS:\n';
+      advancedSets.forEach(({ name, index }) => {
+        prompt += `  ${index + 1}. ${name}\n`;
+      });
+      prompt += '\n';
+    }
+    
+    // Display Mayhem Sets
+    if (mayhemSets.length > 0) {
+      prompt += '🔥 MAYHEM SETS:\n';
+      mayhemSets.forEach(({ name, index }) => {
+        prompt += `  ${index + 1}. ${name}\n`;
+      });
+      prompt += '\n';
+    }
+    
     prompt += 'Select a dice set: ';
+    
     while (true) {
       const input = await this.ask(prompt, '1');
       const idx = parseInt(input.trim(), 10) - 1;
@@ -275,22 +345,26 @@ export class CLIInterface implements GameInterface {
   }
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
-    const ROLLIO_CONFIG = require('../game/config').ROLLIO_CONFIG;
+    // Get user inputs (interface concern)
     const winConditionInput = await this.ask('  Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
-    const winCondition = winConditionInput.trim() === '' ? ROLLIO_CONFIG.winCondition : parseInt(winConditionInput.trim(), 10) || ROLLIO_CONFIG.winCondition;
-
     const penaltyEnabledInput = await this.ask('  Enable flop penalty? (y/n, default y): ', 'y');
-    const penaltyEnabled = penaltyEnabledInput.trim() === '' ? true : penaltyEnabledInput.trim().toLowerCase() === 'y';
-
-    let consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-    let consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
-    if (penaltyEnabled) {
-      const flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
-      consecutiveFlopLimit = flopLimitInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopLimit : parseInt(flopLimitInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-      const flopPenaltyInput = await this.ask(`  Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
-      consecutiveFlopPenalty = flopPenaltyInput.trim() === '' ? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty : parseInt(flopPenaltyInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
+    
+    let flopLimitInput: string | undefined;
+    let flopPenaltyInput: string | undefined;
+    
+    // Only ask for penalty details if enabled
+    if (penaltyEnabledInput.trim() === '' || penaltyEnabledInput.trim().toLowerCase() === 'y') {
+      flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
+      flopPenaltyInput = await this.ask(`  Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
     }
-    return { winCondition, penaltyEnabled, consecutiveFlopLimit, consecutiveFlopPenalty };
+    
+    // Delegate parsing and validation to ConfigManager (game logic concern)
+    return ConfigManager.parseGameRules({
+      winConditionInput,
+      penaltyEnabledInput,
+      flopLimitInput,
+      flopPenaltyInput
+    });
   }
 
   // Display methods
@@ -320,8 +394,9 @@ export class CLIInterface implements GameInterface {
     }
   }
 
-  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void> {
-    await this.log(DisplayFormatter.formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount), ROLLIO_CONFIG.cli.messageDelay);
+  async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopLimit: number): Promise<void> {
+    const { formatFlopMessage } = require('../game/utils/effectUtils');
+    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopLimit), ROLLIO_CONFIG.cli.messageDelay);
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {
@@ -340,7 +415,7 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayWelcome(): Promise<void> {
-    await this.log('=== Welcome to Rollio! ===');
+    await this.log('\n=== Welcome to Rollio! ===');
   }
 
   async displayRoundStart(roundNumber: number): Promise<void> {

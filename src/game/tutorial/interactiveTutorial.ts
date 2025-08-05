@@ -73,10 +73,8 @@ export class InteractiveTutorial {
     await this.gameInterface.log('');
 
     // Roll the dice
-    state.roundState.diceHand = state.gameState.diceSet.map(die => ({
-      ...die,
-      rolledValue: state.rollManager.rollDice([die])[0]
-    }));
+    state.roundState.diceHand = state.gameState.diceSet.map(die => ({ ...die }));
+    state.rollManager.rollDice(state.roundState.diceHand);
 
     await this.gameInterface.displayRoll(1, state.roundState.diceHand);
     await this.gameInterface.log('');
@@ -220,7 +218,8 @@ export class InteractiveTutorial {
         300, // forfeited points
         0, // points added
         1, // consecutive flops
-        1 // round number
+        1, // round number
+        0 // no flop penalty in tutorial
       );
       for (const line of endOfRoundLines) {
         await this.gameInterface.log(line);
@@ -265,7 +264,7 @@ export class InteractiveTutorial {
     await this.gameInterface.log('');
 
     await this.gameInterface.log('If you score ALL the dice, you trigger HOT DICE!');
-    await this.gameInterface.log('Hot dice let you reroll ALL dice with a multiplier!');
+    await this.gameInterface.log('Hot dice let you reroll ALL dice!');
     await this.gameInterface.log('');
 
     await this.gameInterface.log('Try selecting all dice by typing "111555":');
@@ -280,11 +279,10 @@ export class InteractiveTutorial {
       await this.gameInterface.log('🎲 ROLL SUMMARY');
       await this.gameInterface.log('  Roll points: +450');
       await this.gameInterface.log('  Round points: 450');
-      await this.gameInterface.log('  Hot dice multiplier: x2');
       await this.gameInterface.log('Bank points (b) or reroll 6 dice (r): ');
       await this.gameInterface.log('');
       await this.gameInterface.log('✅ Congratulations! You triggered Hot Dice!');
-      await this.gameInterface.log('Now you can reroll all 6 dice with a 2x multiplier!');
+      await this.gameInterface.log('Now you can reroll all 6 dice!');
     } else {
       await this.gameInterface.log('❌ Try selecting ALL the dice by typing "111555"');
       await this.gameInterface.log('You need to score every die to trigger Hot Dice!');

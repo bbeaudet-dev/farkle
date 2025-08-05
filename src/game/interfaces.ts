@@ -8,7 +8,7 @@ export interface DisplayInterface {
   displayWelcome(): Promise<void>;
   displayRoundStart(roundNumber: number): Promise<void>;
   displayRoll(rollNumber: number, dice: Die[]): Promise<void>;
-  displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): Promise<void>;
+  displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopLimit: number): Promise<void>;
   displayHotDice(count?: number): Promise<void>;
   displayScoringResult(selectedIndices: number[], dice: Die[], combinations: ScoringCombination[], points: number): Promise<void>;
   displayRoundPoints(points: number): Promise<void>;

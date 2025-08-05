@@ -45,6 +45,7 @@ export class RoundManager {
     useConsumable: (idx: number, gameState: any, roundState: any) => Promise<void>
   ): Promise<void> {
     /* === Round Setup === */
+    gameState.roundNumber++; // Increment round number at the start
     let roundState = createInitialRoundState(gameState.roundNumber);
     roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, scored: false }));
     roundState.crystalsScoredThisRound = 0;
@@ -53,17 +54,14 @@ export class RoundManager {
     let roundActive = true;
 
     /* === Initial Roll and Flop Check === */
-    // Roll the dice first to get final values
-    roundState.diceHand = roundState.diceHand.map((die: Die) => ({ ...die, rolledValue: rollManager.rollDice([die])[0] }));
+    // Roll the dice and set their values
+    rollManager.rollDice(roundState.diceHand);
     
     const rollNumber = roundState.rollHistory.length + 1;
+    // Display roll number when dice are rolled
+    await this.displayRollNumber(rollNumber, gameInterface);
     // Animate dice roll with final values
     await this.diceAnimation.animateDiceRoll(roundState.diceHand, rollNumber);
-    const flopOnInitial = await this.displayRollAndCheckFlop(roundState, gameState, gameInterface, rollNumber, charmManager);
-    if (flopOnInitial) {
-      gameState.roundNumber++;
-      return;
-    }
 
     while (roundActive) {
       /* === Scoring Selection === */
@@ -84,8 +82,12 @@ export class RoundManager {
       );
       roundState.crystalsScoredThisRound = (roundState.crystalsScoredThisRound || 0) + scoredCrystals;
       
-      // Display combination summary with partitioning info
-      await gameInterface.log(CLIDisplayFormatter.formatCombinationSummary(selectedIndices, roundState.diceHand, selectedPartitioning, undefined, partitioningInfo));
+      // Display partitioning info if available
+      if (partitioningInfo && partitioningInfo.length > 0) {
+        for (const line of partitioningInfo) {
+          await gameInterface.log(line);
+        }
+      }
       
       // Display material effects first, then charm effects
       if (materialLogs && materialLogs.length > 0) {
@@ -142,12 +144,8 @@ export class RoundManager {
         gameState.globalHotDiceCounter++;
         await gameInterface.displayHotDice(roundState.hotDiceCount);
         
-        // Hot dice! Reroll all dice in the set
-        roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, rolledValue: rollManager.rollDice([die])[0] }));
-        
-        // Animate the hot dice reroll
-        const newRollNumber = roundState.rollHistory.length + 1;
-        await this.diceAnimation.animateDiceRoll(roundState.diceHand, newRollNumber);
+        // Hot dice! Reset hand to full dice set but don't roll yet
+        roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, scored: false }));
       }
 
       /* === Bank or Reroll Prompt === */
@@ -159,7 +157,6 @@ export class RoundManager {
 
     /* === End of Round Bookkeeping === */
     gameState.roundState = roundState;
-    gameState.roundNumber++;
     roundState.crystalsScoredThisRound = 0;
     if (roundState.forfeitedPoints > 0) {
       gameState.lastForfeitedPoints = roundState.forfeitedPoints;
@@ -180,6 +177,8 @@ export class RoundManager {
     gameState: any,
     useConsumable: (idx: number, gameState: any, roundState: any) => Promise<void>
   ) {
+
+    
     const input = await (gameInterface as any).askForDiceSelection(
       roundState.diceHand,
       gameState.consumables,
@@ -188,6 +187,8 @@ export class RoundManager {
     );
     return validateDiceSelectionAndScore(input, roundState.diceHand, { charms: gameState.charms });
   }
+
+
 
   /*
    * choosePartitioning
@@ -212,12 +213,18 @@ export class RoundManager {
       partitioningInfo.push(`  ${i + 1}. ${partitioning.map((c: any) => c.type).join(', ')} (${points} points)`);
     }
     
+    // Display the partitioning options
+    for (const line of partitioningInfo) {
+      await gameInterface.log(line);
+    }
+    
     const bestPartitioningIndex = getHighestPointsPartitioning(scoringResult.allPartitionings);
     const choice = await gameInterface.askForPartitioningChoice(scoringResult.allPartitionings.length);
     let choiceIndex: number;
+    let resultInfo: string[] = [];
     if (choice.trim() === '' || choice.trim() === '1') {
       choiceIndex = bestPartitioningIndex;
-      partitioningInfo.push(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
+      resultInfo.push(`Auto-selected highest points partitioning: Option ${choiceIndex + 1}`);
     } else {
       choiceIndex = parseInt(choice.trim(), 10) - 1;
     }
@@ -227,7 +234,7 @@ export class RoundManager {
     }
     return { 
       partitioning: scoringResult.allPartitionings[choiceIndex], 
-      partitioningInfo 
+      partitioningInfo: resultInfo 
     };
   }
 
@@ -319,22 +326,22 @@ export class RoundManager {
         0, // forfeited points
         bankedPoints, // points added
         0, // consecutive flops
-        gameState.roundNumber
+        gameState.roundNumber,
+        0 // no flop penalty for banking
       );
       for (const line of endOfRoundLines) {
         await gameInterface.log(line);
       }
       
       updateGameStateAfterRound(gameState, roundState, bankResult);
-      await gameInterface.displayGameScore(gameState.gameScore);
       return 'banked';
     } else {
       // Reroll the current hand (all dice if hot dice, remaining dice otherwise)
-      // Roll first to get final values
-      roundState.diceHand = roundState.diceHand.map((die: Die) => ({ ...die, rolledValue: rollManager.rollDice([die])[0] }));
+      rollManager.rollDice(roundState.diceHand);
       
-      // Animate reroll with final values
+      // Display roll number when dice are rerolled
       const newRollNumber = roundState.rollHistory.length + 1;
+      await this.displayRollNumber(newRollNumber, gameInterface);
       await this.diceAnimation.animateDiceRoll(roundState.diceHand, newRollNumber);
       // Reroll, display and flop check
       const flopResult = await this.displayRollAndCheckFlop(roundState, gameState, gameInterface, newRollNumber, charmManager);
@@ -345,6 +352,15 @@ export class RoundManager {
       }
       return 'reroll';
     }
+  }
+
+  /*
+   * displayRollNumber
+   * ----------------
+   * Helper: Display the roll number when dice are rolled.
+   */
+  private async displayRollNumber(rollNumber: number, gameInterface: GameInterface): Promise<void> {
+    await gameInterface.log(`\nRoll #${rollNumber}:`);
   }
 
   /*
@@ -364,25 +380,7 @@ export class RoundManager {
         return 'flopPrevented';
       }
       
-      // Display combinations header with flop message
-      await gameInterface.log(`🎯 COMBINATIONS: No valid scoring combinations found, you flopped!`);
-      
-      // Process flop and update game state
-      const flopResult2 = processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore);
-      updateGameStateAfterRound(gameState, roundState, flopResult2);
-      
-      // Display end-of-round summary
-      const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
-        roundState.roundPoints, // forfeited points
-        0, // points added (always 0 for flop)
-        gameState.consecutiveFlops,
-        gameState.roundNumber
-      );
-      for (const line of endOfRoundLines) {
-        await gameInterface.log(line);
-      }
-      
-      // Display additional flop info
+      // Display flop message using proper formatting
       await gameInterface.displayFlopMessage(
         roundState.roundPoints,
         gameState.consecutiveFlops,
@@ -390,6 +388,25 @@ export class RoundManager {
         (gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty),
         (gameState.consecutiveFlopLimit ?? ROLLIO_CONFIG.penalties.consecutiveFlopLimit)
       );
+      
+      // Process flop and update game state
+      const flopResult2 = processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore);
+      updateGameStateAfterRound(gameState, roundState, flopResult2);
+      
+      // Display end-of-round summary
+      const flopPenalty = (gameState.consecutiveFlops >= (gameState.consecutiveFlopLimit ?? 3) && !gameState.charmPreventingFlop) 
+        ? (gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty) 
+        : 0;
+      const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
+        roundState.roundPoints, // forfeited points
+        0, // points added (always 0 for flop)
+        gameState.consecutiveFlops,
+        gameState.roundNumber,
+        flopPenalty
+      );
+      for (const line of endOfRoundLines) {
+        await gameInterface.log(line);
+      }
       return true;
     }
     return false;

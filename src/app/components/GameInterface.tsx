@@ -144,7 +144,9 @@ class ReactGameInterface implements IGameInterface {
   }
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
-    return { winCondition: 10000, penaltyEnabled: true, consecutiveFlopLimit: 3, consecutiveFlopPenalty: 1000 };
+    // React interface uses defaults (could be enhanced with UI for rule selection)
+    const { ConfigManager } = await import('../../game/engine/ConfigManager');
+    return ConfigManager.getDefaultGameRules();
   }
 
   async askForCharmSelection(availableCharms: string[], numToSelect: number): Promise<number[]> {
@@ -196,15 +198,15 @@ export const GameInterface: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
-  const [gameState, setGameState] = useState({
-    isActive: false,
-    gameScore: 0,
-    roundNumber: 1,
-    rollNumber: 1,
-    roundPoints: 0,
+  // UI state only - not game state
+  const [uiState, setUiState] = useState({
+    gameStarted: false,
     currentDice: [] as number[],
     selectedIndices: [] as number[]
   });
+  
+  // Game state should come from GameEngine, not be maintained here
+  const [displayGameState, setDisplayGameState] = useState<any>(null);
 
   const gameEngineRef = useRef<GameEngine | null>(null);
   const resolveInputRef = useRef<((value: string) => void) | null>(null);
@@ -234,14 +236,15 @@ export const GameInterface: React.FC = () => {
     if (gameEngineRef.current) return;
 
     const updateGameStateCallback = (state: any) => {
-      setGameState(prev => ({ ...prev, ...state }));
+      // Update display state for UI rendering only
+      setDisplayGameState(state);
     };
 
     const gameInterface = new ReactGameInterface(appendToOutput, handleInput, updateGameStateCallback);
     const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
     gameEngineRef.current = new GameEngine(gameInterface, debugMode);
     
-    setGameState(prev => ({ ...prev, isActive: true }));
+    setUiState(prev => ({ ...prev, gameStarted: true }));
     
     try {
       await gameEngineRef.current.run();
@@ -249,7 +252,8 @@ export const GameInterface: React.FC = () => {
       console.error('Game error:', error);
     } finally {
       gameEngineRef.current = null;
-      setGameState(prev => ({ ...prev, isActive: false }));
+      setUiState(prev => ({ ...prev, gameStarted: false }));
+      setDisplayGameState(null);
     }
   };
 
@@ -272,15 +276,15 @@ export const GameInterface: React.FC = () => {
       <h1 className="text-4xl text-center mb-8 text-green-500">{GAME_META.GAME_NAME_EMOJI}</h1>
       
       <GameStatus
-        gameScore={gameState.gameScore}
-        roundNumber={gameState.roundNumber}
-        rollNumber={gameState.rollNumber}
-        roundPoints={gameState.roundPoints}
+        gameScore={displayGameState?.gameScore || 0}
+        roundNumber={displayGameState?.roundNumber || 1}
+        rollNumber={displayGameState?.rollNumber || 1}
+        roundPoints={displayGameState?.roundPoints || 0}
       />
       
       <DiceDisplay
-        dice={gameState.currentDice}
-        selectedIndices={gameState.selectedIndices}
+        dice={uiState.currentDice}
+        selectedIndices={uiState.selectedIndices}
       />
       
       <GameOutput id="gameOutput">
@@ -314,7 +318,7 @@ export const GameInterface: React.FC = () => {
       <div className="flex gap-4 justify-center">
         <GameButton
           onClick={startNewGame}
-          disabled={gameState.isActive}
+          disabled={uiState.gameStarted}
         >
           Start New Game
         </GameButton>

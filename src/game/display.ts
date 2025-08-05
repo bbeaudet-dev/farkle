@@ -1,6 +1,5 @@
-import { ROLLIO_CONFIG } from './config';
 import { Die, ScoringCombination } from './core/types';
-import { formatDiceValues, formatCombinations, formatFlopMessage, formatGameStats } from './utils/effectUtils';
+import { formatDiceValues, formatCombinations, formatGameStats } from './utils/effectUtils';
 import { MATERIALS } from './content/materials';
 
 /**
@@ -43,10 +42,6 @@ export class DisplayFormatter {
 
   static formatGameScore(score: number): string {
     return `  Game score: ${Math.ceil(score)}`;
-  }
-
-  static formatFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopWarningCount: number): string {
-    return formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopWarningCount);
   }
 
   static formatGameEnd(gameState: any, isWin: boolean): string[] {
@@ -113,7 +108,7 @@ export class DisplayFormatter {
   }
 
   static formatNextRoundPrompt(roundNumber: number): string {
-    return `\nStart Round ${roundNumber}? (y/n): `;
+    return `Start Round ${roundNumber}? (y/n): `;
   }
 
 

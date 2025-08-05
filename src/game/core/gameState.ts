@@ -28,7 +28,7 @@ export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState 
   
   return {
     gameScore: 0,
-    roundNumber: 1,
+    roundNumber: 0,
     rollCount: 0,
     diceSet: createDiceFromConfig(diceSetConfig.dice),
     diceSetConfig,

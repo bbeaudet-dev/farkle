@@ -1,9 +1,10 @@
 export class RollManager {
   constructor() {}
 
-  // Roll all dice in the config, return their rolled values
-  rollDice(diceConfig: any[]): any[] {
-    // TODO: Add animation support in the future
-    return diceConfig.map(die => (die.allowedValues[Math.floor(Math.random() * die.allowedValues.length)]));
+  // Roll all dice in the config and set their rolled values
+  rollDice(diceHand: any[]): void {
+    for (const die of diceHand) {
+      die.rolledValue = die.allowedValues[Math.floor(Math.random() * die.allowedValues.length)];
+    }
   }
 } 

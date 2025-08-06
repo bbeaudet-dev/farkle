@@ -32,8 +32,12 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.57.0",
+    "@types/socket.io": "^3.0.1",
+    "@types/socket.io-client": "^1.4.36",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "ts-node": "^10.9.1"
   },
   "devDependencies": {

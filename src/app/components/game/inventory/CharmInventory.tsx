@@ -1,6 +1,6 @@
 import React from 'react';
-import { CharmInventoryProps } from '../../types/inventory';
-import { InventoryItem } from '../ui/InventoryItem';
+import { CharmInventoryProps } from '../../../types/inventory';
+import { InventoryItem } from '../../ui/InventoryItem';
 
 export const CharmInventory: React.FC<CharmInventoryProps> = ({ charms }) => {
   return (

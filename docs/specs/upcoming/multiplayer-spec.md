@@ -58,7 +58,7 @@ interface SerializableGameState {
 
 ## Phase 2: Basic Multiplayer
 
-### 2.1 Turn-Based Multiplayer Core
+### 2.1 Independent Play Multiplayer Core
 
 **Priority**: Medium - Core multiplayer experience
 
@@ -66,9 +66,17 @@ interface SerializableGameState {
 
 1. **Lobby Creation**: Host creates room, gets room code
 2. **Player Joining**: Players join via room code or direct link
-3. **Game Start**: All players ready, game begins
-4. **Turn Rotation**: Players take turns in order
-5. **Game End**: Winner determined, return to lobby
+3. **Game Start**: All players ready, game begins with 5 rounds
+4. **Independent Play**: Players play simultaneously, trying to get highest score
+5. **Live Tracking**: Real-time score and round updates for all players
+6. **Game End**: Winner determined after 5 rounds, return to lobby
+
+#### Advantages of Independent Play
+
+- **Simpler Implementation**: No complex turn management
+- **Better UX**: Players can play at their own pace
+- **Reduced Waiting**: No waiting for other players' turns
+- **Easier State Sync**: Only need to sync scores and round numbers
 
 #### Player Management
 
@@ -79,10 +87,10 @@ interface SerializableGameState {
 
 #### Real-Time Features
 
-- **Live Dice Rolls**: See other players' dice in real-time
-- **Turn Indicators**: Clear indication of whose turn it is
-- **Score Updates**: Live score tracking for all players
-- **Chat System**: Basic text chat between players
+- **Live Score Tracking**: Real-time score updates for all players
+- **Round Progress**: See other players' current round number
+- **Game Status**: Live updates on who's banking, rolling, etc.
+- **Chat System**: Basic text chat between players (Phase 2.2)
 
 ### 2.2 Network Architecture
 
@@ -99,10 +107,25 @@ interface SerializableGameState {
 
 ```typescript
 interface GameMessage {
-  type: "roll" | "score" | "bank" | "flop" | "turn_change" | "game_end";
+  type:
+    | "player_join"
+    | "player_leave"
+    | "score_update"
+    | "round_update"
+    | "game_end"
+    | "chat";
   playerId: string;
   data: any;
   timestamp: number;
+}
+
+interface PlayerState {
+  id: string;
+  username: string;
+  gameScore: number;
+  currentRound: number;
+  isActive: boolean;
+  lastAction: string;
 }
 ```
 
@@ -157,6 +180,37 @@ interface GameMessage {
 - **Commentary System**: Allow spectators to comment
 - **Highlight Reels**: Auto-generate highlights from games
 - **Streaming Integration**: Support for streaming platforms
+
+## Implementation Approach
+
+### Component Reuse Strategy
+
+**Reusable Components (90% of existing code):**
+
+- `WebGameManager` - Core game logic and state management
+- `GameBoard` - Dice display and game controls
+- `GameConfigSelector` - Game setup and configuration
+- All game state management, scoring logic, charms, consumables
+
+**Components Requiring Modification:**
+
+- `App.tsx` - Add multiplayer mode selection and routing
+- `useGameState` - Add WebSocket state synchronization
+- Server - Add WebSocket support and room management
+
+**New Components Needed:**
+
+- Multiplayer lobby/room system
+- Live scoreboard component
+- WebSocket connection management
+- Room creation/joining interface
+
+### Development Phases
+
+1. **Phase 1.1**: Add multiplayer button to home page
+2. **Phase 1.2**: Implement WebSocket server with socket.io
+3. **Phase 1.3**: Create room management system
+4. **Phase 1.4**: Add live scoreboard and state synchronization
 
 ## Technical Implementation Details
 

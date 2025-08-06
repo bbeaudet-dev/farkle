@@ -242,7 +242,7 @@ export const DiceFace: React.FC<DiceFaceProps> = ({ value, size = 40, material =
     <div style={{
       width: `${size}px`,
       height: `${size}px`,
-      position: 'relative',
+      position: 'relative' as const,
       background: colors.background,
       border: `2px solid ${colors.border}`,
       borderRadius: '8px',

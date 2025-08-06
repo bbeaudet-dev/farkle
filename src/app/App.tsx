@@ -22,6 +22,7 @@ function App() {
     messages,
     canSelectDice,
     justBanked,
+    justFlopped,
     startNewGame,
     handleDiceSelect,
     handleRollDice,
@@ -125,6 +126,7 @@ function App() {
         gameState={gameState}
         roundState={roundState}
         justBanked={justBanked}
+        justFlopped={justFlopped}
       />
       
       {/* Game Log */}

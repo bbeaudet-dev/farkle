@@ -108,9 +108,10 @@ export function useGameState() {
     isLoading,
     messages,
     canSelectDice: webState?.roundState ? 
-      webState.roundState.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked : 
+      webState.roundState.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked && !webState.justFlopped : 
       false,
     justBanked: webState?.justBanked || false,
+    justFlopped: webState?.justFlopped || false,
     
     // Actions
     startNewGame,

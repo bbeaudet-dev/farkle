@@ -17,6 +17,7 @@ export interface WebGameState {
   canRoll: boolean;
   canBank: boolean;
   canReroll: boolean;
+  canSelectDice: boolean;
   previewScoring: {
     isValid: boolean;
     points: number;
@@ -25,6 +26,7 @@ export interface WebGameState {
   materialLogs: string[];
   charmLogs: string[];
   justBanked: boolean;
+  justFlopped: boolean;
 }
 
 export class WebGameManager {
@@ -40,25 +42,34 @@ export class WebGameManager {
   }
 
   private createWebGameState(
-    gameState: GameState | null,
+    gameState: GameState,
     roundState: RoundState | null,
-    overrides: Partial<WebGameState> = {}
+    selectedDice: number[],
+    previewScoring: { isValid: boolean; points: number; combinations: string[] } | null,
+    canRoll: boolean,
+    canBank: boolean,
+    canReroll: boolean,
+    canSelectDice: boolean,
+    materialLogs: string[],
+    charmLogs: string[],
+    justBanked: boolean,
+    justFlopped: boolean
   ): WebGameState {
-    const baseState: WebGameState = {
+    return {
       gameState,
       roundState,
-      selectedDice: [],
+      selectedDice,
       messages: [],
-      canRoll: false,
-      canBank: false,
-      canReroll: false,
-      previewScoring: null,
-      materialLogs: [],
-      charmLogs: [],
-      justBanked: false,
+      previewScoring,
+      canRoll,
+      canBank,
+      canReroll,
+      canSelectDice,
+      materialLogs,
+      charmLogs,
+      justBanked,
+      justFlopped,
     };
-
-    return { ...baseState, ...overrides };
   }
 
   async initializeGame(diceSetIndex?: number): Promise<WebGameState> {
@@ -75,7 +86,7 @@ export class WebGameManager {
 
     this.addMessage(`Game started with ${diceSetConfig.name}! Click "Start Round" to begin.`);
 
-    return this.createWebGameState(gameState, null, { canRoll: true });
+    return this.createWebGameState(gameState, null, [], null, true, false, false, false, [], [], false, false);
   }
 
   startRound(state: WebGameState): WebGameState {
@@ -108,11 +119,11 @@ export class WebGameManager {
       
       this.addMessage('Round ended. Click "Start Round" for next round.');
       
-      return this.createWebGameState(newGameState, newRoundState, { justBanked: false });
+      return this.createWebGameState(newGameState, newRoundState, [], null, false, false, false, false, [], [], false, true);
     } else {
       this.addMessage('Select dice to score:');
       
-      return this.createWebGameState(newGameState, newRoundState, { justBanked: false });
+      return this.createWebGameState(newGameState, newRoundState, [], null, false, false, false, false, [], [], false, false);
     }
   }
 
@@ -127,16 +138,7 @@ export class WebGameManager {
       this.charmManager
     );
 
-    return this.createWebGameState(state.gameState, state.roundState, { 
-      selectedDice: selectedIndices, 
-      previewScoring,
-      canRoll: state.canRoll,
-      canBank: state.canBank,
-      canReroll: state.canReroll,
-      materialLogs: state.materialLogs,
-      charmLogs: state.charmLogs,
-      justBanked: state.justBanked
-    });
+    return this.createWebGameState(state.gameState, state.roundState, selectedIndices, previewScoring, state.canRoll, state.canBank, state.canReroll, false, state.materialLogs, state.charmLogs, state.justBanked, state.justFlopped);
   }
 
   scoreSelectedDice(state: WebGameState): WebGameState {
@@ -180,14 +182,7 @@ export class WebGameManager {
     this.addMessage(`Roll points: +${result.finalPoints}`);
     this.addMessage(`Round points: ${result.newRoundState.roundPoints}`);
 
-    return this.createWebGameState(result.newGameState, result.newRoundState, {
-      selectedDice: [],
-      canRoll: false,
-      canBank: true,
-      canReroll: true,
-      materialLogs: result.materialEffectData?.materialLogs || [],
-      charmLogs: result.charmEffectData ? [`Charm effects: +${result.charmEffectData.modifiedPoints - result.charmEffectData.basePoints} points`] : [],
-    });
+    return this.createWebGameState(result.newGameState, result.newRoundState, [], null, false, true, true, false, result.materialEffectData?.materialLogs || [], result.charmEffectData ? [`Charm effects: +${result.charmEffectData.modifiedPoints - result.charmEffectData.basePoints} points`] : [], false, false);
   }
 
   bankPoints(state: WebGameState): WebGameState {
@@ -212,7 +207,7 @@ export class WebGameManager {
       newGameState.isActive = false;
       newGameState.endReason = 'win';
       
-      return this.createWebGameState(newGameState, null);
+      return this.createWebGameState(newGameState, null, [], null, false, false, false, false, [], [], false, false);
     }
 
     this.addMessage('Round completed! Click "Start New Round" for next round.');
@@ -221,7 +216,7 @@ export class WebGameManager {
     const completedRoundState = { ...state.roundState };
     completedRoundState.isActive = false;
     
-    return this.createWebGameState(newGameState, completedRoundState, { canRoll: true, justBanked: true });
+    return this.createWebGameState(newGameState, completedRoundState, [], null, true, false, false, false, [], [], true, false);
   }
 
   rerollDice(state: WebGameState): WebGameState {
@@ -257,11 +252,11 @@ export class WebGameManager {
       
       this.addMessage(`Consecutive flops: ${newGameState.consecutiveFlops}`);
       
-      return this.createWebGameState(newGameState, result.newRoundState, { canRoll: true });
+      return this.createWebGameState(newGameState, result.newRoundState, [], null, true, false, false, false, [], [], false, true);
     } else {
       this.addMessage('Select dice to score:');
       
-      return this.createWebGameState(state.gameState, result.newRoundState, { selectedDice: [], previewScoring: null });
+      return this.createWebGameState(state.gameState, result.newRoundState, [], null, false, false, false, false, [], [], false, false);
     }
   }
 

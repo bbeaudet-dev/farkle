@@ -37,6 +37,7 @@ interface GameBoardProps {
   gameState: any;
   roundState: any;
   justBanked: boolean;
+  justFlopped?: boolean;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({
@@ -70,6 +71,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   gameState,
   roundState,
   justBanked,
+  justFlopped = false,
 }) => {
   // Calculate last roll points from rollHistory
   const lastRollPoints = roundState?.rollHistory && roundState.rollHistory.length > 0 
@@ -127,6 +129,26 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             roundNumber={roundNumber}
             rollNumber={rollNumber}
           />
+
+          {/* Flop Notification */}
+          {justFlopped && (
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '12px', 
+              backgroundColor: '#ffebee',
+              border: '2px solid #f44336',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              color: '#c62828'
+            }}>
+              🎲 FLOP! 🎲
+              <div style={{ fontSize: '14px', marginTop: '5px', fontWeight: 'normal' }}>
+                No valid scoring combinations found
+              </div>
+            </div>
+          )}
           
           {/* Score Selected Dice Button */}
           {canSelectDice && selectedDice.length > 0 && (
@@ -185,7 +207,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           />
           
           {/* Hot Dice Information */}
-          {(isHotDice || hotDiceCount > 0) && (
+          {(isHotDice || hotDiceCount > 0) && !justFlopped && (
             <div style={{ 
               marginTop: '15px', 
               padding: '8px', 

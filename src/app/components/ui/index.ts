@@ -1,6 +1,5 @@
-export { Dice } from './Dice';
-export { GameOutput } from './GameOutput';
-export { GameInput } from './GameInput';
-export { GameButton } from './GameButton';
-export { GameStatus } from './GameStatus';
-export { DiceDisplay } from './DiceDisplay'; 
+export { Button } from './Button';
+export { Input } from './Input';
+export { Modal } from './Modal';
+export { Tooltip } from './Tooltip';
+export { InventoryItem } from './InventoryItem'; 

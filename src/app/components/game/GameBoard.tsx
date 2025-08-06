@@ -1,9 +1,9 @@
 import React from 'react';
-import { DiceDisplay } from '../dice/DiceDisplay';
+import { DiceDisplay } from './dice/DiceDisplay';
 import { GameControls } from './GameControls';
 import { GameStatus } from './GameStatus';
-import { CharmInventory, ConsumableInventory } from '../inventory';
-import { PreviewScoring } from '../score';
+import { CharmInventory, ConsumableInventory } from './inventory/';
+import { PreviewScoring } from './score/PreviewScoring';
 import { Button } from '../ui/Button';
 
 interface GameBoardProps {

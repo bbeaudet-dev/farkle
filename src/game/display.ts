@@ -55,11 +55,11 @@ export class DisplayFormatter {
     lines.push(`\n=== ${isWin ? 'FINAL GAME STATISTICS' : 'GAME SUMMARY'} ===`);
     
     const stats = formatGameStats({
-      roundsPlayed: gameState.roundNumber - 1,
+      rounds: gameState.roundNumber - 1,
       totalRolls: gameState.rollCount || 0,
-      hotDiceCount: gameState.hotDiceCounterGlobal || 0,
-      forfeitedPoints: gameState.forfeitedPointsTotal || 0,
       gameScore: gameState.gameScore,
+      money: gameState.money || 0,
+      hotDiceCounterRound: gameState.hotDiceCounterGlobal || 0,
     });
     
     lines.push(...stats);

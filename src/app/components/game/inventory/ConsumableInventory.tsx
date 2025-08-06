@@ -1,6 +1,6 @@
 import React from 'react';
-import { ConsumableInventoryProps } from '../../types/inventory';
-import { InventoryItem } from '../ui/InventoryItem';
+import { ConsumableInventoryProps } from '../../../types/inventory';
+import { InventoryItem } from '../../ui/InventoryItem';
 
 export const ConsumableInventory: React.FC<ConsumableInventoryProps> = ({ 
   consumables, 

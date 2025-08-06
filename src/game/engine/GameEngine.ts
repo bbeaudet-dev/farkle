@@ -1,12 +1,12 @@
-import { ROLLIO_CONFIG } from '../config';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 import { Die, DiceMaterialType } from '../core/types';
 import { GameInterface } from '../interfaces';
 import { setDebugMode, getDebugMode, debugLog, debugAction, debugStateChange } from '../utils/debug';
-import { CharmManager } from '../core/charmSystem';
+import { CharmManager } from '../logic/charmSystem';
 import { registerCharms } from '../content/charms/index';
 import { applyConsumableEffect } from '../consumableEffects';
-import { DisplayFormatter } from '../display';
-import { CLIDisplayFormatter } from '../display/cliDisplay';
+import { DisplayFormatter } from '../../app/utils/display';
+import { CLIDisplayFormatter } from '../../cli/display/cliDisplay';
 import { SetupManager } from './SetupManager';
 import { RoundManager } from './RoundManager';
 import { RollManager } from './RollManager';

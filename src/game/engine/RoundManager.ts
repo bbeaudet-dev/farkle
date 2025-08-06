@@ -1,16 +1,16 @@
 import { GameInterface } from '../interfaces';
-import { CharmManager } from '../core/charmSystem';
-import { createInitialRoundState } from '../core/gameState';
+import { CharmManager } from '../logic/charmSystem';
+import { createInitialRoundState } from '../core/gameInitializer';
 import { validateDiceSelectionAndScore, processDiceScoring, processBankAction, processFlop, updateGameStateAfterRound, isFlop } from '../logic/gameLogic';
 import { applyMaterialEffects } from '../logic/materialSystem';
 import { getHighestPointsPartitioning } from '../logic/scoring';
 
-import { DisplayFormatter } from '../display';
-import { CLIDisplayFormatter } from '../display/cliDisplay';
-import { ROLLIO_CONFIG } from '../config';
+import { DisplayFormatter } from '../../app/utils/display';
+import { CLIDisplayFormatter } from '../../cli/display/cliDisplay';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 import { RollManager } from './RollManager';
 import { Die } from '../core/types';
-import { SimpleDiceAnimation } from '../display/simpleDiceAnimation';
+import { SimpleDiceAnimation } from '../../cli/display/simpleDiceAnimation';
 
 /*
  * =============================
@@ -45,23 +45,23 @@ export class RoundManager {
     useConsumable: (idx: number, gameState: any, roundState: any) => Promise<void>
   ): Promise<void> {
     /* === Round Setup === */
-    gameState.roundNumber++; // Increment round number at the start
-    let roundState = createInitialRoundState(gameState.roundNumber);
-    roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, scored: false }));
-    roundState.crystalsScoredThisRound = 0;
+    gameState.core.roundNumber++; // Increment round number at the start
+    let roundState = createInitialRoundState(gameState.core.roundNumber);
+    roundState.core.diceHand = gameState.core.diceSet.map((die: Die) => ({ ...die, scored: false }));
+    roundState.history.crystalsScoredThisRound = 0;
     charmManager.callAllOnRoundStart({ gameState, roundState });
-    await gameInterface.displayRoundStart(gameState.roundNumber);
+    await gameInterface.displayRoundStart(gameState.core.roundNumber);
     let roundActive = true;
 
     /* === Initial Roll and Flop Check === */
     // Roll the dice and set their values
-    rollManager.rollDice(roundState.diceHand);
+    rollManager.rollDice(roundState.core.diceHand);
     
-    const rollNumber = roundState.rollHistory.length + 1;
+    const rollNumber = roundState.history.rollHistory.length + 1;
     // Display roll number when dice are rolled
     await this.displayRollNumber(rollNumber, gameInterface);
     // Animate dice roll with final values
-    await this.diceAnimation.animateDiceRoll(roundState.diceHand, rollNumber);
+    await this.diceAnimation.animateDiceRoll(roundState.core.diceHand, rollNumber);
 
     while (roundActive) {
       /* === Scoring Selection === */
@@ -80,7 +80,7 @@ export class RoundManager {
       const { finalPoints, scoredCrystals, charmLogs, materialLogs, baseMaterialPoints, finalMaterialPoints } = await this.applyCharmAndMaterialEffects(
         charmManager, gameInterface, selectedPartitioning, roundState, gameState, selectedIndices
       );
-      roundState.crystalsScoredThisRound = (roundState.crystalsScoredThisRound || 0) + scoredCrystals;
+      roundState.history.crystalsScoredThisRound = (roundState.history.crystalsScoredThisRound || 0) + scoredCrystals;
       
       // Display partitioning info if available
       if (partitioningInfo && partitioningInfo.length > 0) {
@@ -110,29 +110,34 @@ export class RoundManager {
       }
       
       // Update round points
-      roundState.roundPoints += finalPoints;
-      roundState.roundPoints = Math.ceil(roundState.roundPoints);
+      roundState.core.roundPoints += finalPoints;
+      roundState.core.roundPoints = Math.ceil(roundState.core.roundPoints);
 
       /* === Remove Scored Dice and Update History === */
-      const scoringActionResult = processDiceScoring(roundState.diceHand, selectedIndices, { valid: true, points: finalPoints, combinations: selectedPartitioning });
-      roundState.diceHand = scoringActionResult.newHand;
-      roundState.rollHistory.push({
-        rollNumber,
-        diceHand: roundState.diceHand,
-        maxRollPoints: 0, // TODO: calculate this
-        rollPoints: finalPoints,
-        scoringSelection: selectedIndices,
-        combinations: selectedPartitioning,
-        isHotDice: scoringActionResult.hotDice,
-        isFlop: false,
+      const scoringActionResult = processDiceScoring(roundState.core.diceHand, selectedIndices, { valid: true, points: finalPoints, combinations: selectedPartitioning });
+      roundState.core.diceHand = scoringActionResult.newHand;
+      roundState.history.rollHistory.push({
+        core: {
+          diceHand: roundState.core.diceHand,
+          selectedDice: [],
+          maxRollPoints: 0, // TODO: calculate this
+          rollPoints: finalPoints,
+          scoringSelection: selectedIndices,
+          combinations: selectedPartitioning,
+        },
+        meta: {
+          isActive: false,
+          isHotDice: scoringActionResult.hotDice,
+          endReason: 'scored',
+        },
       });
 
       /* === Display Roll Summary === */
       const rollSummaryLines = CLIDisplayFormatter.formatRollSummary(
         Math.ceil(finalPoints),
-        roundState.roundPoints,
-        roundState.hotDiceCounterRound,
-        roundState.diceHand.length
+        roundState.core.roundPoints,
+        roundState.core.hotDiceCounterRound,
+        roundState.core.diceHand.length
       );
       for (const line of rollSummaryLines) {
         await gameInterface.log(line);
@@ -140,10 +145,10 @@ export class RoundManager {
 
       /* === Hot Dice Handling === */
       if (scoringActionResult.hotDice) {
-        await gameInterface.displayHotDice(roundState.hotDiceCounterRound);
+        await gameInterface.displayHotDice(roundState.core.hotDiceCounterRound);
         
         // Hot dice! Reset hand to full dice set but don't roll yet
-        roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, scored: false }));
+        roundState.core.diceHand = gameState.core.diceSet.map((die: Die) => ({ ...die, scored: false }));
       }
 
       /* === Bank or Reroll Prompt === */
@@ -154,12 +159,12 @@ export class RoundManager {
     }
 
     /* === End of Round Bookkeeping === */
-    gameState.roundState = roundState;
-    roundState.crystalsScoredThisRound = 0;
-    if (roundState.forfeitedPoints > 0) {
-      gameState.lastForfeitedPoints = roundState.forfeitedPoints;
+    gameState.core.currentRound = roundState;
+    roundState.history.crystalsScoredThisRound = 0;
+    if (roundState.core.forfeitedPoints > 0) {
+      gameState.history.forfeitedPointsTotal = roundState.core.forfeitedPoints;
     } else {
-      gameState.lastForfeitedPoints = 0;
+      gameState.history.forfeitedPointsTotal = 0;
     }
     await gameInterface.displayBetweenRounds(gameState);
   }
@@ -383,8 +388,8 @@ export class RoundManager {
         roundState.roundPoints,
         gameState.consecutiveFlops,
         gameState.gameScore,
-        (gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty),
-        (gameState.consecutiveFlopLimit ?? ROLLIO_CONFIG.penalties.consecutiveFlopLimit)
+        (gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty),
+        (gameState.config.penalties.consecutiveFlopLimit ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit)
       );
       
       // Process flop and update game state
@@ -393,7 +398,7 @@ export class RoundManager {
       
       // Display end-of-round summary
       const flopPenalty = (gameState.consecutiveFlops >= (gameState.consecutiveFlopLimit ?? 3) && !gameState.charmPreventingFlop) 
-        ? (gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty) 
+        ? (gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty) 
         : 0;
       const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
         roundState.roundPoints, // forfeited points

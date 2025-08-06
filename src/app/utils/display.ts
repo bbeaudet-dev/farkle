@@ -1,6 +1,6 @@
-import { Die, ScoringCombination } from './core/types';
-import { formatDiceValues, formatCombinations, formatGameStats } from './utils/effectUtils';
-import { MATERIALS } from './content/materials';
+import { Die, ScoringCombination } from '../../game/core/types';
+import { formatDiceValues, formatCombinations, formatGameStats } from '../../game/utils/effectUtils';
+import { MATERIALS } from '../../game/content/materials';
 
 /**
  * Pure display functions that format text for output

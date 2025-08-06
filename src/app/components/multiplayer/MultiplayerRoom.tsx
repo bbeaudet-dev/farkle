@@ -172,6 +172,7 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
         currentRoom={currentRoom}
         currentPlayer={currentPlayer}
         activePlayerIds={activePlayerIds}
+        socket={socket}
         onBackToLobby={() => setGameStarted(false)}
       />
     );

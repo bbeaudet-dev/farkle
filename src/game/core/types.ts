@@ -57,6 +57,11 @@ export interface Charm {
   uses?: number; // For limited-use charms
   buyValue?: number;
   sellValue?: number;
+  // Charm effect properties
+  flopPreventing?: boolean;
+  combinationFiltering?: boolean;
+  scoreMultiplier?: number;
+  ruleChange?: string;
   // Add runtime state/effects as needed
   filterScoringCombinations?: (combinations: any[], context: any) => any[];
 }
@@ -72,50 +77,121 @@ export interface Consumable {
 }
 
 // GAME ENGINE TYPES
-export interface RollState {
-  diceHand: Die[];
-  rollNumber: number;
+
+// Roll core state (renamed from RollScoring)
+export interface RollCore {
+  diceHand: Die[];      // Available dice for this roll (subset of diceSet)
+  selectedDice: Die[];  // Dice selected by player for scoring (subset of diceHand)
   maxRollPoints?: number;
   rollPoints?: number;
   scoringSelection?: number[];
   combinations?: ScoringCombination[];
-  isHotDice?: boolean;
-  isFlop?: boolean;
 }
 
-export interface RoundState {
-  roundNumber: number;
+// Roll metadata and status
+export interface RollMeta {
+  isActive: boolean;
+  isHotDice?: boolean;
+  endReason?: RollEndReason;
+}
+
+// Organized RollState
+export interface RollState {
+  core: RollCore;
+  meta: RollMeta;
+}
+
+// Round metadata and configuration
+export interface RoundMeta {
+  isActive: boolean;
+  endReason?: RoundEndReason;
+}
+
+// Round core state
+export interface RoundCore {
   rollNumber: number;
   roundPoints: number;
   diceHand: Die[];
-  rollHistory: RollState[];
   hotDiceCounterRound: number;
   forfeitedPoints: number;
-  isActive: boolean;
+}
+
+// Round history and tracking
+export interface RoundHistory {
+  rollHistory: RollState[];
   crystalsScoredThisRound?: number;
 }
 
-export interface GameState {
-  gameScore: number;
-  roundNumber: number;
-  rollCount: number;
-  diceSet: Die[];
-  diceSetConfig: DiceSetConfig;
-  consecutiveFlops: number;
-  hotDiceCounterGlobal: number;
-  money: number;
-  charms: Charm[];
-  consumables: Consumable[];
-  combinationCounters: CombinationCounters;
+// Organized RoundState
+export interface RoundState {
+  meta: RoundMeta;
+  core: RoundCore;
+  history: RoundHistory;
+}
+
+// Game metadata and status
+export interface GameMeta {
   isActive: boolean;
   endReason?: GameEndReason;
-  forfeitedPointsTotal: number; // Track total forfeited points across all rounds
-  winCondition?: number;
-  consecutiveFlopLimit?: number;
-  consecutiveFlopPenalty?: number;
-  flopPenaltyEnabled?: boolean;
-  charmPreventingFlop?: boolean;
+}
+
+// Core game data - runtime state that changes during gameplay
+export interface GameCore {
+  gameScore: number;
+  money: number;
+  roundNumber: number;
+  consecutiveFlops: number;
+  diceSet: Die[];
+  charms: Charm[];
+  consumables: Consumable[];
+  currentRound: RoundState;
+  settings: GameSettings;
+  shop: ShopState;
+}
+
+// Game settings that can change during gameplay
+export interface GameSettings {
+  sortDice: 'unsorted' | 'ascending' | 'descending' | 'material'; // How to sort dice for display
+  gameSpeed: 'low' | 'default' | 'medium' | 'high' | number; // Game animation speed
+  optimizeRollScore: boolean; // Auto-select best scoring combination vs manual selection
+}
+
+// Game configuration - set at start, rarely changes
+export interface GameConfig {
+  diceSetConfig: DiceSetConfig;
+  winCondition: number;
+  penalties: {
+    consecutiveFlopLimit: number;
+    consecutiveFlopPenalty: number;
+    flopPenaltyEnabled: boolean;
+  };
+}
+
+// Shop state and data
+export interface ShopState {
+  isOpen: boolean;
+  availableCharms: Charm[];
+  availableConsumables: Consumable[];
+}
+
+// Game history and tracking data
+export interface GameHistory {
+  rollCount: number;
+  hotDiceCounterGlobal: number;
+  forfeitedPointsTotal: number;
+  combinationCounters: CombinationCounters;
+  roundHistory: RoundState[]; // Completed rounds (excluding current)
+}
+
+// Main game state - organized into logical groups
+export interface GameState {
+  meta: GameMeta;
+  core: GameCore;
+  config: GameConfig;
+  history: GameHistory;
 }
 
 // ENDGAME TYPES
 export type GameEndReason = 'win' | 'quit';
+export type RoundEndReason = 'flopped' | 'banked';
+export type RollEndReason = 'flopped' | 'scored';

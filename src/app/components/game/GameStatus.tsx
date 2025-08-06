@@ -1,26 +1,19 @@
 import React from 'react';
 
 interface GameStatusProps {
-  roundNumber: number;
-  rollNumber: number;
-  roundPoints: number;
-  gameScore: number;
-  consecutiveFlops: number;
-  hotDiceCount: number;
-  totalRolls: number;
-  money: number;
+  status: {
+    roundNumber: number;
+    rollNumber: number;
+    roundPoints: number;
+    gameScore: number;
+    consecutiveFlops: number;
+    hotDiceCount: number;
+    totalRolls: number;
+    money: number;
+  };
 }
 
-export const GameStatus: React.FC<GameStatusProps> = ({
-  roundNumber,
-  rollNumber,
-  roundPoints,
-  gameScore,
-  consecutiveFlops,
-  hotDiceCount,
-  totalRolls,
-  money
-}) => {
+export const GameStatus: React.FC<GameStatusProps> = ({ status }) => {
   return (
     <div>
       <div style={{ 
@@ -29,8 +22,8 @@ export const GameStatus: React.FC<GameStatusProps> = ({
         borderRadius: '4px',
         backgroundColor: '#f9f9f9'
       }}>
-        <div><strong>Game score:</strong> {gameScore}</div>
-        <div><strong>Money:</strong> ${money}</div>   
+        <div><strong>Game score:</strong> {status.gameScore}</div>
+        <div><strong>Money:</strong> ${status.money}</div>   
       </div>
     </div>
   );

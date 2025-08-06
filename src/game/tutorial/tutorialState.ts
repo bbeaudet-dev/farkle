@@ -1,5 +1,5 @@
 import { Die, GameState, RoundState } from '../core/types';
-import { CharmManager } from '../core/charmSystem';
+import { CharmManager } from '../logic/charmSystem';
 import { RollManager } from '../engine/RollManager';
 
 export interface TutorialState {
@@ -23,70 +23,99 @@ export class TutorialStateManager {
   private createInitialTutorialState(): TutorialState {
     // Create a minimal game state for tutorial
     const gameState: GameState = {
-          gameScore: 0,
-    roundNumber: 1,
-    rollCount: 0,
-    diceSet: [
-      { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-      { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-      { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-      { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-      { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-      { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
-    ],
-    diceSetConfig: {
-      name: 'Tutorial Set',
-      dice: [
-        { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-        { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-        { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-        { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-        { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-        { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
-      ],
-      startingMoney: 0,
-      charmSlots: 0,
-      consumableSlots: 0,
-      setType: 'beginner'
-    },
-    consecutiveFlops: 0,
-    hotDiceCounterGlobal: 0,
-    money: 0,
-    charms: [],
-    consumables: [],
-      combinationCounters: {
-        godStraight: 0,
-        straight: 0,
-        fourPairs: 0,
-        threePairs: 0,
-        tripleTriplets: 0,
-        twoTriplets: 0,
-        sevenOfAKind: 0,
-        sixOfAKind: 0,
-        fiveOfAKind: 0,
-        fourOfAKind: 0,
-        threeOfAKind: 0,
-        singleOne: 0,
-        singleFive: 0
+      meta: {
+        isActive: true,
+        endReason: undefined
       },
-      isActive: true,
-      forfeitedPointsTotal: 0,
-      winCondition: 1000,
-      consecutiveFlopLimit: 3,
-      consecutiveFlopPenalty: 1000,
-      flopPenaltyEnabled: true
+      core: {
+        gameScore: 0,
+        roundNumber: 1,
+        diceSet: [
+          { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+          { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+          { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+          { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+          { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+          { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
+        ],
+        consecutiveFlops: 0,
+        money: 0,
+        charms: [],
+        consumables: [],
+        currentRound: null as any, // Will be set properly when round starts
+        settings: {
+          sortDice: 'unsorted',
+          gameSpeed: 'default',
+          optimizeRollScore: false
+        },
+        shop: {
+          isOpen: false,
+          availableCharms: [],
+          availableConsumables: []
+        }
+      },
+      config: {
+        winCondition: 1000,
+        diceSetConfig: {
+          name: 'Tutorial Set',
+          dice: [
+            { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+            { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+            { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+            { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+            { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+            { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
+          ],
+          startingMoney: 0,
+          charmSlots: 0,
+          consumableSlots: 0,
+          setType: 'beginner'
+        },
+        penalties: {
+          consecutiveFlopLimit: 3,
+          consecutiveFlopPenalty: 1000,
+          flopPenaltyEnabled: true
+        }
+      },
+      history: {
+        rollCount: 0,
+        hotDiceCounterGlobal: 0,
+        forfeitedPointsTotal: 0,
+        combinationCounters: {
+          godStraight: 0,
+          straight: 0,
+          fourPairs: 0,
+          threePairs: 0,
+          tripleTriplets: 0,
+          twoTriplets: 0,
+          sevenOfAKind: 0,
+          sixOfAKind: 0,
+          fiveOfAKind: 0,
+          fourOfAKind: 0,
+          threeOfAKind: 0,
+          singleOne: 0,
+          singleFive: 0
+        },
+        roundHistory: []
+      }
     };
 
     const roundState: RoundState = {
-      roundNumber: 1,
-      rollNumber: 0,
-      roundPoints: 0,
-      diceHand: [],
-      rollHistory: [],
-      hotDiceCounterRound: 0,
-      forfeitedPoints: 0,
-      isActive: true,
-      crystalsScoredThisRound: 0
+      meta: {
+        isActive: true,
+        endReason: undefined
+      },
+      core: {
+        rollNumber: 0,
+        roundPoints: 0,
+        diceHand: [],
+        hotDiceCounterRound: 0,
+        forfeitedPoints: 0,
+      },
+      history: {
+        rollHistory: [],
+        crystalsScoredThisRound: 0
+      }
     };
 
     return {

@@ -71,103 +71,74 @@ export function useGameState() {
     setWebState(newState);
   }, [webState]);
 
-  const handleConsumableUse = useCallback((index: number) => {
+    const handleConsumableUse = useCallback((index: number) => {
     if (!webState || !gameManagerRef.current || !webState.gameState) return;
     
-    const consumable = webState.gameState.consumables[index];
-    if (!consumable || consumable.uses <= 0) {
-      addMessage(`Cannot use consumable - no uses remaining`);
-      return;
-    }
-    
-    // Implement consumable effects based on ID
-    const gameState = { ...webState.gameState };
-    let message = '';
-    
-    switch (consumable.id) {
-      case 'moneyDoubler':
-        gameState.money *= 2;
-        message = `Money doubled! You now have $${gameState.money}`;
-        break;
-      case 'extraDie':
-        // Add an extra plastic die to the current dice set
-        if (webState.roundState) {
-          const extraDie = {
-            id: 'extra-die',
-            sides: 6,
-            allowedValues: [1, 2, 3, 4, 5, 6],
-            material: 'plastic' as const,
-            scored: false,
-            rolledValue: Math.floor(Math.random() * 6) + 1
-          };
-          webState.roundState.diceHand.push(extraDie);
-          message = 'Extra die added to your hand!';
-        }
-        break;
-      case 'charmGiver':
-        // Add a random charm (simplified implementation)
-        message = 'Random charm functionality not yet implemented';
-        break;
-      default:
-        message = `${consumable.name} effect not yet implemented`;
-        break;
-    }
-    
-    // Reduce uses
-    consumable.uses--;
-    if (consumable.uses <= 0) {
-      // Remove the consumable
-      gameState.consumables = gameState.consumables.filter((_, i) => i !== index);
-    }
-    
-    addMessage(message);
-    
-    // Update the web state
-    const newWebState = { ...webState, gameState };
-    setWebState(newWebState);
+    // TODO: Implement consumable logic in game engine
+    // For now, just show a message that it's not implemented
+    addMessage('Consumable system not yet implemented in game engine');
   }, [webState, addMessage]);
 
   return {
-    // Game state
+    // Core game state (properly organized)
     gameState: webState?.gameState || null,
     roundState: webState?.roundState || null,
-    currentDice: webState?.roundState?.diceHand || [],
-    selectedDice: webState?.selectedDice || [],
-    previewScoring: webState?.previewScoring || null,
-    
-    // Debug
-    debug: {
-      webStateExists: !!webState,
-      roundStateExists: !!webState?.roundState,
-      rollHistoryLength: webState?.roundState?.rollHistory?.length || 0
-    },
-    
-    // Effect logs
-    materialLogs: webState?.materialLogs || [],
-    charmLogs: webState?.charmLogs || [],
     
     // UI state
-    isGameStarted: !!webState,
     isLoading,
     messages,
-    canSelectDice: webState?.roundState ? 
-      webState.roundState.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked && !webState.justFlopped : 
-      false,
-    justBanked: webState?.justBanked || false,
-    justFlopped: webState?.justFlopped || false,
     
-    // Actions
-    startNewGame,
-    handleDiceSelect,
-    handleRollDice,
-    handleBank,
-    handleConsumableUse,
-    scoreSelectedDice,
+    // Actions (logical groups)
+    rollActions: {
+      handleDiceSelect,
+      handleRollDice,
+      scoreSelectedDice,
+    },
     
-    // Button states
-    canRoll: webState?.canRoll || false,
-    canBank: webState?.canBank || false,
-    canReroll: webState?.canReroll || false,
-    canRollDice: (webState?.canRoll || webState?.canReroll) || false
+    gameActions: {
+      handleBank,
+      startNewGame,
+    },
+    
+    inventoryActions: {
+      handleConsumableUse,
+    },
+    
+    // Game board data (from round state)
+    board: {
+      dice: webState?.roundState?.core?.diceHand || [],
+      selectedDice: webState?.selectedDice || [],
+      previewScoring: webState?.previewScoring || null,
+      canRoll: webState?.canRoll || false,
+      canBank: webState?.canBank || false,
+      canReroll: webState?.canReroll || false,
+      canSelectDice: webState?.roundState ? 
+        webState.roundState.core.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked && !webState.justFlopped : 
+        false,
+      justBanked: webState?.justBanked || false,
+      justFlopped: webState?.justFlopped || false,
+    },
+    
+    // Game status (from core game state)
+    status: {
+      roundNumber: webState?.gameState?.core?.roundNumber || 0,
+      rollNumber: webState?.roundState?.core?.rollNumber || 0,
+      roundPoints: webState?.roundState?.core?.roundPoints || 0,
+      gameScore: webState?.gameState?.core?.gameScore || 0,
+      consecutiveFlops: webState?.gameState?.core?.consecutiveFlops || 0,
+      hotDiceCount: webState?.roundState?.core?.hotDiceCounterRound || 0,
+      totalRolls: webState?.gameState?.history?.rollCount || 0,
+      money: webState?.gameState?.core?.money || 0,
+      forfeitedPoints: webState?.gameState?.history?.forfeitedPointsTotal || 0,
+      isHotDice: !!(webState?.roundState && webState.roundState.core.diceHand.length === 0 && webState.roundState.history.rollHistory.length > 0),
+    },
+    
+    // Inventory (from core game state)
+    inventory: {
+      charms: webState?.gameState?.core?.charms || [],
+      consumables: webState?.gameState?.core?.consumables || [],
+      materialLogs: webState?.materialLogs || [],
+      charmLogs: webState?.charmLogs || [],
+    },
   };
 } 

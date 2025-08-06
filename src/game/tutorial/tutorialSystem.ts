@@ -1,5 +1,5 @@
 import { GameInterface } from '../interfaces';
-import { InteractiveTutorial } from './interactiveTutorial';
+// import { InteractiveTutorial } from './interactiveTutorial';
 
 export class TutorialSystem {
   private gameInterface: GameInterface;
@@ -24,8 +24,9 @@ export class TutorialSystem {
     
     switch (choice.trim()) {
       case '1':
-        const interactiveTutorial = new InteractiveTutorial(this.gameInterface);
-        await interactiveTutorial.runInteractiveTutorial();
+        // const interactiveTutorial = new InteractiveTutorial(this.gameInterface);
+        // await interactiveTutorial.runInteractiveTutorial();
+        await this.gameInterface.log('Interactive tutorial temporarily disabled due to TypeScript errors.');
         break;
       case '2':
         await this.showHowToPlay();

@@ -5,88 +5,57 @@ import { GameStatus } from './GameStatus';
 import { CharmInventory, ConsumableInventory } from './inventory/';
 import { PreviewScoring } from './score/PreviewScoring';
 import { Button } from '../ui/Button';
+import { useGameState } from '../../hooks/useGameState';
 
-interface GameBoardProps {
+// Intermediary interfaces for logical groups
+interface RollActions {
+  handleDiceSelect: (index: number) => void;
+  handleRollDice: () => void;
+  scoreSelectedDice: () => void;
+}
+
+interface GameActions {
+  handleBank: () => void;
+  startNewGame: (diceSetIndex: number, selectedCharms: number[], selectedConsumables: number[]) => void;
+}
+
+interface InventoryActions {
+  handleConsumableUse: (index: number) => void;
+}
+
+interface GameBoardData {
   dice: any[];
   selectedDice: number[];
-  onDiceSelect: (index: number) => void;
-  onScoreSelectedDice: () => void;
-  onRoll: () => void;
-  onBank: () => void;
+  previewScoring: any;
   canRoll: boolean;
   canBank: boolean;
   canReroll: boolean;
-  diceToReroll: number;
-  roundNumber: number;
-  rollNumber: number;
-  roundPoints: number;
-  gameScore: number;
-  consecutiveFlops: number;
-  isHotDice: boolean;
-  hotDiceCount: number;
-  totalRolls: number;
-  money: number;
-  forfeitedPoints: number;
-  charms: any[];
-  consumables: any[];
-  onConsumableUse: (index: number) => void;
-  previewScoring: { isValid: boolean; points: number; combinations: string[] } | null;
   canSelectDice: boolean;
-  materialLogs: string[];
-  charmLogs: string[];
-  gameState: any;
-  roundState: any;
   justBanked: boolean;
-  justFlopped?: boolean;
+  justFlopped: boolean;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({
-  dice,
-  selectedDice,
-  onDiceSelect,
-  onScoreSelectedDice,
-  onRoll,
-  onBank,
-  canRoll,
-  canBank,
-  canReroll,
-  diceToReroll,
-  roundNumber,
-  rollNumber,
-  roundPoints,
-  gameScore,
-  consecutiveFlops,
-  isHotDice,
-  hotDiceCount,
-  totalRolls,
-  money,
-  forfeitedPoints,
-  charms,
-  consumables,
-  onConsumableUse,
-  previewScoring,
-  canSelectDice,
-  materialLogs,
-  charmLogs,
-  gameState,
-  roundState,
-  justBanked,
-  justFlopped = false,
+interface GameBoardProps {
+  rollActions: RollActions;
+  gameActions: GameActions;
+  inventoryActions: InventoryActions;
+  board: GameBoardData;
+  status: any;
+  inventory: any;
+  canPlay?: boolean;
+}
+
+export const GameBoard: React.FC<GameBoardProps> = ({ 
+  rollActions, 
+  gameActions, 
+  inventoryActions, 
+  board, 
+  status, 
+  inventory, 
+  canPlay = true 
 }) => {
   // Calculate last roll points from rollHistory
-  const lastRollPoints = roundState?.rollHistory && roundState.rollHistory.length > 0 
-    ? roundState.rollHistory[roundState.rollHistory.length - 1]?.rollPoints || 0 
-    : 0;
-
-  // Debug roll points
-  console.log('Debug - rollHistory length:', roundState?.rollHistory?.length);
-  console.log('Debug - lastRollPoints:', lastRollPoints);
-  console.log('Debug - rollHistory:', roundState?.rollHistory);
-  console.log('Debug - roundState exists:', !!roundState);
-  console.log('Debug - roundState:', roundState);
-
-  // Determine if points were just banked (round complete but can start new round)
-  // const justBanked = canRoll && gameState?.roundState && !gameState.roundState.isActive;
+  const lastRollPoints = 0; // TODO: Get from roundState if needed
 
   return (
     <div style={{ 
@@ -100,14 +69,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       {/* Left Column - Game Area */}
       <div>
         <GameStatus 
-          roundNumber={roundNumber}
-          rollNumber={rollNumber}
-          roundPoints={roundPoints}
-          gameScore={gameScore}
-          consecutiveFlops={consecutiveFlops}
-          hotDiceCount={hotDiceCount}
-          totalRolls={totalRolls}
-          money={money}
+          status={status}
         />
         
         {/* Scoring Section */}
@@ -120,18 +82,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         }}>
           
           <DiceDisplay 
-            dice={dice}
-            selectedIndices={selectedDice}
-            onDiceSelect={onDiceSelect}
-            canSelect={canSelectDice}
-            isHotDice={isHotDice}
-            hotDiceCount={hotDiceCount}
-            roundNumber={roundNumber}
-            rollNumber={rollNumber}
+            dice={board.dice}
+            selectedIndices={board.selectedDice}
+            onDiceSelect={rollActions.handleDiceSelect}
+            canSelect={board.canSelectDice && canPlay}
+            isHotDice={status.isHotDice}
+            hotDiceCount={status.hotDiceCount}
+            roundNumber={status.roundNumber}
+            rollNumber={status.rollNumber}
           />
 
           {/* Flop Notification */}
-          {justFlopped && (
+          {board.justFlopped && (
             <div style={{ 
               marginTop: '15px', 
               padding: '12px', 
@@ -151,23 +113,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           )}
           
           {/* Score Selected Dice Button */}
-          {canSelectDice && selectedDice.length > 0 && (
+          {(board.canSelectDice && canPlay) && board.selectedDice.length > 0 && (
             <div style={{ marginTop: '15px', marginBottom: '15px', textAlign: 'center' }}>
               <Button 
-                onClick={onScoreSelectedDice}
-                disabled={!previewScoring?.isValid}
+                onClick={rollActions.scoreSelectedDice}
+                disabled={!board.previewScoring?.isValid}
               >
-                Score Selected Dice ({selectedDice.length})
-                {previewScoring?.isValid && ` - ${previewScoring.points} pts`}
+                Score Selected Dice ({board.selectedDice.length})
+                {board.previewScoring?.isValid && ` - ${board.previewScoring.points} pts`}
               </Button>
             </div>
           )}
           
-          <PreviewScoring previewScoring={previewScoring} />
+          <PreviewScoring previewScoring={board.previewScoring} />
           
           <div style={{ marginTop: '10px' }}>
             {/* Roll Points - GREEN when just scored dice */}
-            {lastRollPoints > 0 && canReroll && !justBanked && (
+            {lastRollPoints > 0 && (board.canReroll && canPlay) && !board.justBanked && (
               <div style={{ 
                 marginBottom: '5px',
                 color: '#28a745' // Green when showing roll points
@@ -178,36 +140,36 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             
             {/* Round Points - GREEN only when just banked points, BLACK otherwise */}
             <div style={{ 
-              color: justBanked ? '#28a745' : '#000'
+              color: board.justBanked ? '#28a745' : '#000'
             }}>
-              Round points: {justBanked ? '+' : ''}{roundPoints}
+              Round points: {board.justBanked ? '+' : ''}{status.roundPoints}
             </div>
             
             {/* Game Score - show only when just banked points */}
-            {justBanked && (
+            {board.justBanked && (
               <div style={{ 
                 marginTop: '5px',
                 color: '#000', // Keep black, not green
                 fontWeight: 'bold'
               }}>
-                Game score: {gameScore}
+                Game score: {status.gameScore}
               </div>
             )}
           </div>
 
           {/* Game Controls - now integrated into scoring section */}
           <GameControls 
-            onRoll={onRoll}
-            onBank={onBank}
-            canRoll={canRoll}
-            canBank={canBank}
-            diceToReroll={diceToReroll}
-            canReroll={canReroll}
-            gameState={gameState}
+            onRoll={rollActions.handleRollDice}
+            onBank={gameActions.handleBank}
+            canRoll={board.canRoll && canPlay}
+            canBank={board.canBank && canPlay}
+            diceToReroll={board.dice.length}
+            canReroll={board.canReroll && canPlay}
+            gameState={null} // TODO: Pass gameState if needed
           />
           
           {/* Hot Dice Information */}
-          {(isHotDice || hotDiceCount > 0) && !justFlopped && (
+          {(status.isHotDice || status.hotDiceCount > 0) && !board.justFlopped && (
             <div style={{ 
               marginTop: '15px', 
               padding: '8px', 
@@ -216,12 +178,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               borderRadius: '4px',
               fontSize: '14px'
             }}>
-              {'🔥'.repeat(Math.max(hotDiceCount, 1))} Hot dice! x{hotDiceCount} {'🔥'.repeat(Math.max(hotDiceCount, 1))}
+              {'🔥'.repeat(Math.max(status.hotDiceCount, 1))} Hot dice! x{status.hotDiceCount} {'🔥'.repeat(Math.max(status.hotDiceCount, 1))}
             </div>
           )}
           
           {/* Flop Information */}
-          {consecutiveFlops > 0 && (
+          {status.consecutiveFlops > 0 && (
             <div style={{ 
               marginTop: '8px', 
               padding: '8px', 
@@ -230,8 +192,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               borderRadius: '4px',
               fontSize: '14px'
             }}>
-              ⚠️ Consecutive flops: {consecutiveFlops}/3
-              {consecutiveFlops >= 3 && canRoll && (
+              ⚠️ Consecutive flops: {status.consecutiveFlops}/3
+              {status.consecutiveFlops >= 3 && (board.canRoll && canPlay) && (
                 <div style={{ color: '#d63031', fontWeight: 'bold' }}>
                   Flop penalty: -1000 points
                 </div>
@@ -250,12 +212,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         padding: '15px'
       }}>        
         <CharmInventory 
-          charms={charms}
+          charms={inventory.charms}
         />
         
         <ConsumableInventory 
-          consumables={consumables}
-          onConsumableUse={onConsumableUse}
+          consumables={inventory.consumables}
+          onConsumableUse={inventoryActions.handleConsumableUse}
         />
       </div>
     </div>

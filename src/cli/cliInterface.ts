@@ -1,10 +1,10 @@
 import readline from 'readline';
-import { ROLLIO_CONFIG } from '../game/config';
+import { DEFAULT_GAME_CONFIG } from '../game/core/gameInitializer';
 import { DieValue, ScoringCombination, GameState, Die } from '../game/core/types';
 import { DisplayInterface, InputInterface, GameInterface } from '../game/interfaces';
-import { DisplayFormatter } from '../game/display';
-import { CLIDisplayFormatter } from '../game/display/cliDisplay';
-import { SimpleDiceAnimation } from '../game/display/simpleDiceAnimation';
+import { DisplayFormatter } from '../app/utils/display';
+import { CLIDisplayFormatter } from './display/cliDisplay';
+import { SimpleDiceAnimation } from './display/simpleDiceAnimation';
 import { CommandHandler } from '../game/engine/CommandHandler';
 import { ConfigManager } from '../game/engine/ConfigManager';
 
@@ -13,6 +13,11 @@ import { ConfigManager } from '../game/engine/ConfigManager';
  */
 export class CLIInterface implements GameInterface {
   private rl: readline.Interface;
+  
+  // CLI display timing parameters
+  private readonly DEFAULT_DELAY = 100;
+  private readonly MESSAGE_DELAY = 100;
+  private readonly NO_DELAY = 0;
 
   constructor() {
     this.rl = readline.createInterface({
@@ -346,7 +351,7 @@ export class CLIInterface implements GameInterface {
 
   async askForGameRules(): Promise<{ winCondition: number; penaltyEnabled: boolean; consecutiveFlopLimit: number; consecutiveFlopPenalty: number }> {
     // Get user inputs (interface concern)
-    const winConditionInput = await this.ask('  Set win condition (default 10000): ', ROLLIO_CONFIG.winCondition.toString());
+    const winConditionInput = await this.ask('  Set win condition (default 10000): ', DEFAULT_GAME_CONFIG.winCondition.toString());
     const penaltyEnabledInput = await this.ask('  Enable flop penalty? (y/n, default y): ', 'y');
     
     let flopLimitInput: string | undefined;
@@ -354,8 +359,8 @@ export class CLIInterface implements GameInterface {
     
     // Only ask for penalty details if enabled
     if (penaltyEnabledInput.trim() === '' || penaltyEnabledInput.trim().toLowerCase() === 'y') {
-      flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${ROLLIO_CONFIG.penalties.consecutiveFlopLimit}): `, ROLLIO_CONFIG.penalties.consecutiveFlopLimit.toString());
-      flopPenaltyInput = await this.ask(`  Set penalty amount (default ${ROLLIO_CONFIG.penalties.consecutiveFlopPenalty}): `, ROLLIO_CONFIG.penalties.consecutiveFlopPenalty.toString());
+      flopLimitInput = await this.ask(`  Set consecutive flop limit before penalty (default ${DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit}): `, DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit.toString());
+      flopPenaltyInput = await this.ask(`  Set penalty amount (default ${DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty}): `, DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty.toString());
     }
     
     // Delegate parsing and validation to ConfigManager (game logic concern)
@@ -368,7 +373,7 @@ export class CLIInterface implements GameInterface {
   }
 
   // Display methods
-  async log(message: string, delayBefore: number = ROLLIO_CONFIG.cli.defaultDelay, delayAfter: number = ROLLIO_CONFIG.cli.defaultDelay): Promise<void> {
+  async log(message: string, delayBefore: number = this.DEFAULT_DELAY, delayAfter: number = this.DEFAULT_DELAY): Promise<void> {
     if (delayBefore > 0) await this.sleep(delayBefore);
     console.log(message);
     if (delayAfter > 0) await this.sleep(delayAfter);
@@ -383,35 +388,31 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayRoundPoints(points: number): Promise<void> {
-    if (ROLLIO_CONFIG.display.showRoundPoints) {
-      await this.log(DisplayFormatter.formatRoundPoints(points));
-    }
+    await this.log(DisplayFormatter.formatRoundPoints(points));
   }
 
   async displayGameScore(score: number): Promise<void> {
-    if (ROLLIO_CONFIG.display.showGameScore) {
-      await this.log(DisplayFormatter.formatGameScore(score));
-    }
+    await this.log(DisplayFormatter.formatGameScore(score));
   }
 
   async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopLimit: number): Promise<void> {
     const { formatFlopMessage } = require('../game/utils/effectUtils');
-    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopLimit), ROLLIO_CONFIG.cli.messageDelay);
+    await this.log(formatFlopMessage(forfeitedPoints, consecutiveFlops, gameScore, consecutiveFlopPenalty, consecutiveFlopLimit), this.MESSAGE_DELAY);
   }
 
   async displayGameEnd(gameState: any, isWin: boolean): Promise<void> {
     const lines = DisplayFormatter.formatGameEnd(gameState, isWin);
     for (const line of lines) {
-      await this.log(line, ROLLIO_CONFIG.cli.messageDelay);
+      await this.log(line, this.MESSAGE_DELAY);
     }
   }
 
   async displayHotDice(count?: number): Promise<void> {
-    await this.log(CLIDisplayFormatter.formatHotDice(count), ROLLIO_CONFIG.cli.messageDelay);
+    await this.log(CLIDisplayFormatter.formatHotDice(count), this.MESSAGE_DELAY);
   }
 
   async displayBankedPoints(points: number): Promise<void> {
-    await this.log(DisplayFormatter.formatBankedPoints(points), ROLLIO_CONFIG.cli.messageDelay);
+    await this.log(DisplayFormatter.formatBankedPoints(points), this.MESSAGE_DELAY);
   }
 
   async displayWelcome(): Promise<void> {
@@ -419,11 +420,11 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayRoundStart(roundNumber: number): Promise<void> {
-    await this.log(DisplayFormatter.formatRoundStart(roundNumber), ROLLIO_CONFIG.cli.noDelay);
+    await this.log(DisplayFormatter.formatRoundStart(roundNumber), this.NO_DELAY);
   }
 
   async displayWinCondition(): Promise<void> {
-    await this.log(DisplayFormatter.formatWinCondition(), ROLLIO_CONFIG.cli.messageDelay);
+    await this.log(DisplayFormatter.formatWinCondition(), this.MESSAGE_DELAY);
   }
 
   async displayGoodbye(): Promise<void> {
@@ -432,9 +433,9 @@ export class CLIInterface implements GameInterface {
 
   async displayBetweenRounds(gameState: GameState): Promise<void> {
     await this.log('\n--- Between Rounds ---');
-    await this.log(`Money: $${gameState.money}`);
-    await this.log(`Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c) => c.name).join(', ') : 'None'}`);
-    await this.log(`Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c) => c.name).join(', ') : 'None'}`);
+    await this.log(`Money: $${gameState.core.money}`);
+    await this.log(`Charms: ${gameState.core.charms.length > 0 ? gameState.core.charms.map((c: any) => c.name).join(', ') : 'None'}`);
+    await this.log(`Consumables: ${gameState.core.consumables.length > 0 ? gameState.core.consumables.map((c: any) => c.name).join(', ') : 'None'}`);
     await this.log('----------------------\n');
   }
 

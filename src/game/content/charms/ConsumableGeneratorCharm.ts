@@ -1,4 +1,4 @@
-import { BaseCharm, CharmRoundStartContext, CharmScoringContext } from '../../core/charmSystem';
+import { BaseCharm, CharmRoundStartContext, CharmScoringContext } from '../../logic/charmSystem';
 import { CONSUMABLES } from '../consumables';
 
 export class ConsumableGeneratorCharm extends BaseCharm {

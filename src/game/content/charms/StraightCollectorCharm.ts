@@ -1,4 +1,4 @@
-import { BaseCharm, CharmScoringContext } from '../../core/charmSystem';
+import { BaseCharm, CharmScoringContext } from '../../logic/charmSystem';
 
 export class StraightCollectorCharm extends BaseCharm {
   private bonus: number = 0;

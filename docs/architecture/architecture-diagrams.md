@@ -7,41 +7,115 @@
 ```mermaid
 classDiagram
     class GameState {
-        +roundNumber: number
-        +gameScore: number
-        +forfeitedPointsTotal: number
-        +rollCount: number
-        +hotDiceTotal: number
-        +consecutiveFlopCount: number
-        +roundState: RoundState
+        +meta: GameMeta
+        +core: GameCore
+        +config: GameConfig
+        +history: GameHistory
+    }
+
+    class GameMeta {
         +isActive: boolean
         +endReason: GameEndReason
     }
 
-    class RoundState {
+    class GameCore {
+        +gameScore: number
+        +money: number
         +roundNumber: number
-        +hand: DieValue[]
-        +roundPoints: number
-        +rollHistory: RollState[]
-        +hotDiceCount: number
-        +forfeitedPoints: number
+        +consecutiveFlops: number
+        +diceSet: Die[]
+        +charms: Charm[]
+        +consumables: Consumable[]
+        +currentRound: RoundState
+        +settings: GameSettings
+        +shop: ShopState
+    }
+
+    class GameSettings {
+        +sortDice: string
+        +gameSpeed: string
+        +optimizeRollScore: boolean
+    }
+
+    class GameConfig {
+        +diceSetConfig: DiceSetConfig
+        +winCondition: number
+        +penalties: object
+    }
+
+    class ShopState {
+        +isOpen: boolean
+        +availableCharms: Charm[]
+        +availableConsumables: Consumable[]
+        +playerMoney: number
+    }
+
+    class GameHistory {
+        +rollCount: number
+        +hotDiceCounterGlobal: number
+        +forfeitedPointsTotal: number
+        +combinationCounters: CombinationCounters
+        +roundHistory: RoundState[]
+    }
+
+    class RoundState {
+        +meta: RoundMeta
+        +core: RoundCore
+        +history: RoundHistory
+    }
+
+    class RoundMeta {
         +isActive: boolean
         +endReason: RoundEndReason
     }
 
-    class RollState {
+    class RoundCore {
         +rollNumber: number
-        +dice: DieValue[]
+        +roundPoints: number
+        +diceHand: Die[]
+        +hotDiceCounterRound: number
+        +forfeitedPoints: number
+    }
+
+    class RoundHistory {
+        +rollHistory: RollState[]
+        +crystalsScoredThisRound: number
+    }
+
+    class RollState {
+        +data: RollData
+        +core: RollCore
+        +meta: RollMeta
+    }
+
+    class RollCore {
+        +diceHand: Die[]
+        +selectedDice: Die[]
         +maxRollPoints: number
         +rollPoints: number
         +scoringSelection: number[]
         +combinations: ScoringCombination[]
-        +isHotDice: boolean
-        +isFlop: boolean
     }
 
-    GameState --> RoundState : contains
-    RoundState --> RollState : contains
+    class RollMeta {
+        +isActive: boolean
+        +isHotDice: boolean
+        +endReason: RollEndReason
+    }
+
+    GameState --> GameMeta : contains
+    GameState --> GameCore : contains
+    GameState --> GameConfig : contains
+    GameState --> GameHistory : contains
+    GameCore --> GameSettings : contains
+    GameCore --> ShopState : contains
+    GameCore --> RoundState : contains
+    RoundState --> RoundMeta : contains
+    RoundState --> RoundCore : contains
+    RoundState --> RoundHistory : contains
+    RoundHistory --> RollState : contains
+    RollState --> RollCore : contains
+    RollState --> RollMeta : contains
 ```
 
 ## CLI Interaction Flow
@@ -215,21 +289,102 @@ flowchart TD
 
 ```mermaid
 graph TD
-    A[src/] --> B[cli.ts]
-    A --> C[config.ts]
-    A --> D[types.ts]
-    A --> E[scoring.ts]
-    A --> F[gameState.ts]
-    A --> G[utils.ts]
+    A[src/] --> B[game/]
+    A --> C[app/]
+    A --> D[cli/]
+    A --> E[server/]
 
-    H[docs/] --> I[specs/farkle-rules.md]
-    H --> J[architecture/farkle-diagrams.md]
+    B --> B1[core/types.ts]
+    B --> B2[core/gameState.ts]
+    B --> B3[engine/GameEngine.ts]
+    B --> B4[logic/scoring.ts]
+    B --> B5[logic/gameActions.ts]
+    B --> B6[content/charms.ts]
+    B --> B7[content/consumables.ts]
 
-    K[Root] --> A
-    K --> H
-    K --> L[package.json]
-    K --> M[tsconfig.json]
-    K --> N[README.md]
+    C --> C1[components/game/]
+    C --> C2[components/multiplayer/]
+    C --> C3[components/single-player/]
+    C --> C4[hooks/useGameState.ts]
+    C --> C5[services/WebGameManager.ts]
+
+    C1 --> C1A[GameBoard.tsx]
+    C1 --> C1B[GameStatus.tsx]
+    C1 --> C1C[dice/DiceDisplay.tsx]
+
+    C2 --> C2A[MultiplayerRoom.tsx]
+    C2 --> C2B[MultiplayerLobby.tsx]
+    C2 --> C2C[MultiplayerGame.tsx]
+
+    C3 --> C3A[SinglePlayerGame.tsx]
+
+    D --> D1[cli.ts]
+    D --> D2[cliInterface.ts]
+
+    E --> E1[server.ts]
+
+    F[docs/] --> F1[specs/]
+    F --> F2[architecture/]
+    F --> F3[agents/]
+
+    G[Root] --> A
+    G --> F
+    G --> H[package.json]
+    G --> I[tsconfig.json]
+    G --> J[README.md]
+```
+
+## Data Organization & Access Patterns
+
+```mermaid
+flowchart TD
+    A[GameState] --> B[GameMeta]
+    A --> C[GameCore]
+    A --> D[GameConfig]
+    A --> E[GameHistory]
+
+    B --> B1[isActive, endReason]
+
+    C --> C1[gameScore, money, roundNumber]
+    C --> C2[consecutiveFlops]
+    C --> C3[diceSet: Die[], currentRound: RoundState]
+    C --> C4[charms: Charm[], consumables: Consumable[]]
+    C --> C5[settings: GameSettings, shop: ShopState]
+
+    D --> D1[diceSetConfig: DiceSetConfig]
+    D --> D2[winCondition, penalties]
+
+    E --> E1[rollCount, hotDiceCounterGlobal]
+    E --> E2[forfeitedPointsTotal]
+    E --> E3[combinationCounters: CombinationCounters]
+    E --> E4[roundHistory: RoundState[]]
+
+    F[Access Patterns] --> G[gameState.meta.isActive]
+    F --> H[gameState.core.gameScore]
+    F --> I[gameState.core.diceSet]
+    F --> J[gameState.core.charms]
+    F --> K[gameState.core.settings.sortDice]
+    F --> L[gameState.core.settings.gameSpeed]
+    F --> M[gameState.core.shop.isOpen]
+```
+
+## Component Data Flow
+
+```mermaid
+flowchart LR
+    A[useGameState Hook] --> B[Organized Data Groups]
+    B --> C[board: {dice, canRoll, canBank, ...}]
+    B --> D[status: {gameScore, money, roundNumber, ...}]
+    B --> E[charms: Charm[], consumables: Consumable[]]
+    B --> F[history: {rollCount, hotDiceCounter, roundHistory, ...}]
+    B --> G[rollActions: {handleRollDice, handleDiceSelect, ...}]
+    B --> H[gameActions: {handleBank, startNewGame, ...}]
+    B --> I[inventoryActions: {handleConsumableUse, ...}]
+
+    J[GameBoard Component] --> K[Receives Logical Groups]
+    K --> L[rollActions, gameActions, inventoryActions]
+    K --> M[board, status, charms, consumables, history]
+    K --> N[canPlay: boolean]
 ```
 
 ## Data Flow Summary
@@ -258,3 +413,5 @@ The architecture follows a clean separation of concerns with:
 - **Modular** scoring engine
 - **Extensible** utility functions
 - **Clear** data flow patterns
+- **Organized** data structure with logical groupings
+- **Component-friendly** prop interfaces

@@ -1,4 +1,4 @@
-import { BaseCharm, CharmFlopContext, CharmScoringContext } from '../../core/charmSystem';
+import { BaseCharm, CharmFlopContext, CharmScoringContext } from '../../logic/charmSystem';
 
 export class FlopShieldCharm extends BaseCharm {
   constructor(charm: any) {

@@ -1,4 +1,4 @@
-import { ROLLIO_CONFIG } from '../config';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 import { DieValue } from '../core/types';
 
 /**

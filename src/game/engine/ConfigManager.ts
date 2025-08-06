@@ -1,4 +1,4 @@
-import { ROLLIO_CONFIG } from '../config';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 
 /**
  * ConfigManager
@@ -25,8 +25,8 @@ export class ConfigManager {
     
     // Parse win condition
     const winCondition = inputs.winConditionInput?.trim() === '' || !inputs.winConditionInput
-      ? ROLLIO_CONFIG.winCondition 
-      : parseInt(inputs.winConditionInput.trim(), 10) || ROLLIO_CONFIG.winCondition;
+      ? DEFAULT_GAME_CONFIG.winCondition 
+      : parseInt(inputs.winConditionInput.trim(), 10) || DEFAULT_GAME_CONFIG.winCondition;
     
     // Parse penalty enabled
     const penaltyEnabled = inputs.penaltyEnabledInput?.trim() === '' || !inputs.penaltyEnabledInput
@@ -34,19 +34,19 @@ export class ConfigManager {
       : inputs.penaltyEnabledInput.trim().toLowerCase() === 'y';
     
     // Parse flop limit
-    let consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
+    let consecutiveFlopLimit = DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit;
     if (penaltyEnabled && inputs.flopLimitInput) {
       consecutiveFlopLimit = inputs.flopLimitInput.trim() === ''
-        ? ROLLIO_CONFIG.penalties.consecutiveFlopLimit
-        : parseInt(inputs.flopLimitInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
+        ? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit
+        : parseInt(inputs.flopLimitInput.trim(), 10) || DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit;
     }
     
     // Parse flop penalty
-    let consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
+    let consecutiveFlopPenalty = DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
     if (penaltyEnabled && inputs.flopPenaltyInput) {
       consecutiveFlopPenalty = inputs.flopPenaltyInput.trim() === ''
-        ? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty
-        : parseInt(inputs.flopPenaltyInput.trim(), 10) || ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
+        ? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty
+        : parseInt(inputs.flopPenaltyInput.trim(), 10) || DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
     }
     
     return {
@@ -67,10 +67,10 @@ export class ConfigManager {
     consecutiveFlopPenalty: number;
   } {
     return {
-      winCondition: ROLLIO_CONFIG.winCondition,
+      winCondition: DEFAULT_GAME_CONFIG.winCondition,
       penaltyEnabled: true,
-      consecutiveFlopLimit: ROLLIO_CONFIG.penalties.consecutiveFlopLimit,
-      consecutiveFlopPenalty: ROLLIO_CONFIG.penalties.consecutiveFlopPenalty
+      consecutiveFlopLimit: DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit,
+      consecutiveFlopPenalty: DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty
     };
   }
   

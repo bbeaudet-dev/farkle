@@ -1,14 +1,14 @@
 import { GameState, RoundState, Die } from '../../game/core/types';
-import { createInitialGameState, createInitialRoundState } from '../../game/core/gameState';
+import { createInitialGameState, createInitialRoundState } from '../../game/core/gameInitializer';
 import { BASIC_DICE_SET } from '../../game/content/diceSets';
-import { CharmManager } from '../../game/core/charmSystem';
+import { CharmManager } from '../../game/logic/charmSystem';
 import { registerCharms } from '../../game/content/charms/index';
 import { RollManager } from '../../game/engine/RollManager';
 import { processCompleteScoring, calculatePreviewScoring, processReroll } from '../../game/logic/gameActions';
 import { getScoringCombinations } from '../../game/logic/scoring';
 import { isFlop } from '../../game/logic/gameLogic';
 import { formatDiceAsPips } from '../utils/diceUtils';
-import { ROLLIO_CONFIG } from '../../game/config';
+import { DEFAULT_GAME_CONFIG } from '../../game/core/gameInitializer';
 
 export interface WebGameState {
   gameState: GameState | null;
@@ -80,10 +80,10 @@ export class WebGameManager {
     const diceSetConfig = typeof selectedSet === 'function' ? selectedSet() : selectedSet;
     
     const gameState = createInitialGameState(diceSetConfig);
-    gameState.winCondition = ROLLIO_CONFIG.winCondition;
-    gameState.consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-    gameState.consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
-    gameState.flopPenaltyEnabled = true;
+    gameState.config.winCondition = DEFAULT_GAME_CONFIG.winCondition;
+    gameState.config.penalties.consecutiveFlopLimit = DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit;
+    gameState.config.penalties.consecutiveFlopPenalty = DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
+    gameState.config.penalties.flopPenaltyEnabled = true;
 
     // Add selected charms
     if (selectedCharms && selectedCharms.length > 0) {
@@ -92,7 +92,7 @@ export class WebGameManager {
         if (charmIndex >= 0 && charmIndex < CHARMS.length) {
           const charmData = CHARMS[charmIndex];
           this.charmManager.addCharm({ ...charmData, active: true });
-          gameState.charms.push({ ...charmData, active: true });
+          gameState.core.charms.push({ ...charmData, active: true });
         }
       });
     }
@@ -103,7 +103,7 @@ export class WebGameManager {
       selectedConsumables.forEach(consumableIndex => {
         if (consumableIndex >= 0 && consumableIndex < CONSUMABLES.length) {
           const consumableData = CONSUMABLES[consumableIndex];
-          gameState.consumables.push({ ...consumableData, uses: consumableData.uses || 1 });
+          gameState.core.consumables.push({ ...consumableData, uses: consumableData.uses || 1 });
         }
       });
     }
@@ -117,20 +117,20 @@ export class WebGameManager {
     if (!state.gameState) return state;
 
     const newGameState = { ...state.gameState };
-    newGameState.roundNumber++;
+    newGameState.core.roundNumber++;
     
-    const newRoundState = createInitialRoundState(newGameState.roundNumber);
-    newRoundState.diceHand = newGameState.diceSet.map(die => ({ ...die, scored: false }));
+    const newRoundState = createInitialRoundState(newGameState.core.roundNumber);
+    newRoundState.core.diceHand = newGameState.core.diceSet.map((die: any) => ({ ...die, scored: false }));
     
     // Roll the initial dice
-    newRoundState.rollNumber = 1;
-    this.rollManager.rollDice(newRoundState.diceHand);
+    newRoundState.core.rollNumber = 1;
+    this.rollManager.rollDice(newRoundState.core.diceHand);
     
-    this.addMessage(`=== ROUND ${newRoundState.roundNumber} ===`);
-    this.addMessage(`Roll ${newRoundState.rollNumber}: ${formatDiceAsPips(newRoundState.diceHand.map(d => d.rolledValue || 0))}`);
+    this.addMessage(`=== ROUND ${newGameState.core.roundNumber} ===`);
+    this.addMessage(`Roll ${newRoundState.core.rollNumber}: ${formatDiceAsPips(newRoundState.core.diceHand.map((d: any) => d.rolledValue || 0))}`);
 
     // Check for immediate flop
-    if (isFlop(newRoundState.diceHand)) {
+    if (isFlop(newRoundState.core.diceHand)) {
       // Try to prevent flop with charms
       const flopResult = this.charmManager.tryPreventFlop({ gameState: newGameState, roundState: newRoundState });
       if (flopResult.prevented) {
@@ -141,11 +141,11 @@ export class WebGameManager {
       
       this.addMessage('No valid scoring combinations found, you flopped!');
       
-      newGameState.consecutiveFlops++;
+      newGameState.core.consecutiveFlops++;
       
-      if (newGameState.consecutiveFlops >= (newGameState.consecutiveFlopLimit || 3)) {
-        const penalty = newGameState.consecutiveFlopPenalty || 1000;
-        newGameState.gameScore -= penalty;
+      if (newGameState.core.consecutiveFlops >= (newGameState.config.penalties.consecutiveFlopLimit || 3)) {
+        const penalty = newGameState.config.penalties.consecutiveFlopPenalty || 1000;
+        newGameState.core.gameScore -= penalty;
         this.addMessage(`Flop penalty: -${penalty} points`);
       }
       
@@ -179,10 +179,10 @@ export class WebGameManager {
     }
 
     console.log('Debug - Before scoring, roundState:', state.roundState);
-    console.log('Debug - Before scoring, rollHistory length:', state.roundState.rollHistory?.length);
+    console.log('Debug - Before scoring, rollHistory length:', state.roundState.history.rollHistory?.length);
 
     // Check charm restrictions before scoring
-    const combos = getScoringCombinations(state.roundState.diceHand, state.selectedDice, { charms: state.gameState.charms });
+    const combos = getScoringCombinations(state.roundState.core.diceHand, state.selectedDice, { charms: state.gameState.core.charms });
     
     // Apply charm filtering to check for restrictions
     let filteredCombos = combos;
@@ -214,7 +214,7 @@ export class WebGameManager {
     );
 
     console.log('Debug - After scoring, newRoundState:', result.newRoundState);
-    console.log('Debug - After scoring, rollHistory length:', result.newRoundState.rollHistory?.length);
+    console.log('Debug - After scoring, rollHistory length:', result.newRoundState.history.rollHistory?.length);
 
     if (!result.success) {
       this.addMessage('Invalid dice selection. Please select valid scoring combinations.');
@@ -236,7 +236,7 @@ export class WebGameManager {
     }
 
     this.addMessage(`Roll points: +${result.finalPoints}`);
-    this.addMessage(`Round points: ${result.newRoundState.roundPoints}`);
+    this.addMessage(`Round points: ${result.newRoundState.core.roundPoints}`);
 
     return this.createWebGameState(result.newGameState, result.newRoundState, [], null, false, true, true, false, result.materialEffectData?.materialLogs || [], result.charmEffectData ? [`Charm effects: +${result.charmEffectData.modifiedPoints - result.charmEffectData.basePoints} points`] : [], false, false);
   }
@@ -247,21 +247,21 @@ export class WebGameManager {
     const bankedPoints = this.charmManager.applyBankEffects({ 
       gameState: state.gameState, 
       roundState: state.roundState, 
-      bankedPoints: state.roundState.roundPoints 
+      bankedPoints: state.roundState.core.roundPoints 
     });
     
     const newGameState = { ...state.gameState };
-    newGameState.gameScore += bankedPoints;
-    newGameState.consecutiveFlops = 0; // Reset consecutive flops on successful bank
+    newGameState.core.gameScore += bankedPoints;
+    newGameState.core.consecutiveFlops = 0; // Reset consecutive flops on successful bank
 
     this.addMessage(`Banked ${bankedPoints} points!`);
-    this.addMessage(`Total score: ${newGameState.gameScore}`);
+    this.addMessage(`Total score: ${newGameState.core.gameScore}`);
 
     // Check win condition
-    if (newGameState.gameScore >= (newGameState.winCondition || 10000)) {
-      this.addMessage(`🎉 You won with ${newGameState.gameScore} points!`);
-      newGameState.isActive = false;
-      newGameState.endReason = 'win';
+    if (newGameState.core.gameScore >= (newGameState.config.winCondition || 10000)) {
+      this.addMessage(`🎉 You won with ${newGameState.core.gameScore} points!`);
+      newGameState.meta.isActive = false;
+      newGameState.meta.endReason = 'win';
       
       return this.createWebGameState(newGameState, null, [], null, false, false, false, false, [], [], false, false);
     }
@@ -270,7 +270,7 @@ export class WebGameManager {
     
     // Keep the round state but mark it as complete
     const completedRoundState = { ...state.roundState };
-    completedRoundState.isActive = false;
+    completedRoundState.meta.isActive = false;
     
     return this.createWebGameState(newGameState, completedRoundState, [], null, true, false, false, false, [], [], true, false);
   }
@@ -289,7 +289,7 @@ export class WebGameManager {
       this.addMessage('Hot dice reroll - all dice restored!');
     }
     
-    this.addMessage(`Roll ${result.newRoundState.rollNumber}: ${formatDiceAsPips(result.newRoundState.diceHand.map(d => d.rolledValue || 0))}`);
+    this.addMessage(`Roll ${result.newRoundState.core.rollNumber}: ${formatDiceAsPips(result.newRoundState.core.diceHand.map((d: any) => d.rolledValue || 0))}`);
 
     // Check for flop
     if (result.isFlop) {
@@ -306,15 +306,15 @@ export class WebGameManager {
       
       // Increment consecutive flops when actually flopping
       const newGameState = { ...state.gameState };
-      newGameState.consecutiveFlops++;
+      newGameState.core.consecutiveFlops++;
       
-      if (newGameState.consecutiveFlops >= (newGameState.consecutiveFlopLimit || 3)) {
-        const penalty = newGameState.consecutiveFlopPenalty || 1000;
-        newGameState.gameScore -= penalty;
+      if (newGameState.core.consecutiveFlops >= (newGameState.config.penalties.consecutiveFlopLimit || 3)) {
+        const penalty = newGameState.config.penalties.consecutiveFlopPenalty || 1000;
+        newGameState.core.gameScore -= penalty;
         this.addMessage(`Flop penalty: -${penalty} points`);
       }
       
-      this.addMessage(`Consecutive flops: ${newGameState.consecutiveFlops}`);
+      this.addMessage(`Consecutive flops: ${newGameState.core.consecutiveFlops}`);
       
       return this.createWebGameState(newGameState, result.newRoundState, [], null, true, false, false, false, [], [], false, true);
     } else {

@@ -1,11 +1,13 @@
 import { GameState, RoundState, DiceSetConfig, Die, CombinationCounters } from './types';
 import { BASIC_DICE_SET } from '../content/diceSets';
-// Define scoring types locally since scoringTypes.ts was deleted
-const ALL_SCORING_TYPES = [
-  'godStraight', 'straight', 'fourPairs', 'threePairs', 'tripleTriplets', 
-  'twoTriplets', 'sevenOfAKind', 'sixOfAKind', 'fiveOfAKind', 'fourOfAKind', 
-  'threeOfAKind', 'singleOne', 'singleFive'
-] as const;
+import { ScoringCombinationType } from '../logic/scoring';
+
+// Define all possible scoring combination types (for use in other modules)
+const ALL_SCORING_TYPES: ScoringCombinationType[] = [
+  'godStraight', 'straight', 'fourPairs', 'threePairs', 'tripleTriplets', 'twoTriplets',
+  'sevenOfAKind', 'sixOfAKind', 'fiveOfAKind', 'fourOfAKind', 'threeOfAKind',
+  'singleOne', 'singleFive'
+];
 import { getRandomInt } from '../utils/effectUtils';
 import { validateDiceSetConfig } from '../validation/diceSetValidation';
 
@@ -31,6 +33,7 @@ export const DEFAULT_SHOP_STATE = {
   isOpen: false,
   availableCharms: [],
   availableConsumables: [],
+  playerMoney: 0,
 };
 
 function createInitialCombinationCounters(): CombinationCounters {
@@ -56,7 +59,7 @@ export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState 
     core: {
       gameScore: 0,
       money: diceSetConfig.startingMoney,
-      roundNumber: 0,
+      roundNumber: 1,
       consecutiveFlops: 0,
       diceSet: createDiceFromConfig(diceSetConfig.dice),
       charms: [],

@@ -1,6 +1,6 @@
 import { GameInterface } from '../interfaces';
 import { TutorialStateManager } from './tutorialState';
-import { CLIDisplayFormatter } from '../display/cliDisplay';
+import { CLIDisplayFormatter } from '../../cli/display/cliDisplay';
 import { validateDiceSelection } from '../utils/effectUtils';
 import { getAllPartitionings } from '../logic/scoring';
 
@@ -102,16 +102,16 @@ export class InteractiveTutorial {
     await this.gameInterface.log('');
 
     // Set up a specific roll for teaching
-    state.roundState.diceHand = [
-      { ...state.gameState.diceSet[0], rolledValue: 1 },
-      { ...state.gameState.diceSet[1], rolledValue: 1 },
-      { ...state.gameState.diceSet[2], rolledValue: 1 },
-      { ...state.gameState.diceSet[3], rolledValue: 2 },
-      { ...state.gameState.diceSet[4], rolledValue: 3 },
-      { ...state.gameState.diceSet[5], rolledValue: 4 }
+    state.roundState.core.diceHand = [
+      { ...state.gameState.core.diceSet[0], rolledValue: 1 },
+      { ...state.gameState.core.diceSet[1], rolledValue: 1 },
+      { ...state.gameState.core.diceSet[2], rolledValue: 1 },
+      { ...state.gameState.core.diceSet[3], rolledValue: 2 },
+      { ...state.gameState.core.diceSet[4], rolledValue: 3 },
+      { ...state.gameState.core.diceSet[5], rolledValue: 4 }
     ];
 
-    await this.gameInterface.displayRoll(1, state.roundState.diceHand);
+    await this.gameInterface.displayRoll(1, state.roundState.core.diceHand);
     await this.gameInterface.log('');
 
     await this.gameInterface.log('Look at this roll! You have:');
@@ -120,7 +120,7 @@ export class InteractiveTutorial {
     await this.gameInterface.log('');
 
     await this.gameInterface.log('Let\'s see all possible combinations:');
-    const combinations = CLIDisplayFormatter.formatCombinationsDisplay(state.roundState.diceHand, state.gameState);
+    const combinations = CLIDisplayFormatter.formatCombinationsDisplay(state.roundState.core.diceHand, state.gameState);
     for (const line of combinations) {
       await this.gameInterface.log(line);
     }

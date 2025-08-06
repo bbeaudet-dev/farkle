@@ -1,4 +1,4 @@
-import { CharmRegistry } from '../../core/charmSystem';
+import { CharmRegistry } from '../../logic/charmSystem';
 import { FlopShieldCharm } from './FlopShieldCharm';
 import { ScoreMultiplierCharm } from './ScoreMultiplierCharm';
 import { FourOfAKindBoosterCharm } from './FourOfAKindBoosterCharm';

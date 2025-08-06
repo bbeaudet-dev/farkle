@@ -1,5 +1,5 @@
-import { Die, ScoringCombination } from '../core/types';
-import { MATERIALS } from '../content/materials';
+import { Die, ScoringCombination } from '../../game/core/types';
+import { MATERIALS } from '../../game/content/materials';
 
 /**
  * CLI-specific display formatting utilities

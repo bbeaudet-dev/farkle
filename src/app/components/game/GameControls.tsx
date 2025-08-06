@@ -28,7 +28,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
       return 'Start New Round';
     } else if (canReroll) {
       // For hot dice (0 dice remaining), show full dice set size
-      const diceCount = diceToReroll === 0 ? gameState.diceSet.length : diceToReroll;
+      const diceCount = diceToReroll === 0 ? gameState?.core?.diceSet?.length : diceToReroll;
       return <>Reroll<br/>({diceCount} dice)</>;
     }
     // Fallback

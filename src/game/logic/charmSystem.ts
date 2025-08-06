@@ -1,4 +1,4 @@
-import { Charm, CharmRarity } from './types';
+import { Charm, CharmRarity } from '../core/types';
 
 /**
  * Base class for all charms

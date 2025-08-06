@@ -1,4 +1,4 @@
-import { ROLLIO_CONFIG } from '../config';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 import { Die, DieValue, ScoringCombination, Charm } from '../core/types';
 import { debugLog, getDebugMode, debugAction, debugVerbose } from '../utils/debug';
 import { applyMaterialEffects } from './materialSystem';

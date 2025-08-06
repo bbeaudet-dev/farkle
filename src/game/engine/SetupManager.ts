@@ -1,6 +1,6 @@
 import { GameInterface } from '../interfaces';
-import { CharmManager } from '../core/charmSystem';
-import { ROLLIO_CONFIG } from '../config';
+import { CharmManager } from '../logic/charmSystem';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 import { ALL_DICE_SETS } from '../content/diceSets';
 import { CHARMS } from '../content/charms';
 import { CONSUMABLES } from '../content/consumables';
@@ -37,12 +37,12 @@ export class SetupManager {
     await gameInterface.log(`Selected Dice Set: ${diceSetConfig.name}`);
     // No custom materials, no charms, no consumables, no custom rules
     let gameState = createInitialGameState(diceSetConfig);
-    gameState.charms = [];
-    gameState.consumables = [];
-    gameState.winCondition = ROLLIO_CONFIG.winCondition;
-    gameState.consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
-    gameState.consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
-    gameState.flopPenaltyEnabled = true;
+    gameState.core.charms = [];
+    gameState.core.consumables = [];
+    gameState.config.winCondition = DEFAULT_GAME_CONFIG.winCondition;
+    gameState.config.penalties.consecutiveFlopLimit = DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit;
+    gameState.config.penalties.consecutiveFlopPenalty = DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
+    gameState.config.penalties.flopPenaltyEnabled = true;
     return { gameState, diceSetConfig };
   }
 
@@ -74,18 +74,18 @@ export class SetupManager {
     const selectedConsumableIndices = await gameInterface.askForConsumableSelection(availableConsumables, consumableSlots);
     // Create game state with selected charms, materials, and consumables
     let gameState = createInitialGameState(diceSetConfig);
-    gameState.winCondition = winCondition;
-    gameState.consecutiveFlopLimit = consecutiveFlopLimit;
-    gameState.consecutiveFlopPenalty = penaltyEnabled ? consecutiveFlopPenalty : 0;
-    gameState.flopPenaltyEnabled = penaltyEnabled;
+    gameState.config.winCondition = winCondition;
+    gameState.config.penalties.consecutiveFlopLimit = consecutiveFlopLimit;
+    gameState.config.penalties.consecutiveFlopPenalty = penaltyEnabled ? consecutiveFlopPenalty : 0;
+    gameState.config.penalties.flopPenaltyEnabled = penaltyEnabled;
     // Assign materials to dice
-    gameState.diceSet = gameState.diceSet.map((die, index) => ({
+    gameState.core.diceSet = gameState.core.diceSet.map((die: any, index: number) => ({
       ...die,
       material: MATERIALS[assignedMaterialIndices[index]].id as DiceMaterialType,
       abbreviation: MATERIALS[assignedMaterialIndices[index]].abbreviation
     }));
     // Add selected charms to game state and charm manager
-    gameState.charms = selectedCharmIndices
+    gameState.core.charms = selectedCharmIndices
       .filter(index => index < CHARMS.length) // Filter out "Empty" selections
       .map(index => {
         const charm = CHARMS[index];
@@ -97,7 +97,7 @@ export class SetupManager {
         return runtimeCharm;
       });
     // Add selected consumables to game state
-    gameState.consumables = selectedConsumableIndices
+    gameState.core.consumables = selectedConsumableIndices
       .filter(index => index < CONSUMABLES.length) // Filter out "Empty" selections
       .map((index: number) => ({ ...CONSUMABLES[index] }));
     return { gameState, diceSetConfig };

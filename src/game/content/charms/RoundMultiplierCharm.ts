@@ -1,4 +1,4 @@
-import { BaseCharm, CharmBankContext } from '../../core/charmSystem';
+import { BaseCharm, CharmBankContext } from '../../logic/charmSystem';
 
 export class RoundMultiplierCharm extends BaseCharm {
   onScoring() { return 0; }

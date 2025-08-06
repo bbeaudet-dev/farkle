@@ -1,4 +1,4 @@
-import { ROLLIO_CONFIG } from '../config';
+import { DEFAULT_GAME_CONFIG } from '../core/gameInitializer';
 import { Die, DieValue, ScoringCombination, Charm, GameState, RoundState } from '../core/types';
 import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from '../logic/scoring';
 import { rollDice } from '../logic/scoring';
@@ -158,10 +158,10 @@ export function processFlop(
 ): RoundActionResult {
   const newConsecutiveFlopCount = consecutiveFlopCount + 1;
   const forfeitedPoints = roundPoints;
-  const consecutiveFlopLimit = gameState.consecutiveFlopLimit ?? 3;
-  const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
+  const consecutiveFlopLimit = gameState.config.penalties.consecutiveFlopLimit ?? 3;
+  const consecutiveFlopPenalty = gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
 
-  const penaltyApplied = newConsecutiveFlopCount >= consecutiveFlopLimit && !gameState.charmPreventingFlop;
+  const penaltyApplied = newConsecutiveFlopCount >= consecutiveFlopLimit && !gameState.core.charms.some(charm => charm.flopPreventing);
   const penaltyMessage = penaltyApplied ? `You flopped! Round points forfeited: ${forfeitedPoints}. Penalty applied.` : `You flopped! Round points forfeited: ${forfeitedPoints}.`;
 
   return {
@@ -171,7 +171,7 @@ export function processFlop(
     flop: true,
     banked: false,
     pointsScored: 0,
-    message: penaltyApplied ? `${penaltyMessage} New game score: ${gameState.gameScore - consecutiveFlopPenalty}` : penaltyMessage
+    message: penaltyApplied ? `${penaltyMessage} New game score: ${gameState.core.gameScore - consecutiveFlopPenalty}` : penaltyMessage
   };
 }
 
@@ -185,8 +185,8 @@ export function calculateDiceToReroll(selectedIndices: number[], diceLength: num
 /**
  * Checks if game has reached win condition
  */
-export function checkWinCondition(gameScore: number): boolean {
-  return gameScore >= ROLLIO_CONFIG.winCondition;
+export function checkWinCondition(gameScore: number, winCondition: number): boolean {
+  return gameScore >= winCondition;
 }
 
 /**
@@ -198,23 +198,23 @@ export function updateGameStateAfterRound(
   roundActionResult: RoundActionResult
 ): void {
   if (roundActionResult.banked) {
-    gameState.gameScore += roundActionResult.pointsScored;
-    gameState.consecutiveFlops = 0;
+    gameState.core.gameScore += roundActionResult.pointsScored;
+    gameState.core.consecutiveFlops = 0;
   } else if (roundActionResult.flop) {
-    gameState.consecutiveFlops++;
+    gameState.core.consecutiveFlops++;
     // Add forfeited points to total
-    gameState.forfeitedPointsTotal += roundState.roundPoints;
+    gameState.history.forfeitedPointsTotal += roundState.core.roundPoints;
     // Set forfeitedPoints for Forfeit Recovery
-    roundState.forfeitedPoints = roundState.roundPoints;
-    const consecutiveFlopLimit = gameState.consecutiveFlopLimit ?? 3;
-    const consecutiveFlopPenalty = gameState.consecutiveFlopPenalty ?? ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
+    roundState.core.forfeitedPoints = roundState.core.roundPoints;
+    const consecutiveFlopLimit = gameState.config.penalties.consecutiveFlopLimit ?? 3;
+    const consecutiveFlopPenalty = gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
 
-    if (gameState.consecutiveFlops >= consecutiveFlopLimit && !gameState.charmPreventingFlop) {
-      gameState.gameScore -= consecutiveFlopPenalty;
+    if (gameState.core.consecutiveFlops >= consecutiveFlopLimit && !gameState.core.charms.some(charm => charm.flopPreventing)) {
+      gameState.core.gameScore -= consecutiveFlopPenalty;
       // Do NOT reset consecutiveFlops here; only reset on bank
     }
   }
   
   // Update roll count based on round history
-  gameState.rollCount += roundState.rollHistory.length;
+  gameState.history.rollCount += roundState.history.rollHistory.length;
 } 

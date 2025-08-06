@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GameBoard } from '../game';
 import { GameHeader, LiveScoreboard } from './';
 import { useGameState } from '../../hooks/useGameState';
+import io from 'socket.io-client';
 
 interface Player {
   id: string;
@@ -27,6 +28,7 @@ interface MultiplayerGameProps {
   currentRoom: Room;
   currentPlayer: Player;
   activePlayerIds: string[];
+  socket: any;
   onBackToLobby: () => void;
 }
 
@@ -34,29 +36,28 @@ export const MultiplayerGame: React.FC<MultiplayerGameProps> = ({
   currentRoom,
   currentPlayer,
   activePlayerIds,
+  socket,
   onBackToLobby
 }) => {
-  const {
-    gameState,
-    roundState,
-    selectedDice,
-    previewScoring,
-    materialLogs,
-    charmLogs,
-    messages,
-    canSelectDice,
-    justBanked,
-    justFlopped,
-    handleDiceSelect,
-    handleRollDice,
-    handleBank,
-    handleConsumableUse,
-    scoreSelectedDice,
-    canRoll,
-    canRollDice,
-    canBank,
-    canReroll,
-  } = useGameState();
+  const game = useGameState();
+
+  // Auto-start game for multiplayer (no config step needed)
+  React.useEffect(() => {
+    if (!game.gameState) {
+      game.gameActions.startNewGame(0, [], []); // Basic dice set, no charms, no consumables
+    }
+  }, [game.gameState, game.gameActions.startNewGame]);
+
+  // Sync player state with server when game state changes
+  useEffect(() => {
+    if (game.gameState && game.roundState && currentRoom && socket) {
+      socket.emit('update_player_state', currentRoom.id, {
+        gameScore: game.gameState?.core?.gameScore || 0,
+        currentRound: game.gameState?.core?.roundNumber || 0,
+        lastAction: game.board.justBanked ? 'banked' : game.board.justFlopped ? 'flopped' : 'playing'
+      });
+    }
+  }, [game.gameState?.core?.gameScore, game.gameState?.core?.roundNumber, game.board.justBanked, game.board.justFlopped, currentRoom, socket]);
 
   const canPlay = currentPlayer && activePlayerIds.includes(currentPlayer.id);
 
@@ -69,46 +70,22 @@ export const MultiplayerGame: React.FC<MultiplayerGameProps> = ({
         onBackToLobby={onBackToLobby}
       />
 
-      <div style={{ display: 'flex', gap: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Main Game Area */}
         <div style={{ flex: 1 }}>
           <GameBoard
-            dice={roundState?.diceHand || []}
-            selectedDice={selectedDice}
-            onDiceSelect={handleDiceSelect}
-            onScoreSelectedDice={scoreSelectedDice}
-            onRoll={handleRollDice}
-            onBank={handleBank}
-            canRoll={!!(canRoll && canPlay)}
-            canBank={!!(canBank && canPlay)}
-            diceToReroll={roundState?.diceHand?.length || 0}
-            roundNumber={roundState?.roundNumber || 0}
-            rollNumber={roundState?.rollNumber || 0}
-            roundPoints={roundState?.roundPoints || 0}
-            gameScore={gameState?.gameScore || 0}
-            consecutiveFlops={gameState?.consecutiveFlops || 0}
-            charms={gameState?.charms || []}
-            consumables={gameState?.consumables || []}
-            onConsumableUse={handleConsumableUse}
-            previewScoring={previewScoring}
-            canSelectDice={!!(canSelectDice && canPlay)}
-            materialLogs={materialLogs}
-            charmLogs={charmLogs}
-            money={gameState?.money || 0}
-            hotDiceCount={roundState?.hotDiceCounterRound || 0}
-            totalRolls={gameState?.rollCount || 0}
-            forfeitedPoints={gameState?.forfeitedPointsTotal || 0}
-            isHotDice={!!(roundState && roundState.diceHand.length === 0 && roundState.rollHistory.length > 0)}
-            canReroll={!!(canReroll && canPlay)}
-            gameState={gameState}
-            roundState={roundState}
-            justBanked={justBanked}
-            justFlopped={justFlopped}
+            rollActions={game.rollActions}
+            gameActions={game.gameActions}
+            inventoryActions={game.inventoryActions}
+            board={game.board}
+            status={game.status}
+            inventory={game.inventory}
+            canPlay={canPlay}
           />
         </div>
 
         {/* Live Scoreboard */}
-        <div style={{ width: '300px' }}>
+        <div style={{ height: '200px' }}>
           <LiveScoreboard
             players={currentRoom.players}
             currentPlayerId={currentPlayer.id}

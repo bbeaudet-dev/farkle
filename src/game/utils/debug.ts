@@ -52,6 +52,11 @@ let DEBUG_CONFIG: DebugConfig = DEFAULT_CONFIG;
 
 // Load configuration from file
 function loadDebugConfig(): DebugConfig {
+  // In browser environment, just use default config
+  if (typeof window !== 'undefined') {
+    return DEFAULT_CONFIG;
+  }
+  
   try {
     const configPath = path.join(process.cwd(), 'debug.config.json');
     if (fs.existsSync(configPath)) {

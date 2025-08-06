@@ -1,5 +1,5 @@
 import { Die, GameState } from '../core/types';
-import { CLIDisplayFormatter } from '../display/cliDisplay';
+import { CLIDisplayFormatter } from '../../cli/display/cliDisplay';
 
 /**
  * CommandHandler

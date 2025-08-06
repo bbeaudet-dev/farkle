@@ -1,5 +1,5 @@
-import { Die } from '../core/types';
-import { MATERIALS } from '../content/materials';
+import { Die } from '../../game/core/types';
+import { MATERIALS } from '../../game/content/materials';
 
 /**
  * Simple dice animation using normal terminal output

@@ -13,6 +13,8 @@ import { SizeMattersCharm } from './SizeMattersCharm';
 import { RabbitsFootCharm } from './RabbitsFootCharm';
 import { WeightedDiceCharm } from './WeightedDiceCharm';
 import { FlopCollectorCharm } from './FlopCollectorCharm';
+import { HighStakesCharm } from './HighStakesCharm';
+import { LowHangingFruitCharm } from './LowHangingFruitCharm';
 
 /**
  * Register all charm implementations with the registry
@@ -34,4 +36,6 @@ export function registerCharms(): void {
   registry.register(RabbitsFootCharm, 'rabbitsFoot');
   registry.register(WeightedDiceCharm, 'weightedDice');
   registry.register(FlopCollectorCharm, 'flopCollector');
+  registry.register(HighStakesCharm, 'highStakes');
+  registry.register(LowHangingFruitCharm, 'lowHangingFruit');
 } 

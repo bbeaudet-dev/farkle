@@ -13,7 +13,9 @@ export type CharmType =
   | 'moneyMagnet'
   | 'sizeMatters'
   | 'rabbitsFoot'
-  | 'weightedDice';
+  | 'weightedDice'
+  | 'highStakes'
+  | 'lowHangingFruit';
 
 // Rarity price mapping
 const CHARM_PRICES: Record<string, { buy: number; sell: number }> = {
@@ -100,6 +102,18 @@ export const CHARMS: Omit<Charm, 'active'>[] = [
     id: 'weightedDice',
     name: 'Weighted Dice',
     description: 'Doubles probability of all chance-based effects (e.g., Rainbow dice, Lucky Token).',
+    rarity: 'rare'
+  },
+  {
+    id: 'highStakes',
+    name: 'High Stakes',
+    description: '3x scoring multiplier, but removes single 1 and single 5 as valid scoring combinations',
+    rarity: 'legendary'
+  },
+  {
+    id: 'lowHangingFruit',
+    name: 'Low Hanging Fruit',
+    description: 'Allows single 3s to be scored as valid combinations (worth 25 points each)',
     rarity: 'rare'
   }
 ]; 

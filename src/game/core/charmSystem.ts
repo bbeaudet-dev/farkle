@@ -145,6 +145,8 @@ export class CharmManager {
     return this.charms;
   }
 
+
+
   /**
    * Apply charm effects to scoring (calls onScoring on all active charms)
    */

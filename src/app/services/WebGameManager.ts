@@ -5,6 +5,7 @@ import { CharmManager } from '../../game/core/charmSystem';
 import { registerCharms } from '../../game/content/charms/index';
 import { RollManager } from '../../game/engine/RollManager';
 import { processCompleteScoring, calculatePreviewScoring, processReroll } from '../../game/logic/gameActions';
+import { getScoringCombinations } from '../../game/logic/scoring';
 import { isFlop } from '../../game/logic/gameLogic';
 import { formatDiceAsPips } from '../utils/diceUtils';
 import { ROLLIO_CONFIG } from '../../game/config';
@@ -72,7 +73,7 @@ export class WebGameManager {
     };
   }
 
-  async initializeGame(diceSetIndex?: number): Promise<WebGameState> {
+  async initializeGame(diceSetIndex?: number, selectedCharms?: number[], selectedConsumables?: number[]): Promise<WebGameState> {
     // Load dice sets and select the specified one
     const { ALL_DICE_SETS } = await import('../../game/content/diceSets');
     const selectedSet = ALL_DICE_SETS[diceSetIndex || 0];
@@ -83,6 +84,29 @@ export class WebGameManager {
     gameState.consecutiveFlopLimit = ROLLIO_CONFIG.penalties.consecutiveFlopLimit;
     gameState.consecutiveFlopPenalty = ROLLIO_CONFIG.penalties.consecutiveFlopPenalty;
     gameState.flopPenaltyEnabled = true;
+
+    // Add selected charms
+    if (selectedCharms && selectedCharms.length > 0) {
+      const { CHARMS } = await import('../../game/content/charms');
+      selectedCharms.forEach(charmIndex => {
+        if (charmIndex >= 0 && charmIndex < CHARMS.length) {
+          const charmData = CHARMS[charmIndex];
+          this.charmManager.addCharm({ ...charmData, active: true });
+          gameState.charms.push({ ...charmData, active: true });
+        }
+      });
+    }
+
+    // Add selected consumables
+    if (selectedConsumables && selectedConsumables.length > 0) {
+      const { CONSUMABLES } = await import('../../game/content/consumables');
+      selectedConsumables.forEach(consumableIndex => {
+        if (consumableIndex >= 0 && consumableIndex < CONSUMABLES.length) {
+          const consumableData = CONSUMABLES[consumableIndex];
+          gameState.consumables.push({ ...consumableData, uses: consumableData.uses || 1 });
+        }
+      });
+    }
 
     this.addMessage(`Game started with ${diceSetConfig.name}! Click "Start Round" to begin.`);
 
@@ -107,6 +131,14 @@ export class WebGameManager {
 
     // Check for immediate flop
     if (isFlop(newRoundState.diceHand)) {
+      // Try to prevent flop with charms
+      const flopResult = this.charmManager.tryPreventFlop({ gameState: newGameState, roundState: newRoundState });
+      if (flopResult.prevented) {
+        this.addMessage(flopResult.log || '🛡️ Flop Shield activated! Flop prevented');
+        this.addMessage('Select dice to score:');
+        return this.createWebGameState(newGameState, newRoundState, [], null, false, false, false, false, [], [], false, false);
+      }
+      
       this.addMessage('No valid scoring combinations found, you flopped!');
       
       newGameState.consecutiveFlops++;
@@ -148,6 +180,30 @@ export class WebGameManager {
 
     console.log('Debug - Before scoring, roundState:', state.roundState);
     console.log('Debug - Before scoring, rollHistory length:', state.roundState.rollHistory?.length);
+
+    // Check charm restrictions before scoring
+    const combos = getScoringCombinations(state.roundState.diceHand, state.selectedDice, { charms: state.gameState.charms });
+    
+    // Apply charm filtering to check for restrictions
+    let filteredCombos = combos;
+    for (const charm of this.charmManager.getActiveCharms()) {
+      if (charm.filterScoringCombinations) {
+        filteredCombos = charm.filterScoringCombinations(filteredCombos, {
+          basePoints: 0,
+          combinations: filteredCombos,
+          selectedIndices: state.selectedDice,
+          roundState: state.roundState,
+          gameState: state.gameState
+        });
+      }
+    }
+    
+    // Check if any combination has points > 0 after filtering
+    const hasValidPoints = filteredCombos.some(combo => combo.points > 0);
+    if (!hasValidPoints && combos.length > 0) {
+      this.addMessage('Invalid selection - restricted by active charms');
+      return state;
+    }
 
     // Use game layer for all scoring logic
     const result = processCompleteScoring(
@@ -237,6 +293,14 @@ export class WebGameManager {
 
     // Check for flop
     if (result.isFlop) {
+      // Try to prevent flop with charms
+      const flopResult = this.charmManager.tryPreventFlop({ gameState: state.gameState, roundState: result.newRoundState });
+      if (flopResult.prevented) {
+        this.addMessage(flopResult.log || '🛡️ Flop Shield activated! Flop prevented');
+        this.addMessage('Select dice to score:');
+        return this.createWebGameState(state.gameState, result.newRoundState, [], null, false, false, false, false, [], [], false, false);
+      }
+      
       this.addMessage('No valid scoring combinations found, you flopped!');
       this.addMessage('Round ended. Click "Start New Round" for next round.');
       

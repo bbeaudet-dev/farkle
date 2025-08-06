@@ -7,11 +7,14 @@ export class HighStakesCharm extends BaseCharm {
   }
 
   /**
-   * Filter out single 1 and single 5 combinations from the scoring combinations
+   * Set points to 0 for single 1 and single 5 combinations to make them invalid
    */
   filterScoringCombinations(combinations: any[], context: CharmScoringContext): any[] {
-    return combinations.filter(combo => 
-      combo.type !== 'singleOne' && combo.type !== 'singleFive'
-    );
+    return combinations.map(combo => {
+      if (combo.type === 'singleOne' || combo.type === 'singleFive') {
+        return { ...combo, points: 0 };
+      }
+      return combo;
+    });
   }
 } 

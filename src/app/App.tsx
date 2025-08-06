@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { GameBoard } from './components/game/GameBoard';
-import { Button } from './components/ui/Button';
-import { DiceSetSelector } from './components/game/DiceSetSelector';
+import { GameBoard, GameConfigSelector } from './components/game';
 import { useGameState } from './hooks/useGameState';
 
 function App() {
-  const [showDiceSetSelector, setShowDiceSetSelector] = useState(false); // Don't auto-open
-  const [selectedDiceSetIndex, setSelectedDiceSetIndex] = useState<number>(0); // Default to basic set (index 0)
-  
+  const [showConfigSelector, setShowConfigSelector] = useState(false);
+  const [selectedDiceSetIndex, setSelectedDiceSetIndex] = useState(0);
+  const [selectedCharms, setSelectedCharms] = useState<number[]>([]);
+  const [selectedConsumables, setSelectedConsumables] = useState<number[]>([]);
+
   const {
     gameState,
     roundState,
@@ -41,25 +41,33 @@ function App() {
 
   // Root container with consistent font
   const rootStyle = {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    fontFamily: 'Arial, sans-serif',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '20px'
   };
 
-  // Handle dice set selection
-  const handleDiceSetSelect = (index: number) => {
-    setSelectedDiceSetIndex(index);
-    setShowDiceSetSelector(false);
+  const handleConfigComplete = (config: {
+    diceSetIndex: number;
+    selectedCharms: number[];
+    selectedConsumables: number[];
+  }) => {
+    setSelectedDiceSetIndex(config.diceSetIndex);
+    setSelectedCharms(config.selectedCharms);
+    setSelectedConsumables(config.selectedConsumables);
+    setShowConfigSelector(false);
+    startNewGame(config.diceSetIndex, config.selectedCharms, config.selectedConsumables);
   };
 
-  // Handle start game with selected dice set
   const handleStartGame = () => {
-    startNewGame(selectedDiceSetIndex);
+    setShowConfigSelector(true);
   };
 
-  // Show dice set selector first
-  if (showDiceSetSelector) {
+  // Show config selector first
+  if (showConfigSelector) {
     return (
       <div style={rootStyle}>
-        <DiceSetSelector onDiceSetSelect={handleDiceSetSelect} />
+        <GameConfigSelector onConfigComplete={handleConfigComplete} />
       </div>
     );
   }
@@ -75,20 +83,22 @@ function App() {
       }}>
         <h1>Rollio</h1>
         <p>The multiplayer dice-rolling roguelike</p>
-        <Button 
+        <button 
           onClick={handleStartGame} 
           disabled={isLoading}
+          style={{
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            padding: '12px 24px',
+            borderRadius: '4px',
+            fontSize: '16px',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.6 : 1
+          }}
         >
           {isLoading ? 'Starting...' : 'Start New Game'}
-        </Button>
-        <div style={{ marginTop: '15px' }}>
-          <Button 
-            onClick={() => setShowDiceSetSelector(true)}
-            disabled={isLoading}
-          >
-            Dice Set
-          </Button>
-        </div>
+        </button>
       </div>
     );
   }

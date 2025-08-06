@@ -141,8 +141,7 @@ interface EnhancedGameState {
   consumables: Consumable[];
   diceSet: DiceWithMaterial[];
   straightCounter: number;
-  hotDiceCounter: number; // per-round
-  globalHotDiceCounter: number; // global
+  hotDiceCounterGlobal: number;
   diceSetConfig: DiceSetConfig;
 }
 ```

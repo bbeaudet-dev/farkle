@@ -131,7 +131,7 @@ export class RoundManager {
       const rollSummaryLines = CLIDisplayFormatter.formatRollSummary(
         Math.ceil(finalPoints),
         roundState.roundPoints,
-        roundState.hotDiceCount,
+        roundState.hotDiceCounterRound,
         roundState.diceHand.length
       );
       for (const line of rollSummaryLines) {
@@ -140,9 +140,7 @@ export class RoundManager {
 
       /* === Hot Dice Handling === */
       if (scoringActionResult.hotDice) {
-        roundState.hotDiceCount++;
-        gameState.globalHotDiceCounter++;
-        await gameInterface.displayHotDice(roundState.hotDiceCount);
+        await gameInterface.displayHotDice(roundState.hotDiceCounterRound);
         
         // Hot dice! Reset hand to full dice set but don't roll yet
         roundState.diceHand = gameState.diceSet.map((die: Die) => ({ ...die, scored: false }));

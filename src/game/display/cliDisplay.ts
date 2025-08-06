@@ -69,7 +69,7 @@ export class CLIDisplayFormatter {
   /**
    * CLI-specific: Format roll summary with points, hot dice, and bank/reroll prompt
    */
-  static formatRollSummary(rollPoints: number, roundPoints: number, hotDiceCount: number, diceToReroll: number): string[] {
+  static formatRollSummary(rollPoints: number, roundPoints: number, hotDiceCounterRound: number, diceToReroll: number): string[] {
     const lines: string[] = [];
     lines.push(`🎲 ROLL SUMMARY`);
     lines.push(`  Roll points: +${rollPoints}`);

@@ -40,6 +40,12 @@ export abstract class BaseCharm implements Charm {
    */
   onRoundStart?(context: CharmRoundStartContext): void;
 
+  /**
+   * Optional method to filter scoring combinations.
+   * If implemented, it should return a new array of combinations.
+   */
+  filterScoringCombinations?(combinations: any[], context: CharmScoringContext): any[];
+
   canUse(): boolean {
     if (!this.active) return false;
     if (this.uses !== undefined && this.uses <= 0) return false;
@@ -139,20 +145,36 @@ export class CharmManager {
     return this.charms;
   }
 
+
+
   /**
    * Apply charm effects to scoring (calls onScoring on all active charms)
    */
   applyCharmEffects(context: CharmScoringContext): number {
-    let modifiedPoints = context.basePoints;
+    let totalBonus = 0;
     
-    this.charms.forEach(charm => {
-      if (charm.canUse()) {
-        const charmEffect = charm.onScoring(context);
-        modifiedPoints += charmEffect;
+    // First, filter combinations if any charm has a filter method
+    let filteredCombinations = context.combinations;
+    for (const charm of this.getActiveCharms()) {
+      if (charm.filterScoringCombinations) {
+        filteredCombinations = charm.filterScoringCombinations(filteredCombinations, context);
       }
-    });
-
-    return modifiedPoints;
+    }
+    
+    // Recalculate base points with filtered combinations
+    const filteredBasePoints = filteredCombinations.reduce((sum: number, combo: any) => sum + combo.points, 0);
+    
+    // Apply scoring effects
+    for (const charm of this.getActiveCharms()) {
+      const bonus = charm.onScoring({
+        ...context,
+        basePoints: filteredBasePoints,
+        combinations: filteredCombinations
+      });
+      totalBonus += bonus || 0;
+    }
+    
+    return filteredBasePoints + totalBonus;
   }
 
   /**

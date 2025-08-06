@@ -12,6 +12,7 @@ export type ScoringCombinationType =
 interface ScoringContext {
   charms: Charm[];
   materials?: any[];
+  charmManager?: any;
 }
 
 // Base points for combinations that don't depend on face values
@@ -66,7 +67,7 @@ export function getScoringCombinations(
   const values = selectedIndices.map(i => diceHand[i].rolledValue!);
   
   // Find all valid partitionings of the dice into valid combinations
-  const allPartitionings = findAllValidPartitionings(values, selectedIndices, diceHand);
+  const allPartitionings = findAllValidPartitionings(values, selectedIndices, diceHand, context);
   
   if (allPartitionings.length === 0) {
     return [];
@@ -98,7 +99,7 @@ export function getAllPartitionings(
   
   const values = selectedIndices.map(i => diceHand[i].rolledValue!);
   
-  return findAllValidPartitionings(values, selectedIndices, diceHand);
+  return findAllValidPartitionings(values, selectedIndices, diceHand, context);
 }
 
 export function getHighestPointsPartitioning(partitionings: ScoringCombination[][]): number {
@@ -118,10 +119,11 @@ export function getHighestPointsPartitioning(partitionings: ScoringCombination[]
 function findAllValidPartitionings(
   values: number[], 
   selectedIndices: number[], 
-  diceHand: Die[]
+  diceHand: Die[],
+  context?: ScoringContext
 ): ScoringCombination[][] {
   // Step 1: Generate all possible individual combinations that can be made from these dice
-  const allPossibleCombos = findAllPossibleCombinations(values, selectedIndices, diceHand);
+  const allPossibleCombos = findAllPossibleCombinations(values, selectedIndices, diceHand, context);
   
   // Step 2: Find all possible ways to combine these combinations to use all dice exactly once
   const allPartitionings: ScoringCombination[][] = [];
@@ -244,7 +246,8 @@ function findAllValidPartitionings(
 function findAllPossibleCombinations(
   values: number[], 
   selectedIndices: number[], 
-  diceHand: Die[]
+  diceHand: Die[],
+  context?: ScoringContext
 ): ScoringCombination[] {
   const combinations: ScoringCombination[] = [];
   

@@ -55,6 +55,7 @@ export function validateDiceSelectionAndScore(input: string, diceHand: Die[], co
   const combos = getScoringCombinations(diceHand, selectedIndices, context);
   const allPartitionings = getAllPartitionings(diceHand, selectedIndices, context);
   const totalComboDice = combos.reduce((sum, c) => sum + c.dice.length, 0);
+  
   const valid = combos.length > 0 && totalComboDice === selectedIndices.length;
   const points = combos.reduce((sum, c) => sum + c.points, 0);
   

@@ -67,15 +67,6 @@ export const DiceDisplay: React.FC<DiceDisplayProps> = ({
                 size={50} 
                 material={material}
               />
-              <div style={{
-                position: 'absolute',
-                bottom: '2px',
-                right: '2px',
-                fontSize: '8px',
-                color: '#666'
-              }}>
-                {material.charAt(0).toUpperCase()}
-              </div>
             </button>
           );
         })}

@@ -14,11 +14,11 @@ export function useGameState() {
   }, []);
 
   // Initialize a new game
-  const startNewGame = useCallback(async (diceSetIndex?: number) => {
+  const startNewGame = useCallback(async (diceSetIndex?: number, selectedCharms?: number[], selectedConsumables?: number[]) => {
     setIsLoading(true);
     try {
       gameManagerRef.current = new WebGameManager(addMessage);
-      const initialState = await gameManagerRef.current.initializeGame(diceSetIndex);
+      const initialState = await gameManagerRef.current.initializeGame(diceSetIndex, selectedCharms, selectedConsumables);
       setWebState(initialState);
       setMessages([]);
     } catch (error) {
@@ -80,8 +80,51 @@ export function useGameState() {
       return;
     }
     
-    addMessage(`Using ${consumable.name}...`);
-    // TODO: Implement specific consumable effects through WebGameManager
+    // Implement consumable effects based on ID
+    const gameState = { ...webState.gameState };
+    let message = '';
+    
+    switch (consumable.id) {
+      case 'moneyDoubler':
+        gameState.money *= 2;
+        message = `Money doubled! You now have $${gameState.money}`;
+        break;
+      case 'extraDie':
+        // Add an extra plastic die to the current dice set
+        if (webState.roundState) {
+          const extraDie = {
+            id: 'extra-die',
+            sides: 6,
+            allowedValues: [1, 2, 3, 4, 5, 6],
+            material: 'plastic' as const,
+            scored: false,
+            rolledValue: Math.floor(Math.random() * 6) + 1
+          };
+          webState.roundState.diceHand.push(extraDie);
+          message = 'Extra die added to your hand!';
+        }
+        break;
+      case 'charmGiver':
+        // Add a random charm (simplified implementation)
+        message = 'Random charm functionality not yet implemented';
+        break;
+      default:
+        message = `${consumable.name} effect not yet implemented`;
+        break;
+    }
+    
+    // Reduce uses
+    consumable.uses--;
+    if (consumable.uses <= 0) {
+      // Remove the consumable
+      gameState.consumables = gameState.consumables.filter((_, i) => i !== index);
+    }
+    
+    addMessage(message);
+    
+    // Update the web state
+    const newWebState = { ...webState, gameState };
+    setWebState(newWebState);
   }, [webState, addMessage]);
 
   return {
@@ -108,9 +151,10 @@ export function useGameState() {
     isLoading,
     messages,
     canSelectDice: webState?.roundState ? 
-      webState.roundState.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked : 
+      webState.roundState.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked && !webState.justFlopped : 
       false,
     justBanked: webState?.justBanked || false,
+    justFlopped: webState?.justFlopped || false,
     
     // Actions
     startNewGame,

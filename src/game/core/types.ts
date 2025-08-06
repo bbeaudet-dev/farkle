@@ -58,6 +58,7 @@ export interface Charm {
   buyValue?: number;
   sellValue?: number;
   // Add runtime state/effects as needed
+  filterScoringCombinations?: (combinations: any[], context: any) => any[];
 }
 
 export type CharmRarity = 'common' | 'uncommon' | 'rare' | 'legendary';

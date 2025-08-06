@@ -1,18 +1,3 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    background-color: #1a1a1a;
-    color: #00ff00;
-    font-family: 'Courier New', monospace;
-  }
-}
-
-@layer components {
-  /* Blinking cursor effect for input fields */
-  input:focus {
-    caret-color: #00ff00;
-  }
-} 
+@tailwind utilities; 

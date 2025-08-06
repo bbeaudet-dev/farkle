@@ -57,7 +57,7 @@ export class DisplayFormatter {
     const stats = formatGameStats({
       roundsPlayed: gameState.roundNumber - 1,
       totalRolls: gameState.rollCount || 0,
-      hotDiceCount: gameState.globalHotDiceCounter || 0,
+      hotDiceCount: gameState.hotDiceCounterGlobal || 0,
       forfeitedPoints: gameState.forfeitedPointsTotal || 0,
       gameScore: gameState.gameScore,
     });

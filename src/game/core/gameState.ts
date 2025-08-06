@@ -33,8 +33,7 @@ export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState 
     diceSet: createDiceFromConfig(diceSetConfig.dice),
     diceSetConfig,
     consecutiveFlops: 0,
-    hotDiceCounter: 0,
-    globalHotDiceCounter: 0,
+    hotDiceCounterGlobal: 0,
     money: diceSetConfig.startingMoney,
     charms: [],
     consumables: [],
@@ -47,10 +46,11 @@ export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState 
 export function createInitialRoundState(roundNumber: number = 1): RoundState {
   return {
     roundNumber,
+    rollNumber: 0,
     roundPoints: 0,
     diceHand: [],
     rollHistory: [],
-    hotDiceCount: 0,
+    hotDiceCounterRound: 0,
     forfeitedPoints: 0,
     isActive: true,
   };

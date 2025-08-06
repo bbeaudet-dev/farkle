@@ -37,22 +37,21 @@ export function formatFlopMessage(
   return message;
 }
 
-/**
- * Formats game statistics for display
- */
-export function formatGameStats(stats: {
-  roundsPlayed: number;
+export interface GameStats {
+  rounds: number;
   totalRolls: number;
-  hotDiceCount: number;
-  forfeitedPoints: number;
   gameScore: number;
-}): string[] {
+  money: number;
+  hotDiceCounterRound: number;
+}
+
+export function formatGameStats(stats: GameStats): string[] {
   return [
-    `Total rounds played: ${stats.roundsPlayed}`,
+    `Rounds played: ${stats.rounds}`,
     `Total rolls: ${stats.totalRolls}`,
-    `Hot dice occurrences: ${stats.hotDiceCount}`,
-    `Total points forfeited: ${stats.forfeitedPoints}`,
-    `Final game score: ${stats.gameScore}`,
+    `Current score: ${stats.gameScore}`,
+    `Money: $${stats.money}`,
+    `Hot dice occurrences: ${stats.hotDiceCounterRound}`,
   ];
 }
 

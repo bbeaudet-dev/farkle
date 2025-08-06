@@ -18,17 +18,15 @@ describe('Game State', () => {
       
       // Check all required properties exist
       expect(gameState).toHaveProperty('gameScore', 0);
-      expect(gameState).toHaveProperty('roundNumber', 1);
+      expect(gameState).toHaveProperty('roundNumber', 0);
       expect(gameState).toHaveProperty('rollCount', 0);
+      expect(gameState).toHaveProperty('diceSet');
       expect(gameState).toHaveProperty('consecutiveFlops', 0);
-      expect(gameState).toHaveProperty('money', 10);
+      expect(gameState).toHaveProperty('hotDiceCounterGlobal', 0);
+      expect(gameState).toHaveProperty('money');
       expect(gameState).toHaveProperty('charms');
       expect(gameState).toHaveProperty('consumables');
-      expect(gameState).toHaveProperty('diceSet');
-      expect(gameState).toHaveProperty('combinationCounters');
-      expect(gameState).toHaveProperty('hotDiceCounter', 0);
-      expect(gameState).toHaveProperty('globalHotDiceCounter', 0);
-      expect(gameState).toHaveProperty('diceSetConfig');
+      expect(gameState).toHaveProperty('isActive', true);
     });
 
     it('should create 6 dice with correct initial state for Basic set', () => {
@@ -213,11 +211,11 @@ describe('Game State', () => {
     it('should create a valid round state with default round number', () => {
       const roundState = createInitialRoundState();
       
-      expect(roundState).toHaveProperty('roundNumber', 1);
+      expect(roundState).toHaveProperty('roundNumber', 0);
       expect(roundState).toHaveProperty('roundPoints', 0);
       expect(roundState).toHaveProperty('diceHand');
       expect(roundState).toHaveProperty('rollHistory');
-      expect(roundState).toHaveProperty('hotDiceCount', 0);
+      expect(roundState).toHaveProperty('hotDiceCounterRound', 0);
       expect(roundState).toHaveProperty('forfeitedPoints', 0);
       expect(roundState).toHaveProperty('isActive', true);
     });

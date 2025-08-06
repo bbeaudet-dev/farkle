@@ -1,5 +1,5 @@
 import { ROLLIO_CONFIG } from '../config';
-import { Die, DieValue, ScoringCombination, Charm, GameState } from '../core/types';
+import { Die, DieValue, ScoringCombination, Charm, GameState, RoundState } from '../core/types';
 import { getScoringCombinations, hasAnyScoringCombination, getAllPartitionings } from '../logic/scoring';
 import { rollDice } from '../logic/scoring';
 import { validateDiceSelection } from '../utils/effectUtils';
@@ -213,9 +213,7 @@ export function updateGameStateAfterRound(
       // Do NOT reset consecutiveFlops here; only reset on bank
     }
   }
-  if (roundActionResult.hotDice) {
-    gameState.globalHotDiceCounter++;
-  }
+  
   // Update roll count based on round history
   gameState.rollCount += roundState.rollHistory.length;
 } 

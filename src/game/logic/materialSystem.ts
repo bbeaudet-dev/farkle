@@ -96,9 +96,9 @@ const materialEffects: Record<string, MaterialEffectFn> = {
     const selectedDice = selectedIndices.map(i => diceHand[i]);
     const volcanoCount = selectedDice.filter(die => die.material === 'volcano').length;
     if (volcanoCount > 0 && roundState) {
-      const hotDiceCount = roundState.hotDiceCount || 0;
-      materialLogs.push(`Volcano: ${volcanoCount} scored, hot dice count: ${hotDiceCount}, bonus: +${100 * volcanoCount * hotDiceCount}`);
-      score += 100 * volcanoCount * hotDiceCount;
+      const hotDiceCounterRound = roundState.hotDiceCounterRound || 0;
+      materialLogs.push(`Volcano: ${volcanoCount} scored, hot dice count: ${hotDiceCounterRound}, bonus: +${100 * volcanoCount * hotDiceCounterRound}`);
+      score += 100 * volcanoCount * hotDiceCounterRound;
     }
     return { score, materialLogs };
   },

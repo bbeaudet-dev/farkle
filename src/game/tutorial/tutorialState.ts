@@ -23,10 +23,20 @@ export class TutorialStateManager {
   private createInitialTutorialState(): TutorialState {
     // Create a minimal game state for tutorial
     const gameState: GameState = {
-      gameScore: 0,
-      roundNumber: 1,
-      rollCount: 0,
-      diceSet: [
+          gameScore: 0,
+    roundNumber: 1,
+    rollCount: 0,
+    diceSet: [
+      { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
+    ],
+    diceSetConfig: {
+      name: 'Tutorial Set',
+      dice: [
         { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
         { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
         { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
@@ -34,27 +44,16 @@ export class TutorialStateManager {
         { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
         { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
       ],
-      diceSetConfig: {
-        name: 'Tutorial Set',
-        dice: [
-          { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
-        ],
-        startingMoney: 0,
-        charmSlots: 0,
-        consumableSlots: 0,
-        setType: 'beginner'
-      },
-      consecutiveFlops: 0,
-      hotDiceCounter: 0,
-      globalHotDiceCounter: 0,
-      money: 0,
-      charms: [],
-      consumables: [],
+      startingMoney: 0,
+      charmSlots: 0,
+      consumableSlots: 0,
+      setType: 'beginner'
+    },
+    consecutiveFlops: 0,
+    hotDiceCounterGlobal: 0,
+    money: 0,
+    charms: [],
+    consumables: [],
       combinationCounters: {
         godStraight: 0,
         straight: 0,
@@ -80,10 +79,11 @@ export class TutorialStateManager {
 
     const roundState: RoundState = {
       roundNumber: 1,
+      rollNumber: 0,
       roundPoints: 0,
       diceHand: [],
       rollHistory: [],
-      hotDiceCount: 0,
+      hotDiceCounterRound: 0,
       forfeitedPoints: 0,
       isActive: true,
       crystalsScoredThisRound: 0

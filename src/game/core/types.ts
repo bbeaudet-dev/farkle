@@ -84,10 +84,11 @@ export interface RollState {
 
 export interface RoundState {
   roundNumber: number;
+  rollNumber: number;
   roundPoints: number;
   diceHand: Die[];
   rollHistory: RollState[];
-  hotDiceCount: number;
+  hotDiceCounterRound: number;
   forfeitedPoints: number;
   isActive: boolean;
   crystalsScoredThisRound?: number;
@@ -100,8 +101,7 @@ export interface GameState {
   diceSet: Die[];
   diceSetConfig: DiceSetConfig;
   consecutiveFlops: number;
-  hotDiceCounter: number;
-  globalHotDiceCounter: number;
+  hotDiceCounterGlobal: number;
   money: number;
   charms: Charm[];
   consumables: Consumable[];

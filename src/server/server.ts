@@ -7,7 +7,9 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000"], 
+    origin: process.env.NODE_ENV === 'production' 
+      ? ["https://your-app-name.vercel.app", "https://your-app-name.netlify.app"] 
+      : ["http://localhost:3000"], 
     methods: ["GET", "POST"]
   }
 });
@@ -16,7 +18,13 @@ const PORT = process.env.PORT || 5173;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+
+// Serve static files from the built frontend
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../dist')));
+} else {
+  app.use(express.static('public'));
+}
 
 // Room management
 interface Room {
@@ -50,7 +58,18 @@ function generateRoomCode(): string {
 
 // Serve the main page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, '../../dist/index.html'));
+  } else {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  }
+});
+
+// Handle client-side routing in production
+app.get('*', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, '../../dist/index.html'));
+  }
 });
 
 // API endpoint to start a new game
@@ -225,9 +244,8 @@ io.on('connection', (socket) => {
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`🎲 Rollio server running on http://localhost:${PORT}`);
-  console.log(`📁 Static files served from: ${path.join(__dirname, '../public')}`);
-  console.log(`🔌 WebSocket server ready for multiplayer`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 export default app; 

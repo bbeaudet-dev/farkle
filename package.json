@@ -37,6 +37,7 @@
     "@types/socket.io-client": "^1.4.36",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
+    "express": "^5.1.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "ts-node": "^10.9.1"
@@ -49,7 +50,6 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "autoprefixer": "^10.4.21",
-    "express": "^5.1.0",
     "nodemon": "^3.1.10",
     "postcss": "^8.5.6",
     "react": "^19.1.0",

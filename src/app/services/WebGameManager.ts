@@ -110,7 +110,10 @@ export class WebGameManager {
 
     this.addMessage(`Game started with ${diceSetConfig.name}! Click "Start Round" to begin.`);
 
-    return this.createWebGameState(gameState, null, [], null, true, false, false, false, [], [], false, false);
+    // Create initial round state
+    const initialRoundState = createInitialRoundState(gameState.core.roundNumber);
+    
+    return this.createWebGameState(gameState, initialRoundState, [], null, true, false, false, false, [], [], false, false);
   }
 
   startRound(state: WebGameState): WebGameState {

@@ -53,7 +53,8 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ onBackToMenu
         gameActions={game.gameActions}
         inventoryActions={game.inventoryActions}
         board={game.board}
-        status={game.status}
+        gameState={game.gameState}
+        roundState={game.roundState}
         inventory={game.inventory}
       />
       

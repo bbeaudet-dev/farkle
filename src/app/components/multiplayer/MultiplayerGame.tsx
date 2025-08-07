@@ -78,7 +78,8 @@ export const MultiplayerGame: React.FC<MultiplayerGameProps> = ({
             gameActions={game.gameActions}
             inventoryActions={game.inventoryActions}
             board={game.board}
-            status={game.status}
+            gameState={game.gameState}
+            roundState={game.roundState}
             inventory={game.inventory}
             canPlay={canPlay}
           />

@@ -59,7 +59,7 @@ export function createInitialGameState(diceSetConfig: DiceSetConfig): GameState 
     core: {
       gameScore: 0,
       money: diceSetConfig.startingMoney,
-      roundNumber: 1,
+      roundNumber: 0,
       consecutiveFlops: 0,
       diceSet: createDiceFromConfig(diceSetConfig.dice),
       charms: [],

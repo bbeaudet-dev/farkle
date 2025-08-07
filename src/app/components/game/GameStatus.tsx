@@ -2,14 +2,14 @@ import React from 'react';
 
 interface GameStatusProps {
   status: {
-    roundNumber: number;
-    rollNumber: number;
-    roundPoints: number;
-    gameScore: number;
-    consecutiveFlops: number;
-    hotDiceCount: number;
-    totalRolls: number;
-    money: number;
+  roundNumber: number;
+  rollNumber: number;
+  roundPoints: number;
+  gameScore: number;
+  consecutiveFlops: number;
+  hotDiceCount: number;
+  totalRolls: number;
+  money: number;
   };
 }
 

@@ -71,7 +71,7 @@ export function useGameState() {
     setWebState(newState);
   }, [webState]);
 
-    const handleConsumableUse = useCallback((index: number) => {
+  const handleConsumableUse = useCallback((index: number) => {
     if (!webState || !gameManagerRef.current || !webState.gameState) return;
     
     // TODO: Implement consumable logic in game engine
@@ -90,18 +90,18 @@ export function useGameState() {
     
     // Actions (logical groups)
     rollActions: {
-      handleDiceSelect,
-      handleRollDice,
+    handleDiceSelect,
+    handleRollDice,
       scoreSelectedDice,
     },
     
     gameActions: {
-      handleBank,
+    handleBank,
       startNewGame,
     },
     
     inventoryActions: {
-      handleConsumableUse,
+    handleConsumableUse,
     },
     
     // Game board data (from round state)
@@ -109,9 +109,9 @@ export function useGameState() {
       dice: webState?.roundState?.core?.diceHand || [],
       selectedDice: webState?.selectedDice || [],
       previewScoring: webState?.previewScoring || null,
-      canRoll: webState?.canRoll || false,
-      canBank: webState?.canBank || false,
-      canReroll: webState?.canReroll || false,
+    canRoll: webState?.canRoll || false,
+    canBank: webState?.canBank || false,
+    canReroll: webState?.canReroll || false,
       canSelectDice: webState?.roundState ? 
         webState.roundState.core.diceHand.length > 0 && !(webState.canBank && webState.canReroll) && !webState.justBanked && !webState.justFlopped : 
         false,
@@ -119,19 +119,9 @@ export function useGameState() {
       justFlopped: webState?.justFlopped || false,
     },
     
-    // Game status (from core game state)
-    status: {
-      roundNumber: webState?.gameState?.core?.roundNumber || 0,
-      rollNumber: webState?.roundState?.core?.rollNumber || 0,
-      roundPoints: webState?.roundState?.core?.roundPoints || 0,
-      gameScore: webState?.gameState?.core?.gameScore || 0,
-      consecutiveFlops: webState?.gameState?.core?.consecutiveFlops || 0,
-      hotDiceCount: webState?.roundState?.core?.hotDiceCounterRound || 0,
-      totalRolls: webState?.gameState?.history?.rollCount || 0,
-      money: webState?.gameState?.core?.money || 0,
-      forfeitedPoints: webState?.gameState?.history?.forfeitedPointsTotal || 0,
-      isHotDice: !!(webState?.roundState && webState.roundState.core.diceHand.length === 0 && webState.roundState.history.rollHistory.length > 0),
-    },
+
+    
+
     
     // Inventory (from core game state)
     inventory: {

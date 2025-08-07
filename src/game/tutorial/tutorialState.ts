@@ -28,16 +28,16 @@ export class TutorialStateManager {
         endReason: undefined
       },
       core: {
-        gameScore: 0,
-        roundNumber: 1,
-        diceSet: [
-          { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-          { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
-        ],
+          gameScore: 0,
+    roundNumber: 1,
+    diceSet: [
+      { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+      { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
+    ],
         consecutiveFlops: 0,
         money: 0,
         charms: [],
@@ -56,21 +56,21 @@ export class TutorialStateManager {
       },
       config: {
         winCondition: 1000,
-        diceSetConfig: {
-          name: 'Tutorial Set',
-          dice: [
-            { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-            { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-            { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-            { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-            { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
-            { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
-          ],
-          startingMoney: 0,
-          charmSlots: 0,
-          consumableSlots: 0,
-          setType: 'beginner'
-        },
+    diceSetConfig: {
+      name: 'Tutorial Set',
+      dice: [
+        { id: 'd1', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+        { id: 'd2', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+        { id: 'd3', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+        { id: 'd4', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+        { id: 'd5', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' },
+        { id: 'd6', sides: 6, allowedValues: [1, 2, 3, 4, 5, 6], material: 'plastic' }
+      ],
+      startingMoney: 0,
+      charmSlots: 0,
+      consumableSlots: 0,
+      setType: 'beginner'
+    },
         penalties: {
           consecutiveFlopLimit: 3,
           consecutiveFlopPenalty: 1000,
@@ -79,23 +79,23 @@ export class TutorialStateManager {
       },
       history: {
         rollCount: 0,
-        hotDiceCounterGlobal: 0,
+    hotDiceCounterGlobal: 0,
         forfeitedPointsTotal: 0,
-        combinationCounters: {
-          godStraight: 0,
-          straight: 0,
-          fourPairs: 0,
-          threePairs: 0,
-          tripleTriplets: 0,
-          twoTriplets: 0,
-          sevenOfAKind: 0,
-          sixOfAKind: 0,
-          fiveOfAKind: 0,
-          fourOfAKind: 0,
-          threeOfAKind: 0,
-          singleOne: 0,
-          singleFive: 0
-        },
+      combinationCounters: {
+        godStraight: 0,
+        straight: 0,
+        fourPairs: 0,
+        threePairs: 0,
+        tripleTriplets: 0,
+        twoTriplets: 0,
+        sevenOfAKind: 0,
+        sixOfAKind: 0,
+        fiveOfAKind: 0,
+        fourOfAKind: 0,
+        threeOfAKind: 0,
+        singleOne: 0,
+        singleFive: 0
+      },
         roundHistory: []
       }
     };
@@ -106,15 +106,15 @@ export class TutorialStateManager {
         endReason: undefined
       },
       core: {
-        rollNumber: 0,
-        roundPoints: 0,
-        diceHand: [],
-        hotDiceCounterRound: 0,
-        forfeitedPoints: 0,
+      rollNumber: 0,
+      roundPoints: 0,
+      diceHand: [],
+      hotDiceCounterRound: 0,
+      forfeitedPoints: 0,
       },
       history: {
         rollHistory: [],
-        crystalsScoredThisRound: 0
+      crystalsScoredThisRound: 0
       }
     };
 

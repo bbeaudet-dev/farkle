@@ -88,14 +88,14 @@ export function processCompleteScoring(
     core: {
       diceHand: [...newRoundState.core.diceHand], // Store remaining dice after scoring
       selectedDice: [],
-      maxRollPoints: materialResult.score, // TODO: calculate actual max possible
-      rollPoints: materialResult.score,
-      scoringSelection: selectedIndices,
-      combinations: selectedPartitioning.map((c: any) => c.type),
+    maxRollPoints: materialResult.score, // TODO: calculate actual max possible
+    rollPoints: materialResult.score,
+    scoringSelection: selectedIndices,
+    combinations: selectedPartitioning.map((c: any) => c.type),
     },
     meta: {
       isActive: false,
-      isHotDice: scoringActionResult.hotDice,
+    isHotDice: scoringActionResult.hotDice,
       endReason: 'scored',
     },
   });

@@ -9,7 +9,6 @@ interface GameControlsProps {
   canBank: boolean;
   canReroll: boolean;
   diceToReroll: number;
-  gameState: any;
 }
 
 export const GameControls: React.FC<GameControlsProps> = ({
@@ -18,8 +17,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
   canRoll,
   canBank,
   canReroll,
-  diceToReroll,
-  gameState
+  diceToReroll
 }) => {
   // Determine roll button text based on context
   const getRollButtonText = () => {
@@ -27,9 +25,8 @@ export const GameControls: React.FC<GameControlsProps> = ({
       // Starting a new round (including after flop)
       return 'Start New Round';
     } else if (canReroll) {
-      // For hot dice (0 dice remaining), show full dice set size
-      const diceCount = diceToReroll === 0 ? gameState?.core?.diceSet?.length : diceToReroll;
-      return <>Reroll<br/>({diceCount} dice)</>;
+      // For hot dice, show the dice count
+      return <>Reroll<br/>({diceToReroll} dice)</>;
     }
     // Fallback
     return 'Roll Dice';

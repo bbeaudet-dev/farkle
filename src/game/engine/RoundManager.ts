@@ -120,14 +120,14 @@ export class RoundManager {
         core: {
           diceHand: roundState.core.diceHand,
           selectedDice: [],
-          maxRollPoints: 0, // TODO: calculate this
-          rollPoints: finalPoints,
-          scoringSelection: selectedIndices,
-          combinations: selectedPartitioning,
+        maxRollPoints: 0, // TODO: calculate this
+        rollPoints: finalPoints,
+        scoringSelection: selectedIndices,
+        combinations: selectedPartitioning,
         },
         meta: {
           isActive: false,
-          isHotDice: scoringActionResult.hotDice,
+        isHotDice: scoringActionResult.hotDice,
           endReason: 'scored',
         },
       });

@@ -388,11 +388,11 @@ export class CLIInterface implements GameInterface {
   }
 
   async displayRoundPoints(points: number): Promise<void> {
-    await this.log(DisplayFormatter.formatRoundPoints(points));
+      await this.log(DisplayFormatter.formatRoundPoints(points));
   }
 
   async displayGameScore(score: number): Promise<void> {
-    await this.log(DisplayFormatter.formatGameScore(score));
+      await this.log(DisplayFormatter.formatGameScore(score));
   }
 
   async displayFlopMessage(forfeitedPoints: number, consecutiveFlops: number, gameScore: number, consecutiveFlopPenalty: number, consecutiveFlopLimit: number): Promise<void> {

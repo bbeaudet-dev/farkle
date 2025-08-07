@@ -40,7 +40,8 @@ interface GameBoardProps {
   gameActions: GameActions;
   inventoryActions: InventoryActions;
   board: GameBoardData;
-  status: any;
+  gameState: any;
+  roundState: any;
   inventory: any;
   canPlay?: boolean;
 }
@@ -50,12 +51,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   gameActions, 
   inventoryActions, 
   board, 
-  status, 
+  gameState, 
+  roundState, 
   inventory, 
   canPlay = true 
 }) => {
-  // Calculate last roll points from rollHistory
-  const lastRollPoints = 0; // TODO: Get from roundState if needed
+  // Handle null game state
+  if (!gameState || !roundState) {
+    return (
+      <div style={{ 
+        maxWidth: '1200px', 
+        margin: '0 auto', 
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        <div>Loading game...</div>
+      </div>
+    );
+  }
+
+  // Get last roll points from the actual round state
+  const lastRollPoints = roundState.history.rollHistory.length > 0 ? 
+    roundState.history.rollHistory[roundState.history.rollHistory.length - 1]?.core?.rollPoints || 0 : 0;
 
   return (
     <div style={{ 
@@ -69,7 +86,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       {/* Left Column - Game Area */}
       <div>
         <GameStatus 
-          status={status}
+          status={{
+            roundNumber: gameState.core.roundNumber,
+            rollNumber: roundState.core.rollNumber,
+            roundPoints: roundState.core.roundPoints,
+            gameScore: gameState.core.gameScore,
+            consecutiveFlops: gameState.core.consecutiveFlops,
+            hotDiceCount: roundState.core.hotDiceCounterRound,
+            totalRolls: gameState.history.rollCount,
+            money: gameState.core.money,
+          }}
         />
         
         {/* Scoring Section */}
@@ -86,10 +112,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             selectedIndices={board.selectedDice}
             onDiceSelect={rollActions.handleDiceSelect}
             canSelect={board.canSelectDice && canPlay}
-            isHotDice={status.isHotDice}
-            hotDiceCount={status.hotDiceCount}
-            roundNumber={status.roundNumber}
-            rollNumber={status.rollNumber}
+            isHotDice={roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0}
+            hotDiceCount={roundState.core.hotDiceCounterRound}
+            roundNumber={gameState.core.roundNumber}
+            rollNumber={roundState.core.rollNumber}
           />
 
           {/* Flop Notification */}
@@ -142,7 +168,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <div style={{ 
               color: board.justBanked ? '#28a745' : '#000'
             }}>
-              Round points: {board.justBanked ? '+' : ''}{status.roundPoints}
+              Round points: {board.justBanked ? '+' : ''}{roundState.core.roundPoints}
             </div>
             
             {/* Game Score - show only when just banked points */}
@@ -152,7 +178,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 color: '#000', // Keep black, not green
                 fontWeight: 'bold'
               }}>
-                Game score: {status.gameScore}
+                Game score: {gameState.core.gameScore}
               </div>
             )}
           </div>
@@ -163,13 +189,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             onBank={gameActions.handleBank}
             canRoll={board.canRoll && canPlay}
             canBank={board.canBank && canPlay}
-            diceToReroll={board.dice.length}
+            diceToReroll={(roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0) ? gameState.core.diceSet.length : board.dice.length}
             canReroll={board.canReroll && canPlay}
-            gameState={null} // TODO: Pass gameState if needed
+
           />
           
           {/* Hot Dice Information */}
-          {(status.isHotDice || status.hotDiceCount > 0) && !board.justFlopped && (
+          {((roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0) || roundState.core.hotDiceCounterRound > 0) && !board.justFlopped && (
             <div style={{ 
               marginTop: '15px', 
               padding: '8px', 
@@ -178,12 +204,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               borderRadius: '4px',
               fontSize: '14px'
             }}>
-              {'🔥'.repeat(Math.max(status.hotDiceCount, 1))} Hot dice! x{status.hotDiceCount} {'🔥'.repeat(Math.max(status.hotDiceCount, 1))}
+              {'🔥'.repeat(Math.max(roundState.core.hotDiceCounterRound, 1))} Hot dice! x{roundState.core.hotDiceCounterRound} {'🔥'.repeat(Math.max(roundState.core.hotDiceCounterRound, 1))}
             </div>
           )}
           
           {/* Flop Information */}
-          {status.consecutiveFlops > 0 && (
+          {gameState.core.consecutiveFlops > 0 && (
             <div style={{ 
               marginTop: '8px', 
               padding: '8px', 
@@ -192,8 +218,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               borderRadius: '4px',
               fontSize: '14px'
             }}>
-              ⚠️ Consecutive flops: {status.consecutiveFlops}/3
-              {status.consecutiveFlops >= 3 && (board.canRoll && canPlay) && (
+              ⚠️ Consecutive flops: {gameState.core.consecutiveFlops}/3
+              {gameState.core.consecutiveFlops >= 3 && (board.canRoll && canPlay) && (
                 <div style={{ color: '#d63031', fontWeight: 'bold' }}>
                   Flop penalty: -1000 points
                 </div>

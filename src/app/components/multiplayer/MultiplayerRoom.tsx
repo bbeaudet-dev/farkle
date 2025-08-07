@@ -44,61 +44,69 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
 
   useEffect(() => {
     // Connect to WebSocket server
-    const newSocket = io('http://localhost:5173');
-    setSocket(newSocket);
+    const connectToServer = () => {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? process.env.REACT_APP_BACKEND_URL || 'https://your-backend.onrender.com'
+        : 'http://localhost:5173';
+      
+      const newSocket = io(serverUrl);
+      setSocket(newSocket);
 
-    // Socket event listeners
-    newSocket.on('player_joined', (player: Player) => {
-      console.log('Player joined:', player);
-      setCurrentRoom(prev => {
-        if (prev) {
-          const playerExists = prev.players.some(p => p.id === player.id);
-          if (!playerExists) {
+      // Socket event listeners
+      newSocket.on('player_joined', (player: Player) => {
+        console.log('Player joined:', player);
+        setCurrentRoom(prev => {
+          if (prev) {
+            const playerExists = prev.players.some(p => p.id === player.id);
+            if (!playerExists) {
+              return {
+                ...prev,
+                players: [...prev.players, player]
+              };
+            }
+          }
+          return prev;
+        });
+      });
+
+      newSocket.on('player_left', (player: Player) => {
+        console.log('Player left:', player);
+        setCurrentRoom(prev => {
+          if (prev) {
             return {
               ...prev,
-              players: [...prev.players, player]
+              players: prev.players.filter(p => p.id !== player.id)
             };
           }
-        }
-        return prev;
+          return prev;
+        });
       });
-    });
 
-    newSocket.on('player_left', (player: Player) => {
-      console.log('Player left:', player);
-      setCurrentRoom(prev => {
-        if (prev) {
-          return {
-            ...prev,
-            players: prev.players.filter(p => p.id !== player.id)
-          };
-        }
-        return prev;
+      newSocket.on('player_state_updated', (player: Player) => {
+        console.log('Player state updated:', player);
+        setCurrentRoom(prev => {
+          if (prev) {
+            return {
+              ...prev,
+              players: prev.players.map(p => p.id === player.id ? player : p)
+            };
+          }
+          return prev;
+        });
       });
-    });
 
-    newSocket.on('player_state_updated', (player: Player) => {
-      console.log('Player state updated:', player);
-      setCurrentRoom(prev => {
-        if (prev) {
-          return {
-            ...prev,
-            players: prev.players.map(p => p.id === player.id ? player : p)
-          };
-        }
-        return prev;
+      newSocket.on('game_started', (data: { roomCode: string; activePlayerIds: string[]; gameState: string }) => {
+        console.log('Game started:', data);
+        setGameStarted(true);
+        setActivePlayerIds(data.activePlayerIds);
       });
-    });
 
-    newSocket.on('game_started', (data: { roomCode: string; activePlayerIds: string[]; gameState: string }) => {
-      console.log('Game started:', data);
-      setGameStarted(true);
-      setActivePlayerIds(data.activePlayerIds);
-    });
-
-    return () => {
-      newSocket.close();
+      return () => {
+        newSocket.close();
+      };
     };
+
+    connectToServer();
   }, []);
 
   const handleCreateRoom = () => {

@@ -8,7 +8,12 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ["https://rollio-git-main-ben-beaudets-projects.vercel.app"] 
+      ? [
+          "https://rollio.vercel.app",
+          "https://rollio-klj02tb02-ben-beaudets-projects.vercel.app",
+          "https://rollio-git-main-ben-beaudets-projects.vercel.app",
+          "https://rollio-git-deployment-setup-ben-beaudets-projects.vercel.app"
+        ] 
       : ["http://localhost:3000"], 
     methods: ["GET", "POST"]
   }

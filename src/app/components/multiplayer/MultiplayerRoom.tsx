@@ -43,9 +43,14 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
   const [activePlayerIds, setActivePlayerIds] = useState<string[]>([]);
 
   // Server URL for both socket connection and health checks
+  // For development, connect to deployed backend unless we're running local backend
   const serverUrl = process.env.NODE_ENV === 'production' 
     ? process.env.REACT_APP_BACKEND_URL || 'https://rollio-backend.onrender.com'
-    : 'http://localhost:5173';
+    : process.env.REACT_APP_BACKEND_URL || 'https://rollio-backend.onrender.com';
+  
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Backend URL:', process.env.REACT_APP_BACKEND_URL);
+  console.log('Using server URL:', serverUrl);
 
   useEffect(() => {
     // Connect to WebSocket server

@@ -1,3 +1,4 @@
 export { DiceDisplay } from './DiceDisplay';
+export { DiceFace } from './DiceFace';
 export { DiceSelector } from './DiceSelector';
-export { DiceFace } from './DiceFace'; 
+export { CasinoDiceArea } from './CasinoDiceArea'; 

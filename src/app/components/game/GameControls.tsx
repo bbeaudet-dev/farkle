@@ -26,7 +26,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
       return 'Start New Round';
     } else if (canReroll) {
       // For hot dice, show the dice count
-      return <>Reroll<br/>({diceToReroll} dice)</>;
+      return `Reroll (${diceToReroll} dice)`;
     }
     // Fallback
     return 'Roll Dice';

@@ -45,9 +45,9 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
   useEffect(() => {
     // Connect to WebSocket server
     const connectToServer = () => {
-      const serverUrl = process.env.NODE_ENV === 'production' 
-        ? process.env.REACT_APP_BACKEND_URL || 'https://your-backend.onrender.com'
-        : 'http://localhost:5173';
+          const serverUrl = process.env.NODE_ENV === 'production' 
+      ? process.env.REACT_APP_BACKEND_URL || 'https://rollio-backend.onrender.com'
+      : 'http://localhost:5173';
       
       const newSocket = io(serverUrl);
       setSocket(newSocket);

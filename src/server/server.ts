@@ -19,13 +19,6 @@ const PORT = process.env.PORT || 5173;
 // Middleware
 app.use(express.json());
 
-// Serve static files from the built frontend
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../dist')));
-} else {
-  app.use(express.static('public'));
-}
-
 // Room management
 interface Room {
   id: string;
@@ -56,13 +49,9 @@ function generateRoomCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-// Serve the main page
-app.get('/', (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    res.sendFile(path.join(__dirname, '../../dist/index.html'));
-  } else {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-  }
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Rollio backend is running' });
 });
 
 // API endpoint to start a new game

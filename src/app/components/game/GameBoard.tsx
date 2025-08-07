@@ -1,7 +1,6 @@
 import React from 'react';
-import { DiceDisplay } from './dice/DiceDisplay';
+import { DiceDisplay, CasinoDiceArea } from './dice';
 import { GameControls } from './GameControls';
-import { GameStatus } from './GameStatus';
 import { CharmInventory, ConsumableInventory } from './inventory/';
 import { PreviewScoring } from './score/PreviewScoring';
 import { Button } from '../ui/Button';
@@ -54,7 +53,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   gameState, 
   roundState, 
   inventory, 
-  canPlay = true 
+  canPlay = true
 }) => {
   // Handle null game state
   if (!gameState || !roundState) {
@@ -79,111 +78,137 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       maxWidth: '1200px', 
       margin: '0 auto', 
       padding: '20px',
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '20px'
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px' // Reduced gap between sections
     }}>
-      {/* Left Column - Game Area */}
-      <div>
-        <GameStatus 
-          status={{
-            roundNumber: gameState.core.roundNumber,
-            rollNumber: roundState.core.rollNumber,
-            roundPoints: roundState.core.roundPoints,
-            gameScore: gameState.core.gameScore,
-            consecutiveFlops: gameState.core.consecutiveFlops,
-            hotDiceCount: roundState.core.hotDiceCounterRound,
-            totalRolls: gameState.history.rollCount,
-            money: gameState.core.money,
-          }}
-        />
-        
-        {/* Scoring Section */}
-        <div style={{ 
-          backgroundColor: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderRadius: '8px',
-          padding: '15px',
-          marginTop: '15px'
+      {/* Game Status Bar */}
+      <div style={{ 
+        backgroundColor: '#f8f9fa',
+        border: '1px solid #dee2e6',
+        borderRadius: '8px',
+        padding: '12px'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          fontSize: '16px',
+          gap: '30px'
         }}>
-          
-          <DiceDisplay 
-            dice={board.dice}
-            selectedIndices={board.selectedDice}
-            onDiceSelect={rollActions.handleDiceSelect}
-            canSelect={board.canSelectDice && canPlay}
-            isHotDice={roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0}
-            hotDiceCount={roundState.core.hotDiceCounterRound}
-            roundNumber={gameState.core.roundNumber}
-            rollNumber={roundState.core.rollNumber}
+          <div><strong>Game Score:</strong> {gameState.core.gameScore}</div>
+          <div><strong>Money:</strong> ${gameState.core.money}</div>
+        </div>
+      </div>
+
+      {/* Charm and Consumable Inventories */}
+      <div style={{ 
+        backgroundColor: '#f8f9fa',
+        border: '1px solid #dee2e6',
+        borderRadius: '8px',
+        padding: '8px',
+        marginBottom: '0' // Remove bottom margin to touch casino area
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '10px'
+        }}>
+          <CharmInventory 
+            charms={inventory.charms}
           />
+          
+          <ConsumableInventory 
+            consumables={inventory.consumables}
+            onConsumableUse={inventoryActions.handleConsumableUse}
+          />
+        </div>
+      </div>
 
-          {/* Flop Notification */}
-          {board.justFlopped && (
-            <div style={{ 
-              marginTop: '15px', 
-              padding: '12px', 
-              backgroundColor: '#ffebee',
-              border: '2px solid #f44336',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              textAlign: 'center',
-              color: '#c62828'
-            }}>
-              🎲 FLOP! 🎲
-              <div style={{ fontSize: '14px', marginTop: '5px', fontWeight: 'normal' }}>
-                No valid scoring combinations found
-              </div>
+      {/* Dice-Rolling Area */}
+      <div style={{ position: 'relative' }}>
+        <CasinoDiceArea
+          dice={board.dice}
+          selectedIndices={board.selectedDice}
+          onDiceSelect={rollActions.handleDiceSelect}
+          canSelect={board.canSelectDice && canPlay}
+          roundNumber={gameState.core.roundNumber}
+          rollNumber={roundState.core.rollNumber}
+          hotDiceCount={roundState.core.hotDiceCounterRound}
+          consecutiveFlops={gameState.core.consecutiveFlops}
+        />
+
+        {/* Points Display - Top Center Overlay */}
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 25,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        }}>
+          {/* Roll Points - GREEN when just scored dice */}
+          {lastRollPoints > 0 && (board.canReroll && canPlay) && !board.justBanked && (
+            <div style={{ color: '#28a745' }}>
+              Roll points: +{lastRollPoints}
             </div>
           )}
           
-          {/* Score Selected Dice Button */}
-          {(board.canSelectDice && canPlay) && board.selectedDice.length > 0 && (
-            <div style={{ marginTop: '15px', marginBottom: '15px', textAlign: 'center' }}>
-              <Button 
-                onClick={rollActions.scoreSelectedDice}
-                disabled={!board.previewScoring?.isValid}
-              >
-                Score Selected Dice ({board.selectedDice.length})
-                {board.previewScoring?.isValid && ` - ${board.previewScoring.points} pts`}
-              </Button>
-            </div>
-          )}
-          
-          <PreviewScoring previewScoring={board.previewScoring} />
-          
-          <div style={{ marginTop: '10px' }}>
-            {/* Roll Points - GREEN when just scored dice */}
-            {lastRollPoints > 0 && (board.canReroll && canPlay) && !board.justBanked && (
-              <div style={{ 
-                marginBottom: '5px',
-                color: '#28a745' // Green when showing roll points
-              }}>
-                Roll points: +{lastRollPoints}
-              </div>
-            )}
-            
-            {/* Round Points - GREEN only when just banked points, BLACK otherwise */}
-            <div style={{ 
-              color: board.justBanked ? '#28a745' : '#000'
-            }}>
-              Round points: {board.justBanked ? '+' : ''}{roundState.core.roundPoints}
-            </div>
-            
-            {/* Game Score - show only when just banked points */}
-            {board.justBanked && (
-              <div style={{ 
-                marginTop: '5px',
-                color: '#000', // Keep black, not green
-                fontWeight: 'bold'
-              }}>
-                Game score: {gameState.core.gameScore}
-              </div>
-            )}
+          {/* Round Points - BLUE when just banked points, WHITE otherwise */}
+          <div style={{ 
+            color: board.justBanked ? '#007bff' : 'white'
+          }}>
+            Round points: {board.justBanked ? '+' : ''}{roundState.core.roundPoints}
           </div>
+          
+          {/* Game Score - show only when just banked points */}
+          {board.justBanked && (
+            <div style={{ 
+              marginTop: '5px',
+              color: 'white',
+              fontWeight: 'bold'
+            }}>
+              Game score: {gameState.core.gameScore}
+            </div>
+          )}
+        </div>
 
-          {/* Game Controls - now integrated into scoring section */}
+        {/* Score Selected Dice Button - Center Overlay */}
+        {(board.canSelectDice && canPlay) && board.selectedDice.length > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 30
+          }}>
+            <Button 
+              onClick={rollActions.scoreSelectedDice}
+              disabled={!board.previewScoring?.isValid}
+            >
+              Score Selected Dice ({board.selectedDice.length})
+              {board.previewScoring?.isValid && ` - ${board.previewScoring.points} pts`}
+            </Button>
+          </div>
+        )}
+
+        {/* Game Controls - Bottom Center Overlay */}
+        <div style={{
+          position: 'absolute',
+          bottom: '10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 25,
+          display: 'flex',
+          gap: '10px',
+          alignItems: 'center'
+        }}>
           <GameControls 
             onRoll={rollActions.handleRollDice}
             onBank={gameActions.handleBank}
@@ -191,60 +216,49 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             canBank={board.canBank && canPlay}
             diceToReroll={(roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0) ? gameState.core.diceSet.length : board.dice.length}
             canReroll={board.canReroll && canPlay}
-
           />
-          
-          {/* Hot Dice Information */}
-          {((roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0) || roundState.core.hotDiceCounterRound > 0) && !board.justFlopped && (
-            <div style={{ 
-              marginTop: '15px', 
-              padding: '8px', 
-              backgroundColor: '#ffe6e6',
-              border: '1px solid #ff9999',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}>
-              {'🔥'.repeat(Math.max(roundState.core.hotDiceCounterRound, 1))} Hot dice! x{roundState.core.hotDiceCounterRound} {'🔥'.repeat(Math.max(roundState.core.hotDiceCounterRound, 1))}
-            </div>
-          )}
-          
-          {/* Flop Information */}
-          {gameState.core.consecutiveFlops > 0 && (
-            <div style={{ 
-              marginTop: '8px', 
-              padding: '8px', 
-              backgroundColor: '#fff3cd',
-              border: '1px solid #ffeaa7',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}>
-              ⚠️ Consecutive flops: {gameState.core.consecutiveFlops}/3
-              {gameState.core.consecutiveFlops >= 3 && (board.canRoll && canPlay) && (
-                <div style={{ color: '#d63031', fontWeight: 'bold' }}>
-                  Flop penalty: -1000 points
-                </div>
-              )}
-            </div>
-          )}
         </div>
-        
       </div>
-      
-      {/* Right Column - Inventory */}
+
+      {/* Game Controls and Info Area */}
       <div style={{ 
         backgroundColor: '#f8f9fa',
         border: '1px solid #dee2e6',
         borderRadius: '8px',
-        padding: '15px'
-      }}>        
-        <CharmInventory 
-          charms={inventory.charms}
+        padding: '20px'
+      }}>
+        <DiceDisplay 
+          dice={board.dice}
+          selectedIndices={board.selectedDice}
+          onDiceSelect={rollActions.handleDiceSelect}
+          canSelect={board.canSelectDice && canPlay}
+          isHotDice={roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0}
+          hotDiceCount={roundState.core.hotDiceCounterRound}
+          roundNumber={gameState.core.roundNumber}
+          rollNumber={roundState.core.rollNumber}
         />
+
+        {/* Flop Notification */}
+        {board.justFlopped && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '12px', 
+            backgroundColor: '#ffebee',
+            border: '2px solid #f44336',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: '#c62828'
+          }}>
+            🎲 FLOP! 🎲
+            <div style={{ fontSize: '14px', marginTop: '5px', fontWeight: 'normal' }}>
+              No valid scoring combinations found
+            </div>
+          </div>
+        )}
         
-        <ConsumableInventory 
-          consumables={inventory.consumables}
-          onConsumableUse={inventoryActions.handleConsumableUse}
-        />
+        <PreviewScoring previewScoring={board.previewScoring} />
       </div>
     </div>
   );

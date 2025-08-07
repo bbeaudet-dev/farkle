@@ -34,6 +34,8 @@ interface Player {
   socketId: string;
   gameScore: number;
   currentRound: number;
+  hotDiceCounterRound: number;
+  roundPoints: number;
   isActive: boolean;
   lastAction: string;
   status: 'lobby' | 'in_game' | 'spectating';
@@ -87,6 +89,8 @@ io.on('connection', (socket) => {
       socketId: socket.id,
       gameScore: 0,
       currentRound: 0,
+      hotDiceCounterRound: 0,
+      roundPoints: 0,
       isActive: true,
       lastAction: 'joined',
       status: 'lobby'
@@ -129,6 +133,8 @@ io.on('connection', (socket) => {
       socketId: socket.id,
       gameScore: 0,
       currentRound: 0,
+      hotDiceCounterRound: 0,
+      roundPoints: 0,
       isActive: true,
       lastAction: 'joined',
       status: 'lobby'

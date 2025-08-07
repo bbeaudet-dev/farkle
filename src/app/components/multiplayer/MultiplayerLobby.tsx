@@ -6,6 +6,8 @@ interface Player {
   socketId: string;
   gameScore: number;
   currentRound: number;
+  hotDiceCounterRound: number;
+  roundPoints: number;
   isActive: boolean;
   lastAction: string;
   status: 'lobby' | 'in_game' | 'spectating';
@@ -63,6 +65,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   if (currentRoom && currentPlayer) {
     return (
       <div style={{
+        fontFamily: 'Arial, sans-serif',
         maxWidth: '800px',
         margin: '50px auto',
         padding: '20px',
@@ -70,10 +73,19 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         borderRadius: '8px',
         border: '1px solid #dee2e6'
       }}>
-        <h2>Room: {currentRoom.id}</h2>
+        <h2 style={{ 
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          marginBottom: '20px'
+        }}>Room: {currentRoom.id}</h2>
         
         <div style={{ marginBottom: '20px' }}>
-          <p>Share this room code with friends:</p>
+          <p style={{ 
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '16px',
+            marginBottom: '10px'
+          }}>Share this room code with friends:</p>
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -85,6 +97,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
               value={roomCode}
               readOnly
               style={{
+                fontFamily: 'Arial, sans-serif',
                 padding: '10px',
                 fontSize: '18px',
                 fontWeight: 'bold',
@@ -97,12 +110,14 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
             <button
               onClick={copyRoomCode}
               style={{
+                fontFamily: 'Arial, sans-serif',
                 padding: '10px 20px',
                 backgroundColor: '#007bff',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontWeight: 'bold'
               }}
             >
               Copy
@@ -111,12 +126,18 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         </div>
 
         <div style={{ marginBottom: '20px' }}>
-          <h3>Players ({currentRoom.players.length}/4):</h3>
+          <h3 style={{ 
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            marginBottom: '10px'
+          }}>Players ({currentRoom.players.length}/4):</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {currentRoom.players.map((player) => (
               <div
                 key={player.id}
                 style={{
+                  fontFamily: 'Arial, sans-serif',
                   padding: '10px',
                   backgroundColor: player.id === currentPlayer.id ? '#e3f2fd' : '#fff',
                   border: player.id === currentPlayer.id ? '2px solid #2196f3' : '1px solid #ddd',
@@ -126,11 +147,16 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   alignItems: 'center'
                 }}
               >
-                <span style={{ fontWeight: 'bold' }}>
+                <span style={{ 
+                  fontFamily: 'Arial, sans-serif',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>
                   {player.username} {player.id === currentPlayer.id ? '(You)' : ''}
                   {isHost && player.id === currentPlayer.id && ' (Host)'}
                 </span>
                 <span style={{
+                  fontFamily: 'Arial, sans-serif',
                   padding: '2px 6px',
                   borderRadius: '12px',
                   fontSize: '10px',
@@ -150,37 +176,42 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {isHost && (
+        {isHost && (
+          <div style={{ textAlign: 'center' }}>
             <button
               onClick={onStartGame}
-              disabled={currentRoom.players.length < 1}
               style={{
+                fontFamily: 'Arial, sans-serif',
                 padding: '12px 24px',
-                backgroundColor: currentRoom.players.length >= 1 ? '#28a745' : '#6c757d',
+                backgroundColor: '#28a745',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '4px',
-                cursor: currentRoom.players.length >= 1 ? 'pointer' : 'not-allowed',
-                fontSize: '16px'
+                borderRadius: '6px',
+                fontSize: '16px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
               }}
             >
-              Start Game ({currentRoom.players.length} players)
+              🎮 Start Game
             </button>
-          )}
-          
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
           <button
             onClick={onBackToMenu}
             style={{
-              padding: '12px 24px',
+              fontFamily: 'Arial, sans-serif',
+              padding: '8px 16px',
               backgroundColor: '#6c757d',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '14px'
             }}
           >
-            Leave Room
+            ← Back to Menu
           </button>
         </div>
       </div>
@@ -190,6 +221,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   // Show room creation/joining interface
   return (
     <div style={{
+      fontFamily: 'Arial, sans-serif',
       maxWidth: '600px',
       margin: '100px auto',
       padding: '20px',
@@ -197,10 +229,22 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       borderRadius: '8px',
       border: '1px solid #dee2e6'
     }}>
-      <h1>Multiplayer Lobby</h1>
+      <h1 style={{ 
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '28px',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: '30px'
+      }}>Multiplayer Lobby</h1>
       
       <div style={{ marginBottom: '20px' }}>
-        <label htmlFor="username" style={{ display: 'block', marginBottom: '5px' }}>
+        <label htmlFor="username" style={{ 
+          fontFamily: 'Arial, sans-serif',
+          display: 'block', 
+          marginBottom: '5px',
+          fontSize: '16px',
+          fontWeight: 'bold'
+        }}>
           Your Username:
         </label>
         <input
@@ -210,6 +254,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
           onChange={(e) => onUsernameChange(e.target.value)}
           placeholder="Enter your username"
           style={{
+            fontFamily: 'Arial, sans-serif',
             width: '100%',
             padding: '10px',
             fontSize: '16px',
@@ -221,6 +266,7 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
 
       {error && (
         <div style={{
+          fontFamily: 'Arial, sans-serif',
           padding: '10px',
           backgroundColor: '#f8d7da',
           color: '#721c24',
@@ -232,89 +278,83 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Create Room Section */}
-        <div style={{
-          padding: '20px',
-          backgroundColor: '#fff',
-          borderRadius: '4px',
-          border: '1px solid #ddd'
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '12px',
+        marginBottom: '20px'
+      }}>
+        <button 
+          onClick={onCreateRoom} 
+          disabled={isCreating}
+          style={{
+            fontFamily: 'Arial, sans-serif',
+            padding: '12px',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '16px',
+            cursor: isCreating ? 'not-allowed' : 'pointer',
+            opacity: isCreating ? 0.6 : 1,
+            fontWeight: 'bold'
+          }}
+        >
+          {isCreating ? 'Creating...' : 'Create Room'}
+        </button>
+        
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px',
+          alignItems: 'center'
         }}>
-          <h3>Create a New Room</h3>
-          <p style={{ color: '#666', marginBottom: '15px' }}>
-            Create a new game and invite friends to join.
-          </p>
-          <button
-            onClick={onCreateRoom}
-            disabled={isCreating || !username.trim()}
+          <input
+            type="text"
+            value={roomCode}
+            onChange={(e) => onRoomCodeChange(e.target.value)}
+            placeholder="Enter room code"
             style={{
-              padding: '12px 24px',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isCreating || !username.trim() ? 'not-allowed' : 'pointer',
-              opacity: isCreating || !username.trim() ? 0.6 : 1
+              fontFamily: 'Arial, sans-serif',
+              flex: 1,
+              padding: '10px',
+              fontSize: '16px',
+              border: '1px solid #ddd',
+              borderRadius: '4px'
             }}
-          >
-            {isCreating ? 'Creating...' : 'Create Room'}
-          </button>
-        </div>
-
-        {/* Join Room Section */}
-        <div style={{
-          padding: '20px',
-          backgroundColor: '#fff',
-          borderRadius: '4px',
-          border: '1px solid #ddd'
-        }}>
-          <h3>Join an Existing Room</h3>
-          <p style={{ color: '#666', marginBottom: '15px' }}>
-            Enter a room code to join a friend's game.
-          </p>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <input
-              type="text"
-              value={roomCode}
-              onChange={(e) => onRoomCodeChange(e.target.value.toUpperCase())}
-              placeholder="Enter room code"
-              style={{
-                flex: 1,
-                padding: '10px',
-                fontSize: '16px',
-                border: '1px solid #ddd',
-                borderRadius: '4px'
-              }}
-            />
-          </div>
-          <button
-            onClick={onJoinRoom}
-            disabled={isJoining || !username.trim() || !roomCode.trim()}
+          />
+          <button 
+            onClick={onJoinRoom} 
+            disabled={isJoining}
             style={{
-              padding: '12px 24px',
+              fontFamily: 'Arial, sans-serif',
+              padding: '10px 16px',
               backgroundColor: '#28a745',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
-              cursor: isJoining || !username.trim() || !roomCode.trim() ? 'not-allowed' : 'pointer',
-              opacity: isJoining || !username.trim() || !roomCode.trim() ? 0.6 : 1
+              fontSize: '14px',
+              cursor: isJoining ? 'not-allowed' : 'pointer',
+              opacity: isJoining ? 0.6 : 1,
+              fontWeight: 'bold'
             }}
           >
-            {isJoining ? 'Joining...' : 'Join Room'}
+            {isJoining ? 'Joining...' : 'Join'}
           </button>
         </div>
       </div>
 
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
         <button
           onClick={onBackToMenu}
           style={{
-            padding: '10px 20px',
+            fontFamily: 'Arial, sans-serif',
+            padding: '8px 16px',
             backgroundColor: '#6c757d',
             color: '#fff',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            fontSize: '14px'
           }}
         >
           ← Back to Menu

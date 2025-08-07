@@ -15,6 +15,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
 }) => {
   return (
     <div style={{ 
+      fontFamily: 'Arial, sans-serif',
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center',
@@ -25,8 +26,17 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
       border: '1px solid #dee2e6'
     }}>
       <div>
-        <h1 style={{ margin: 0 }}>🎮 Multiplayer Game</h1>
-        <div style={{ fontSize: '14px', color: '#666' }}>
+        <h1 style={{ 
+          margin: 0,
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '24px',
+          fontWeight: 'bold'
+        }}>🎮 Multiplayer Game</h1>
+        <div style={{ 
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '14px', 
+          color: '#666' 
+        }}>
           Room: {roomId} | You: {username}
           {!canPlay && ' (Spectating)'}
         </div>
@@ -35,6 +45,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         <button
           onClick={onBackToLobby}
           style={{
+            fontFamily: 'Arial, sans-serif',
             padding: '8px 16px',
             backgroundColor: '#6c757d',
             color: '#fff',

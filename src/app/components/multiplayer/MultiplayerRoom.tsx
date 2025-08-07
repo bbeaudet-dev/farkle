@@ -8,6 +8,8 @@ interface Player {
   socketId: string;
   gameScore: number;
   currentRound: number;
+  hotDiceCounterRound: number;
+  roundPoints: number;
   isActive: boolean;
   lastAction: string;
   status: 'lobby' | 'in_game' | 'spectating';
@@ -168,32 +170,36 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
   // Show game if started
   if (gameStarted && currentRoom && currentPlayer) {
     return (
-      <MultiplayerGame
-        currentRoom={currentRoom}
-        currentPlayer={currentPlayer}
-        activePlayerIds={activePlayerIds}
-        socket={socket}
-        onBackToLobby={() => setGameStarted(false)}
-      />
+      <div style={{ fontFamily: 'Arial, sans-serif' }}>
+        <MultiplayerGame
+          currentRoom={currentRoom}
+          currentPlayer={currentPlayer}
+          activePlayerIds={activePlayerIds}
+          socket={socket}
+          onBackToLobby={() => setGameStarted(false)}
+        />
+      </div>
     );
   }
 
     // Show lobby
   return (
-    <MultiplayerLobby
-      username={username}
-      roomCode={roomCode}
-      currentRoom={currentRoom}
-      currentPlayer={currentPlayer}
-      error={error}
-      isCreating={isCreating}
-      isJoining={isJoining}
-      onUsernameChange={setUsername}
-      onRoomCodeChange={setRoomCode}
-      onCreateRoom={handleCreateRoom}
-      onJoinRoom={handleJoinRoom}
-      onStartGame={handleStartGame}
-      onBackToMenu={onBackToMenu}
-    />
+    <div style={{ fontFamily: 'Arial, sans-serif' }}>
+      <MultiplayerLobby
+        username={username}
+        roomCode={roomCode}
+        currentRoom={currentRoom}
+        currentPlayer={currentPlayer}
+        error={error}
+        isCreating={isCreating}
+        isJoining={isJoining}
+        onUsernameChange={setUsername}
+        onRoomCodeChange={setRoomCode}
+        onCreateRoom={handleCreateRoom}
+        onJoinRoom={handleJoinRoom}
+        onStartGame={handleStartGame}
+        onBackToMenu={onBackToMenu}
+      />
+    </div>
   );
 }; 

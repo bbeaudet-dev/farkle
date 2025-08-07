@@ -65,13 +65,6 @@ app.get('/', (req, res) => {
   }
 });
 
-// Handle client-side routing in production
-app.get('*', (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    res.sendFile(path.join(__dirname, '../../dist/index.html'));
-  }
-});
-
 // API endpoint to start a new game
 app.post('/api/game/start', (req, res) => {
   try {

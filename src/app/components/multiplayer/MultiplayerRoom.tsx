@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MultiplayerLobby, MultiplayerGame } from './';
+import { MultiplayerLobby, MultiplayerGame, HealthCheckStatus } from './';
 import io from 'socket.io-client';
 
 interface Player {
@@ -42,15 +42,36 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
   const [gameStarted, setGameStarted] = useState(false);
   const [activePlayerIds, setActivePlayerIds] = useState<string[]>([]);
 
+  // Server URL for both socket connection and health checks
+  // For development, connect to deployed backend unless we're running local backend
+  const serverUrl = process.env.NODE_ENV === 'production' 
+    ? process.env.REACT_APP_BACKEND_URL || 'https://rollio-backend.onrender.com'
+    : process.env.REACT_APP_BACKEND_URL || 'https://rollio-backend.onrender.com';
+  
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Backend URL:', process.env.REACT_APP_BACKEND_URL);
+  console.log('Using server URL:', serverUrl);
+
   useEffect(() => {
     // Connect to WebSocket server
     const connectToServer = () => {
-          const serverUrl = process.env.NODE_ENV === 'production' 
-      ? process.env.REACT_APP_BACKEND_URL || 'https://rollio-backend.onrender.com'
-      : 'http://localhost:5173';
-      
+      console.log('Connecting to server:', serverUrl);
       const newSocket = io(serverUrl);
       setSocket(newSocket);
+
+      // Connection event listeners
+      newSocket.on('connect', () => {
+        console.log('Socket connected successfully');
+        console.log('Socket ID:', newSocket.id);
+      });
+
+      newSocket.on('connect_error', (error: any) => {
+        console.error('Socket connection error:', error);
+      });
+
+      newSocket.on('disconnect', (reason: any) => {
+        console.log('Socket disconnected:', reason);
+      });
 
       // Socket event listeners
       newSocket.on('player_joined', (player: Player) => {
@@ -115,12 +136,24 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
       return;
     }
 
+    if (!socket) {
+      setError('Socket connection not available');
+      return;
+    }
+
+    console.log('Creating room with username:', username);
+    console.log('Socket connected:', socket.connected);
+    console.log('Socket ID:', socket.id);
+
     setIsCreating(true);
     setError('');
 
-    socket?.emit('create_room', username, (response: any) => {
+    socket.emit('create_room', username, (response: any) => {
+      console.log('Create room response:', response);
       setIsCreating(false);
-      if (response.success) {
+      
+      if (response && response.success) {
+        console.log('Room created successfully:', response.roomCode);
         setCurrentRoom({
           id: response.roomCode,
           players: [response.player],
@@ -132,9 +165,20 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
         setCurrentPlayer(response.player);
         setRoomCode(response.roomCode);
       } else {
-        setError(response.error || 'Failed to create room');
+        const errorMsg = response?.error || 'Failed to create room';
+        console.error('Failed to create room:', errorMsg);
+        setError(errorMsg);
       }
     });
+
+    // Add timeout in case callback never fires
+    setTimeout(() => {
+      if (isCreating) {
+        console.error('Create room timeout - no response received');
+        setIsCreating(false);
+        setError('Timeout: No response from server');
+      }
+    }, 10000);
   };
 
   const handleJoinRoom = () => {
@@ -179,6 +223,7 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
   if (gameStarted && currentRoom && currentPlayer) {
     return (
       <div style={{ fontFamily: 'Arial, sans-serif' }}>
+        <HealthCheckStatus serverUrl={serverUrl} socket={socket} />
         <MultiplayerGame
           currentRoom={currentRoom}
           currentPlayer={currentPlayer}
@@ -193,6 +238,7 @@ export const MultiplayerRoom: React.FC<MultiplayerRoomProps> = ({
     // Show lobby
   return (
     <div style={{ fontFamily: 'Arial, sans-serif' }}>
+      <HealthCheckStatus serverUrl={serverUrl} socket={socket} />
       <MultiplayerLobby
         username={username}
         roomCode={roomCode}

@@ -52,7 +52,18 @@ function generateRoomCode(): string {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Rollio backend is running' });
+  const healthInfo = {
+    status: 'ok',
+    message: 'Rollio backend is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT,
+    activeRooms: rooms.size,
+    totalPlayers: Array.from(rooms.values()).reduce((total, room) => total + room.players.length, 0),
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  };
+  res.json(healthInfo);
 });
 
 // API endpoint to start a new game
@@ -84,35 +95,51 @@ io.on('connection', (socket) => {
   socket.on('create_room', (username: string, callback) => {
     console.log('Creating room for:', username, 'socket:', socket.id);
     
-    const roomCode = generateRoomCode();
-    const player: Player = {
-      id: socket.id,
-      username,
-      socketId: socket.id,
-      gameScore: 0,
-      currentRound: 0,
-      hotDiceCounterRound: 0,
-      roundPoints: 0,
-      isActive: true,
-      lastAction: 'joined',
-      status: 'lobby'
-    };
+    try {
+      const roomCode = generateRoomCode();
+      console.log('Generated room code:', roomCode);
+      
+      const player: Player = {
+        id: socket.id,
+        username,
+        socketId: socket.id,
+        gameScore: 0,
+        currentRound: 0,
+        hotDiceCounterRound: 0,
+        roundPoints: 0,
+        isActive: true,
+        lastAction: 'joined',
+        status: 'lobby'
+      };
 
-    const room: Room = {
-      id: roomCode,
-      players: [player],
-      gameState: 'waiting',
-      activePlayerIds: [],
-      hostId: socket.id,
-      createdAt: new Date()
-    };
+      const room: Room = {
+        id: roomCode,
+        players: [player],
+        gameState: 'waiting',
+        activePlayerIds: [],
+        hostId: socket.id,
+        createdAt: new Date()
+      };
 
-    rooms.set(roomCode, room);
-    socket.join(roomCode);
-    
-    console.log(`Room ${roomCode} created by ${username}`);
-    console.log('Sending callback with:', { success: true, roomCode, player });
-    callback({ success: true, roomCode, player });
+      rooms.set(roomCode, room);
+      socket.join(roomCode);
+      
+      console.log(`Room ${roomCode} created by ${username}`);
+      console.log('Current rooms:', Array.from(rooms.keys()));
+      console.log('Sending callback with:', { success: true, roomCode, player });
+      
+      // Ensure callback is called
+      if (typeof callback === 'function') {
+        callback({ success: true, roomCode, player });
+      } else {
+        console.error('Callback is not a function:', callback);
+      }
+    } catch (error) {
+      console.error('Error creating room:', error);
+      if (typeof callback === 'function') {
+        callback({ success: false, error: 'Failed to create room' });
+      }
+    }
   });
 
   // Join an existing room

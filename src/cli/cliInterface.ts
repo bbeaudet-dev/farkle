@@ -434,8 +434,8 @@ export class CLIInterface implements GameInterface {
   async displayBetweenRounds(gameState: GameState): Promise<void> {
     await this.log('\n--- Between Rounds ---');
     await this.log(`Money: $${gameState.core.money}`);
-    await this.log(`Charms: ${gameState.core.charms.length > 0 ? gameState.core.charms.map((c: any) => c.name).join(', ') : 'None'}`);
-    await this.log(`Consumables: ${gameState.core.consumables.length > 0 ? gameState.core.consumables.map((c: any) => c.name).join(', ') : 'None'}`);
+    await this.log(`Charms: ${(gameState.core.charms || []).length > 0 ? (gameState.core.charms || []).map((c: any) => c.name).join(', ') : 'None'}`);
+    await this.log(`Consumables: ${(gameState.core.consumables || []).length > 0 ? (gameState.core.consumables || []).map((c: any) => c.name).join(', ') : 'None'}`);
     await this.log('----------------------\n');
   }
 

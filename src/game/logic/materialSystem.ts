@@ -80,7 +80,7 @@ const materialEffects: Record<string, MaterialEffectFn> = {
     const goldenCount = selectedDice.filter(die => die.material === 'golden').length;
     if (goldenCount > 0 && gameState) {
       materialLogs.push(`Golden: ${goldenCount} scored, +$${5 * goldenCount}`);
-      gameState.money = (gameState.money || 0) + 5 * goldenCount;
+      gameState.core.money = (gameState.core.money || 0) + 5 * goldenCount;
     }
     return { score, materialLogs };
   },
@@ -147,8 +147,8 @@ const materialEffects: Record<string, MaterialEffectFn> = {
         }
       }
       if (Math.random() < moneyProb) {
-        if (gameState) gameState.money = (gameState.money || 0) + 10;
-        materialLogs.push('Rainbow: +$10! New total: $' + gameState.money);
+        if (gameState) gameState.core.money = (gameState.core.money || 0) + 10;
+        materialLogs.push('Rainbow: +$10! New total: $' + gameState.core.money);
         // Notify Rabbit's Foot charm if active
         if (charmManager && typeof charmManager.getCharm === 'function') {
           const rabbitsFoot = charmManager.getCharm('rabbitsFoot');
@@ -158,10 +158,10 @@ const materialEffects: Record<string, MaterialEffectFn> = {
         }
       }
       if (Math.random() < cloneProb) {
-        if (gameState && gameState.diceSet) {
-          const newDie = { ...die, id: `d${gameState.diceSet.length + 1}` };
-          gameState.diceSet.push(newDie);
-          materialLogs.push('Rainbow: Cloned itself! New number of dice: ' + gameState.diceSet.length);
+        if (gameState && gameState.core.diceSet) {
+          const newDie = { ...die, id: `d${gameState.core.diceSet.length + 1}` };
+          gameState.core.diceSet.push(newDie);
+          materialLogs.push('Rainbow: Cloned itself! New number of dice: ' + gameState.core.diceSet.length);
           // Notify Rabbit's Foot charm if active
           if (charmManager && typeof charmManager.getCharm === 'function') {
             const rabbitsFoot = charmManager.getCharm('rabbitsFoot');

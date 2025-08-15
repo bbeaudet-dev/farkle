@@ -97,10 +97,16 @@ export const MultiplayerGame: React.FC<MultiplayerGameProps> = ({
         roundState={game.roundState}
         inventory={game.inventory}
         canPlay={canPlay}
+        isMultiplayer={true}
       />
 
       {/* Live Scoreboard */}
-      <div style={{ marginTop: '20px' }}>
+      <div style={{ 
+        marginTop: '20px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         <LiveScoreboard
           players={currentRoom.players}
           currentPlayerId={currentPlayer.id}

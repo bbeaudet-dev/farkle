@@ -28,7 +28,7 @@ export function processCompleteScoring(
   const { scoringResult } = validateDiceSelectionAndScore(
     input, 
     roundState.core.diceHand, 
-    { charms: gameState.core.charms }
+    { charms: gameState.core.charms || [] }
   );
 
   if (!scoringResult.valid) {
@@ -140,7 +140,7 @@ export function calculatePreviewScoring(
     const { scoringResult } = validateDiceSelectionAndScore(
       input, 
       roundState.core.diceHand, 
-      { charms: gameState.core.charms }
+      { charms: gameState.core.charms || [] }
     );
     
     if (scoringResult.valid && scoringResult.allPartitionings.length > 0) {

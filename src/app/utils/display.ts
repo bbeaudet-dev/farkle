@@ -49,17 +49,17 @@ export class DisplayFormatter {
     
     if (isWin) {
       lines.push(`\n🎉 CONGRATULATIONS! 🎉`);
-      lines.push(`You won with ${gameState.gameScore} points!`);
+      lines.push(`You won with ${gameState.core.gameScore} points!`);
     }
     
     lines.push(`\n=== ${isWin ? 'FINAL GAME STATISTICS' : 'GAME SUMMARY'} ===`);
     
     const stats = formatGameStats({
-      rounds: gameState.roundNumber - 1,
-      totalRolls: gameState.rollCount || 0,
-      gameScore: gameState.gameScore,
-      money: gameState.money || 0,
-      hotDiceCounterRound: gameState.hotDiceCounterGlobal || 0,
+      rounds: gameState.core.roundNumber - 1,
+      totalRolls: gameState.history.rollCount || 0,
+      gameScore: gameState.core.gameScore,
+      money: gameState.core.money || 0,
+      hotDiceCounterRound: gameState.history.hotDiceCounterGlobal || 0,
     });
     
     lines.push(...stats);

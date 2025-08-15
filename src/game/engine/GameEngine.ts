@@ -82,26 +82,26 @@ export class GameEngine {
     
     debugAction('gameFlow', 'Game setup completed', { 
       diceSetName: diceSetConfig.name, 
-      charmsCount: gameState.charms?.length || 0,
-      consumablesCount: gameState.consumables?.length || 0
+      charmsCount: gameState.core.charms?.length || 0,
+      consumablesCount: gameState.core.consumables?.length || 0
     });
 
     await this.interface.log(CLIDisplayFormatter.formatGameSetupSummary(gameState));
 
     // Main game loop
     debugAction('gameFlow', 'Starting main game loop');
-    while (gameState.isActive) {
-      debugAction('roundTransitions', `Round ${gameState.roundNumber + 1} starting`, { 
-        currentScore: gameState.gameScore,
-        roundsPlayed: gameState.roundNumber
+    while (gameState.meta.isActive) {
+      debugAction('roundTransitions', `Round ${gameState.core.roundNumber + 1} starting`, { 
+        currentScore: gameState.core.gameScore,
+        roundsPlayed: gameState.core.roundNumber
       });
       
       // Ask user to start the round
       const next = await (this.interface as any).askForNextRound(gameState, null, async (idx: number) => await this.useConsumable(idx, gameState, null));
       if (next.trim().toLowerCase() !== 'y') {
         debugAction('gameFlow', 'Player quit game');
-        gameState.isActive = false;
-        gameState.endReason = 'quit';
+        gameState.meta.isActive = false;
+        gameState.meta.endReason = 'quit';
         await this.interface.displayGameEnd(gameState, false);
         break;
       }
@@ -116,13 +116,13 @@ export class GameEngine {
         this.useConsumable.bind(this)
       );
       
-      if (gameState.gameScore !== undefined && gameState.winCondition !== undefined && gameState.gameScore >= gameState.winCondition) {
+      if (gameState.core.gameScore !== undefined && gameState.config?.winCondition !== undefined && gameState.core.gameScore >= gameState.config.winCondition) {
         debugAction('gameFlow', 'Player reached win condition', { 
-          finalScore: gameState.gameScore, 
-          winCondition: gameState.winCondition 
+          finalScore: gameState.core.gameScore, 
+          winCondition: gameState.config.winCondition 
         });
-        gameState.isActive = false;
-        gameState.endReason = 'win';
+        gameState.meta.isActive = false;
+        gameState.meta.endReason = 'win';
         await this.interface.displayGameEnd(gameState, true);
       }
     }
@@ -134,7 +134,7 @@ export class GameEngine {
    * Handles consumable usage, passed as a callback to RoundManager.
    */
   async useConsumable(idx: number, gameState: any, roundState: any): Promise<void> {
-    const consumable = gameState.consumables?.[idx];
+    const consumable = gameState.core.consumables?.[idx];
     debugAction('consumableUsage', `Using consumable: ${consumable?.name || 'Unknown'}`, { 
       consumableIndex: idx,
       roundContext: roundState ? 'in-round' : 'between-rounds'

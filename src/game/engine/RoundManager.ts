@@ -183,12 +183,12 @@ export class RoundManager {
 
     
     const input = await (gameInterface as any).askForDiceSelection(
-      roundState.diceHand,
-      gameState.consumables,
+      roundState.core.diceHand,
+      gameState.core.consumables,
       async (idx: number) => await useConsumable(idx, gameState, roundState),
       gameState
     );
-    return validateDiceSelectionAndScore(input, roundState.diceHand, { charms: gameState.charms });
+    return validateDiceSelectionAndScore(input, roundState.core.diceHand, { charms: gameState.core.charms || [] });
   }
 
 
@@ -281,11 +281,11 @@ export class RoundManager {
     // Instead of logging here, return the logs and base/final points for the interface to format
     // Calculate number of crystal dice scored in this action
     const scoredCrystals = selectedIndices.filter((idx: number) => {
-      const die = roundState.diceHand[idx];
+      const die = roundState.core.diceHand[idx];
       return die && die.material === 'crystal';
     }).length;
     // Log material effects (crystal effect will use the PREVIOUS value)
-    const materialResult = applyMaterialEffects(roundState.diceHand, selectedIndices, modifiedPoints, gameState, roundState, charmManager);
+    const materialResult = applyMaterialEffects(roundState.core.diceHand, selectedIndices, modifiedPoints, gameState, roundState, charmManager);
     let finalPoints = materialResult.score;
     // Return all relevant logs and points for display
     return {
@@ -315,21 +315,21 @@ export class RoundManager {
     useConsumable: (idx: number, gameState: any, roundState: any) => Promise<void>
   ): Promise<'banked' | 'reroll' | 'end'> {
     const action = await (gameInterface as any).askForBankOrReroll(
-      roundState.diceHand.length,
-      gameState.consumables,
+      roundState.core.diceHand.length,
+      gameState.core.consumables,
       async (idx: number) => await useConsumable(idx, gameState, roundState)
     );
     if (action.trim().toLowerCase() === 'b') {
       // Apply charm bank effects
-      const bankedPoints = charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.roundPoints });
-      const bankResult = processBankAction(bankedPoints, gameState.gameScore);
+      const bankedPoints = charmManager.applyBankEffects({ gameState, roundState, bankedPoints: roundState.core.roundPoints });
+      const bankResult = processBankAction(bankedPoints, gameState.core.gameScore);
       
       // Display end-of-round summary
       const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
         0, // forfeited points
         bankedPoints, // points added
         0, // consecutive flops
-        gameState.roundNumber,
+        gameState.core.roundNumber,
         0 // no flop penalty for banking
       );
       for (const line of endOfRoundLines) {
@@ -340,12 +340,12 @@ export class RoundManager {
       return 'banked';
     } else {
       // Reroll the current hand (all dice if hot dice, remaining dice otherwise)
-      rollManager.rollDice(roundState.diceHand);
+      rollManager.rollDice(roundState.core.diceHand);
       
       // Display roll number when dice are rerolled
-      const newRollNumber = roundState.rollHistory.length + 1;
+      const newRollNumber = roundState.history.rollHistory.length + 1;
       await this.displayRollNumber(newRollNumber, gameInterface);
-      await this.diceAnimation.animateDiceRoll(roundState.diceHand, newRollNumber);
+      await this.diceAnimation.animateDiceRoll(roundState.core.diceHand, newRollNumber);
       // Reroll, display and flop check
       const flopResult = await this.displayRollAndCheckFlop(roundState, gameState, gameInterface, newRollNumber, charmManager);
       if (flopResult === true) return 'end';
@@ -372,12 +372,12 @@ export class RoundManager {
    * Helper: Display a roll and check for flop. Returns true if flop (round should end), false otherwise.
    */
   private async displayRollAndCheckFlop(roundState: any, gameState: any, gameInterface: GameInterface, rollNumber: number, charmManager: CharmManager): Promise<boolean | 'flopPrevented'> {
-    const isFlopResult = isFlop(roundState.diceHand);
+    const isFlopResult = isFlop(roundState.core.diceHand);
     if (isFlopResult) {
       // Try to prevent flop with charms
       const flopResult = charmManager.tryPreventFlop({ gameState, roundState });
       if (flopResult.prevented) {
-        const usesLeft = gameState.charms?.find((c: any) => c.name === 'Flop Shield')?.uses ?? '∞';
+        const usesLeft = gameState.core.charms?.find((c: any) => c.name === 'Flop Shield')?.uses ?? '∞';
         const shieldMsg = flopResult.log || `🛡️ Flop Shield activated! Flop prevented (${usesLeft} uses left)`;
         await gameInterface.log(shieldMsg);
         return 'flopPrevented';
@@ -385,26 +385,26 @@ export class RoundManager {
       
       // Display flop message using proper formatting
       await gameInterface.displayFlopMessage(
-        roundState.roundPoints,
-        gameState.consecutiveFlops,
-        gameState.gameScore,
-        (gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty),
-        (gameState.config.penalties.consecutiveFlopLimit ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit)
+        roundState.core.roundPoints,
+        gameState.core.consecutiveFlops,
+        gameState.core.gameScore,
+        (gameState.config?.penalties?.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty),
+        (gameState.config?.penalties?.consecutiveFlopLimit ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopLimit)
       );
       
       // Process flop and update game state
-      const flopResult2 = processFlop(roundState.roundPoints, gameState.consecutiveFlops, gameState.gameScore);
+      const flopResult2 = processFlop(roundState.core.roundPoints, gameState.core.consecutiveFlops, gameState.core.gameScore);
       updateGameStateAfterRound(gameState, roundState, flopResult2);
       
       // Display end-of-round summary
-      const flopPenalty = (gameState.consecutiveFlops >= (gameState.consecutiveFlopLimit ?? 3) && !gameState.charmPreventingFlop) 
-        ? (gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty) 
+      const flopPenalty = (gameState.core.consecutiveFlops >= (gameState.config?.penalties?.consecutiveFlopLimit ?? 3) && !gameState.meta?.charmPreventingFlop) 
+        ? (gameState.config?.penalties?.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty) 
         : 0;
       const endOfRoundLines = CLIDisplayFormatter.formatEndOfRoundSummary(
-        roundState.roundPoints, // forfeited points
+        roundState.core.roundPoints, // forfeited points
         0, // points added (always 0 for flop)
-        gameState.consecutiveFlops,
-        gameState.roundNumber,
+        gameState.core.consecutiveFlops,
+        gameState.core.roundNumber,
         flopPenalty
       );
       for (const line of endOfRoundLines) {

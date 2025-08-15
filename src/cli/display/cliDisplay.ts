@@ -104,10 +104,10 @@ export class CLIDisplayFormatter {
   static formatGameSetupSummary(gameState: any): string {
     const lines: string[] = [];
     lines.push('\n=== GAME SETUP COMPLETE ===');
-    lines.push(`Money: $${gameState.money}`);
-    lines.push(`Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c: any) => c.name).join(', ') : 'None'}`);
-    lines.push(`Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c: any) => c.name).join(', ') : 'None'}`);
-    lines.push(`Dice Set: ${gameState.diceSetConfig?.name || (gameState.diceSet.length + ' dice')}`);
+    lines.push(`Money: $${gameState.core.money}`);
+    lines.push(`Charms: ${(gameState.core.charms || []).length > 0 ? (gameState.core.charms || []).map((c: any) => c.name).join(', ') : 'None'}`);
+    lines.push(`Consumables: ${(gameState.core.consumables || []).length > 0 ? (gameState.core.consumables || []).map((c: any) => c.name).join(', ') : 'None'}`);
+    lines.push(`Dice Set: ${gameState.config.diceSetConfig?.name || (gameState.core.diceSet.length + ' dice')}`);
     lines.push('===========================\n');
     return lines.join('\n');
   }
@@ -140,9 +140,9 @@ export class CLIDisplayFormatter {
   static formatInventory(gameState: any): string[] {
     const lines: string[] = [];
     lines.push(`🎒 INVENTORY`);
-    lines.push(`  Money: $${gameState.money}`);
-    lines.push(`  Charms: ${gameState.charms.length > 0 ? gameState.charms.map((c: any) => `${c.name}${c.uses !== undefined ? ` (${c.uses} uses)` : ''}`).join(', ') : 'None'}`);
-    lines.push(`  Consumables: ${gameState.consumables.length > 0 ? gameState.consumables.map((c: any) => `${c.name} (${c.uses} uses)`).join(', ') : 'None'}`);
+    lines.push(`  Money: $${gameState.core.money}`);
+    lines.push(`  Charms: ${(gameState.core.charms || []).length > 0 ? (gameState.core.charms || []).map((c: any) => `${c.name}${c.uses !== undefined ? ` (${c.uses} uses)` : ''}`).join(', ') : 'None'}`);
+    lines.push(`  Consumables: ${(gameState.core.consumables || []).length > 0 ? (gameState.core.consumables || []).map((c: any) => `${c.name} (${c.uses} uses)`).join(', ') : 'None'}`);
     return lines;
   }
 
@@ -175,9 +175,9 @@ export class CLIDisplayFormatter {
     }
     
     // Show combination counters from game state
-    if (gameState.combinationCounters) {
+    if (gameState.history.combinationCounters) {
       lines.push(`  Combination History:`);
-      Object.entries(gameState.combinationCounters).forEach(([type, count]) => {
+      Object.entries(gameState.history.combinationCounters).forEach(([type, count]) => {
         if ((count as number) > 0) {
           lines.push(`    ${type}: ${count} scored`);
         }
@@ -193,10 +193,10 @@ export class CLIDisplayFormatter {
   static formatDiceSetDisplay(gameState: any): string[] {
     const lines: string[] = [];
     lines.push(`🎲 DICE SET`);
-    lines.push(`  Set: ${gameState.diceSetConfig?.name || (gameState.diceSet.length + ' dice')}`);
+    lines.push(`  Set: ${gameState.config.diceSetConfig?.name || (gameState.core.diceSet.length + ' dice')}`);
     lines.push(`  Dice:`);
     const materialMap = Object.fromEntries(MATERIALS.map(m => [m.id, m.abbreviation]));
-    gameState.diceSet.forEach((die: any, i: number) => {
+    gameState.core.diceSet.forEach((die: any, i: number) => {
       const abbrev = materialMap[die.material] || '--';
       lines.push(`    Die ${i + 1}: ${abbrev} (${die.sides} sides)`);
     });

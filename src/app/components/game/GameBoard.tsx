@@ -43,6 +43,7 @@ interface GameBoardProps {
   roundState: any;
   inventory: any;
   canPlay?: boolean;
+  isMultiplayer?: boolean;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -53,7 +54,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   gameState, 
   roundState, 
   inventory, 
-  canPlay = true
+  canPlay = true,
+  isMultiplayer = false
 }) => {
   // Handle null game state
   if (!gameState || !roundState) {
@@ -220,46 +222,48 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </div>
       </div>
 
-      {/* Game Controls and Info Area */}
-      <div style={{ 
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #dee2e6',
-        borderRadius: '8px',
-        padding: '20px'
-      }}>
-        <DiceDisplay 
-          dice={board.dice}
-          selectedIndices={board.selectedDice}
-          onDiceSelect={rollActions.handleDiceSelect}
-          canSelect={board.canSelectDice && canPlay}
-          isHotDice={roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0}
-          hotDiceCount={roundState.core.hotDiceCounterRound}
-          roundNumber={gameState.core.roundNumber}
-          rollNumber={roundState.core.rollNumber}
-        />
+      {/* Game Controls and Info Area - Only show in single-player mode */}
+      {!isMultiplayer && (
+        <div style={{ 
+          backgroundColor: '#f8f9fa',
+          border: '1px solid #dee2e6',
+          borderRadius: '8px',
+          padding: '20px'
+        }}>
+          <DiceDisplay 
+            dice={board.dice}
+            selectedIndices={board.selectedDice}
+            onDiceSelect={rollActions.handleDiceSelect}
+            canSelect={board.canSelectDice && canPlay}
+            isHotDice={roundState.core.diceHand.length === 0 && roundState.history.rollHistory.length > 0}
+            hotDiceCount={roundState.core.hotDiceCounterRound}
+            roundNumber={gameState.core.roundNumber}
+            rollNumber={roundState.core.rollNumber}
+          />
 
-        {/* Flop Notification */}
-        {board.justFlopped && (
-          <div style={{ 
-            marginTop: '15px', 
-            padding: '12px', 
-            backgroundColor: '#ffebee',
-            border: '2px solid #f44336',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: '#c62828'
-          }}>
-            🎲 FLOP! 🎲
-            <div style={{ fontSize: '14px', marginTop: '5px', fontWeight: 'normal' }}>
-              No valid scoring combinations found
+          {/* Flop Notification */}
+          {board.justFlopped && (
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '12px', 
+              backgroundColor: '#ffebee',
+              border: '2px solid #f44336',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              color: '#c62828'
+            }}>
+              🎲 FLOP! 🎲
+              <div style={{ fontSize: '14px', marginTop: '5px', fontWeight: 'normal' }}>
+                No valid scoring combinations found
+              </div>
             </div>
-          </div>
-        )}
-        
-        <PreviewScoring previewScoring={board.previewScoring} />
-      </div>
+          )}
+          
+          <PreviewScoring previewScoring={board.previewScoring} />
+        </div>
+      )}
     </div>
   );
 }; 

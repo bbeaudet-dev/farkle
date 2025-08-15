@@ -44,6 +44,15 @@ export interface RoundActionResult {
  * Validates dice selection and returns scoring result
  */
 export function validateDiceSelectionAndScore(input: string, diceHand: Die[], context: ScoringContext): { selectedIndices: number[], scoringResult: { valid: boolean, points: number, combinations: ScoringCombination[], allPartitionings: ScoringCombination[][] } } {
+  // Ensure diceHand is not undefined
+  if (!diceHand || !Array.isArray(diceHand)) {
+    console.error('validateDiceSelectionAndScore: diceHand is undefined or not an array:', diceHand);
+    return {
+      selectedIndices: [],
+      scoringResult: { valid: false, points: 0, combinations: [], allPartitionings: [] }
+    };
+  }
+  
   debugAction('scoring', `Validating dice selection: ${input}`, { 
     diceValues: diceHand.map(d => d.rolledValue),
     charmsActive: context.charms.length
@@ -158,10 +167,10 @@ export function processFlop(
 ): RoundActionResult {
   const newConsecutiveFlopCount = consecutiveFlopCount + 1;
   const forfeitedPoints = roundPoints;
-  const consecutiveFlopLimit = gameState.config.penalties.consecutiveFlopLimit ?? 3;
-  const consecutiveFlopPenalty = gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
+  const consecutiveFlopLimit = gameState.config?.penalties?.consecutiveFlopLimit ?? 3;
+  const consecutiveFlopPenalty = gameState.config?.penalties?.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
 
-  const penaltyApplied = newConsecutiveFlopCount >= consecutiveFlopLimit && !gameState.core.charms.some(charm => charm.flopPreventing);
+  const penaltyApplied = newConsecutiveFlopCount >= consecutiveFlopLimit && !(gameState.core.charms || []).some(charm => charm.flopPreventing);
   const penaltyMessage = penaltyApplied ? `You flopped! Round points forfeited: ${forfeitedPoints}. Penalty applied.` : `You flopped! Round points forfeited: ${forfeitedPoints}.`;
 
   return {
@@ -206,10 +215,10 @@ export function updateGameStateAfterRound(
     gameState.history.forfeitedPointsTotal += roundState.core.roundPoints;
     // Set forfeitedPoints for Forfeit Recovery
     roundState.core.forfeitedPoints = roundState.core.roundPoints;
-    const consecutiveFlopLimit = gameState.config.penalties.consecutiveFlopLimit ?? 3;
-    const consecutiveFlopPenalty = gameState.config.penalties.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
+    const consecutiveFlopLimit = gameState.config?.penalties?.consecutiveFlopLimit ?? 3;
+    const consecutiveFlopPenalty = gameState.config?.penalties?.consecutiveFlopPenalty ?? DEFAULT_GAME_CONFIG.penalties.consecutiveFlopPenalty;
 
-    if (gameState.core.consecutiveFlops >= consecutiveFlopLimit && !gameState.core.charms.some(charm => charm.flopPreventing)) {
+    if (gameState.core.consecutiveFlops >= consecutiveFlopLimit && !(gameState.core.charms || []).some(charm => charm.flopPreventing)) {
       gameState.core.gameScore -= consecutiveFlopPenalty;
       // Do NOT reset consecutiveFlops here; only reset on bank
     }
